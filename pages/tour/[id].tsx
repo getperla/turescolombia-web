@@ -271,30 +271,30 @@ export default function TourDetail({ tour }: Props) {
                   ].join('\r\n');
                   const icsUrl = `data:text/calendar;charset=utf-8,${encodeURIComponent(icsContent)}`;
 
-                  // WhatsApp message con QR link y calendario
+                  // WhatsApp message — limpio, corto, profesional
                   const cleanPhone = clientPhone.replace(/\D/g, '');
                   const phoneWithCountry = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
                   const whatsappMsg = [
-                    `Hola ${clientName}! Tu reserva con *TuresColombia* esta confirmada ✅`,
+                    `✅ *RESERVA CONFIRMADA*`,
+                    `━━━━━━━━━━━━━━━━━`,
                     ``,
-                    `🏖️ *${tour.name}*`,
-                    `📅 Fecha: ${formatDate(tourDate)}`,
-                    `⏰ Hora de salida: ${tour.departureTime}`,
-                    `📍 Punto de encuentro: ${tour.departurePoint}`,
-                    `👥 Personas: ${numAdults} adulto(s)${numChildren > 0 ? `, ${numChildren} nino(s)` : ''}`,
-                    `💰 Total: $${totalPrice.toLocaleString()} COP`,
+                    `Hola *${clientName}*!`,
                     ``,
-                    `🎫 Codigo de reserva: *${bookingResult.bookingCode}*`,
+                    `🏖 *${tour.name}*`,
+                    `📅 ${formatDate(tourDate)}`,
+                    `⏰ Salida: ${tour.departureTime}`,
+                    `📍 ${tour.departurePoint}`,
+                    `👥 ${numAdults} adulto(s)${numChildren > 0 ? ` + ${numChildren} nino(s)` : ''}`,
                     ``,
-                    `📱 Tu codigo QR:`,
-                    `${qrImageUrl}`,
+                    `💰 *Total: $${totalPrice.toLocaleString()} COP*`,
                     ``,
-                    `📅 Agregar a tu calendario:`,
-                    `${googleCalUrl}`,
+                    `━━━━━━━━━━━━━━━━━`,
+                    `🎫 Reserva: *${bookingResult.bookingCode}*`,
+                    `━━━━━━━━━━━━━━━━━`,
                     ``,
-                    `Presenta este mensaje o tu codigo QR el dia del tour.`,
+                    `Presenta este codigo el dia del tour.`,
                     ``,
-                    `Gracias por confiar en TuresColombia! 🌴`,
+                    `_TuresColombia — Tours verificados_`,
                   ].join('\n');
                   const whatsappUrl = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(whatsappMsg)}`;
 
