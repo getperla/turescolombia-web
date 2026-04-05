@@ -1,4 +1,5 @@
 import { GetServerSideProps } from 'next';
+import Head from 'next/head';
 import Link from 'next/link';
 import { useState } from 'react';
 import { getTourBySlug, getTour, Tour, Jalador } from '../../../lib/api';
@@ -58,6 +59,18 @@ export default function JaladorTourLink({ tour, jalador, refCode }: Props) {
 
   return (
     <Layout>
+      <Head>
+        <title>{tour.name} — Desde ${tour.priceAdult.toLocaleString()} COP | TuresColombia</title>
+        <meta name="description" content={`${tour.shortDescription || tour.description.substring(0, 120)} — Reserva con ${jalador?.user.name || 'TuresColombia'}`} />
+        <meta property="og:title" content={`${tour.name} — $${tour.priceAdult.toLocaleString()} COP`} />
+        <meta property="og:description" content={`${tour.shortDescription || tour.description.substring(0, 120)} | ${tour.duration} | ${tour.departurePoint}`} />
+        <meta property="og:image" content={tour.coverImageUrl || 'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=1200&h=630&fit=crop&q=90'} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:type" content="product" />
+        <meta property="og:locale" content="es_CO" />
+      </Head>
+
       {/* Hero compacto */}
       <div className="relative h-56 md:h-72 overflow-hidden">
         {tour.coverImageUrl ? (

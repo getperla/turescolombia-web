@@ -1,4 +1,5 @@
 import { GetServerSideProps } from 'next';
+import Head from 'next/head';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { getTourBySlug, getTour, getTourReviews, Tour, ReviewItem } from '../../lib/api';
@@ -61,6 +62,20 @@ export default function TourDetail({ tour }: Props) {
 
   return (
     <Layout>
+      <Head>
+        <title>{tour.name} — TuresColombia</title>
+        <meta name="description" content={tour.shortDescription || tour.description.substring(0, 160)} />
+        <meta property="og:title" content={`${tour.name} — Desde $${tour.priceAdult.toLocaleString()} COP`} />
+        <meta property="og:description" content={tour.shortDescription || tour.description.substring(0, 160)} />
+        <meta property="og:image" content={tour.coverImageUrl || 'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=1200&h=630&fit=crop&q=90'} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:type" content="product" />
+        <meta property="og:locale" content="es_CO" />
+        <meta property="product:price:amount" content={String(tour.priceAdult)} />
+        <meta property="product:price:currency" content="COP" />
+      </Head>
+
       {/* Hero Image */}
       <div className="relative h-80 md:h-[450px] flex items-center justify-center text-white overflow-hidden">
         {tour.coverImageUrl ? (
