@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+@layer base {
+  body {
+    @apply font-sans text-oscuro-500 antialiased;
+    background-color: #FDF3E3;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* === BOTONES — Tropical Editorial === */
+  .btn-primary {
+    @apply font-sans font-semibold text-white text-center
+           py-4 px-9 transition-all duration-300;
+    background-color: #F5882A;
+    border-radius: 50px;
+  }
+  .btn-primary:hover {
+    background-color: #FF5F5F;
+    transform: translateY(-2px);
+  }
+
+  .btn-outline {
+    @apply font-sans font-semibold text-white text-center
+           py-4 px-9 transition-all duration-300;
+    border: 1.5px solid rgba(255,255,255,0.4);
+    border-radius: 50px;
+    backdrop-filter: blur(8px);
+  }
+  .btn-outline:hover {
+    border-color: white;
+    background: rgba(255,255,255,0.1);
+  }
+
+  .btn-secondary {
+    @apply font-sans font-semibold text-white text-center
+           py-4 px-9 transition-all duration-300;
+    background-color: #0D5C8A;
+    border-radius: 50px;
+  }
+  .btn-secondary:hover {
+    background-color: #0A4A6F;
+    transform: translateY(-2px);
+  }
+
+  .btn-white {
+    @apply font-sans font-semibold text-center
+           py-4 px-9 transition-all duration-300 shadow-card;
+    background: white;
+    color: #0D5C8A;
+    border-radius: 50px;
+  }
+  .btn-white:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+  }
+
+  .btn-coral {
+    @apply font-sans font-semibold text-white text-center
+           py-4 px-9 transition-all duration-300;
+    background-color: #FF5F5F;
+    border-radius: 50px;
+  }
+
+  .btn-sand {
+    @apply font-sans font-semibold text-center
+           py-3.5 px-7 transition-all duration-300;
+    background-color: #FDF3E3;
+    color: #0A1628;
+    border-radius: 50px;
+  }
+
+  /* === CARDS — Premium con sombras suaves === */
+  .card {
+    @apply bg-white overflow-hidden transition-all duration-300;
+    border-radius: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+  }
+  .card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+  }
+
+  /* === GLASSMORPHISM === */
+  .glass {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(20px);
+    border-radius: 18px;
+  }
+
+  /* === INPUTS === */
+  .input {
+    @apply w-full px-4 py-3.5 bg-white outline-none transition-all text-base font-sans;
+    border: 1.5px solid #FAEBD1;
+    border-radius: 16px;
+  }
+  .input:focus {
+    border-color: #00B4CC;
+    box-shadow: 0 0 0 3px rgba(0, 180, 204, 0.1);
+  }
+  .input::placeholder {
+    color: #C9A05C;
+  }
+
+  /* === BADGES / CHIPS === */
+  .badge {
+    @apply inline-block font-sans font-bold uppercase tracking-wider;
+    padding: 4px 12px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    border-radius: 50px;
+  }
+
+  .chip-active {
+    @apply text-white;
+    background: #F5882A;
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .chip-inactive {
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(0,0,0,0.08);
+    color: #0A1628;
+  }
+
+  /* === SECCIONES === */
+  .section-title {
+    @apply font-display font-bold text-oscuro-500;
+    font-size: clamp(28px, 4vw, 36px);
+  }
+
+  .section-subtitle {
+    @apply font-sans text-arena-600 mt-1;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+}
