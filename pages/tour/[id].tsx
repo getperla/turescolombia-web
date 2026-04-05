@@ -62,34 +62,58 @@ export default function TourDetail({ tour }: Props) {
   return (
     <Layout>
       {/* Hero Image */}
-      <div className="relative h-80 md:h-96 flex items-center justify-center text-white overflow-hidden">
+      <div className="relative h-80 md:h-[450px] flex items-center justify-center text-white overflow-hidden">
         {tour.coverImageUrl ? (
-          <img
-            src={tour.coverImageUrl}
-            alt={tour.name}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          <img src={tour.coverImageUrl} alt={tour.name} className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-700 via-primary-500 to-secondary-500"></div>
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #0A1628, #0D5C8A)' }}></div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-black/10"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10"></div>
         <div className="relative text-center px-4">
           {tour.category && (
-            <span className="inline-block mb-3 px-4 py-1.5 bg-white/15 backdrop-blur-sm rounded-full text-sm font-medium">
+            <span className="inline-block mb-3 px-4 py-1.5 text-sm font-sans font-semibold text-white rounded-pill" style={{ background: '#F5882A' }}>
               {tour.category.name}
             </span>
           )}
-          <h1 className="text-3xl md:text-5xl font-extrabold mb-2 drop-shadow-md">{tour.name}</h1>
-          <div className="flex items-center justify-center gap-4 text-ocean-100 text-sm">
+          <h1 className="font-display font-bold mb-2 drop-shadow-lg" style={{ fontSize: 'clamp(28px, 5vw, 52px)' }}>{tour.name}</h1>
+          <div className="flex items-center justify-center gap-4 text-white/70 text-sm font-sans">
             <span>📍 {tour.departurePoint}</span>
             <span>🕐 {tour.duration}</span>
             {tour.avgRating > 0 && <span>⭐ {tour.avgRating.toFixed(1)}</span>}
           </div>
         </div>
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 60" fill="none" className="w-full"><path d="M0,30 C480,60 960,0 1440,30 L1440,60 L0,60 Z" fill="#FDF3E3"/></svg>
+        </div>
+      </div>
 
-        <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute bottom-0 left-0 w-full">
-          <path d="M0,30 C480,60 960,0 1440,30 L1440,60 L0,60 Z" fill="#FAFCFE"/>
-        </svg>
+      {/* Galeria de fotos */}
+      {tour.galleryUrls && tour.galleryUrls.length > 0 && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 mb-6">
+          <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
+            {[tour.coverImageUrl, ...tour.galleryUrls].filter(Boolean).map((url, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  const modal = document.getElementById('gallery-modal');
+                  const img = document.getElementById('gallery-img') as HTMLImageElement;
+                  if (modal && img) { img.src = url!; modal.style.display = 'flex'; }
+                }}
+                className="shrink-0 rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all hover:-translate-y-1 cursor-pointer"
+                style={{ width: '160px', height: '110px' }}
+              >
+                <img src={url!} alt={`${tour.name} foto ${i + 1}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Modal galeria fullscreen */}
+      <div id="gallery-modal" className="fixed inset-0 z-50 items-center justify-center p-4" style={{ display: 'none', background: 'rgba(10,22,40,0.95)' }}
+        onClick={() => { const m = document.getElementById('gallery-modal'); if (m) m.style.display = 'none'; }}>
+        <button className="absolute top-4 right-4 text-white/60 hover:text-white text-3xl font-light z-10" onClick={() => { const m = document.getElementById('gallery-modal'); if (m) m.style.display = 'none'; }}>✕</button>
+        <img id="gallery-img" src="" alt="Foto del tour" className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl" />
       </div>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
