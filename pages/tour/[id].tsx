@@ -240,66 +240,113 @@ export default function TourDetail({ tour }: Props) {
               </div>
 
               {bookingResult ? (
-                /* Resultado exitoso */
+                /* Resultado exitoso con QR + calendario */
                 (() => {
                   const formatDate = (d: string) => {
                     try { return new Date(d + 'T12:00:00').toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }
                     catch { return d; }
                   };
+
+                  // QR code visual via API gratuita
+                  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(bookingResult.qrCode)}&bgcolor=ffffff&color=0A1628`;
+
+                  // Google Calendar link
+                  const calDate = tourDate.replace(/-/g, '');
+                  const calStart = `${calDate}T${tour.departureTime.replace(':', '')}00`;
+                  const calEnd = `${calDate}T${tour.returnTime.replace(':', '')}00`;
+                  const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(tour.name + ' - TuresColombia')}&dates=${calStart}/${calEnd}&details=${encodeURIComponent(`Codigo: ${bookingResult.bookingCode}\nPunto de encuentro: ${tour.departurePoint}\nPersonas: ${numAdults} adulto(s)${numChildren > 0 ? `, ${numChildren} nino(s)` : ''}\nTotal: $${totalPrice.toLocaleString()} COP\n\nPresenta tu QR el dia del tour.`)}&location=${encodeURIComponent(tour.departurePoint + ', Santa Marta, Colombia')}`;
+
+                  // Apple Calendar (.ics) link
+                  const icsContent = [
+                    'BEGIN:VCALENDAR',
+                    'VERSION:2.0',
+                    'BEGIN:VEVENT',
+                    `DTSTART:${calStart}`,
+                    `DTEND:${calEnd}`,
+                    `SUMMARY:${tour.name} - TuresColombia`,
+                    `DESCRIPTION:Codigo: ${bookingResult.bookingCode}\\nPunto de encuentro: ${tour.departurePoint}\\nTotal: $${totalPrice.toLocaleString()} COP`,
+                    `LOCATION:${tour.departurePoint}, Santa Marta, Colombia`,
+                    'END:VEVENT',
+                    'END:VCALENDAR',
+                  ].join('\r\n');
+                  const icsUrl = `data:text/calendar;charset=utf-8,${encodeURIComponent(icsContent)}`;
+
+                  // WhatsApp message con QR link y calendario
+                  const cleanPhone = clientPhone.replace(/\D/g, '');
+                  const phoneWithCountry = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
                   const whatsappMsg = [
-                    `Hola ${clientName}! Tu reserva con TuresColombia esta confirmada`,
+                    `Hola ${clientName}! Tu reserva con *TuresColombia* esta confirmada ✅`,
                     ``,
-                    `*${tour.name}*`,
-                    `Fecha: ${formatDate(tourDate)}`,
-                    `Hora de salida: ${tour.departureTime}`,
-                    `Punto de encuentro: ${tour.departurePoint}`,
-                    `Personas: ${numAdults} adulto(s)${numChildren > 0 ? `, ${numChildren} nino(s)` : ''}`,
-                    `Total: $${totalPrice.toLocaleString()} COP`,
+                    `🏖️ *${tour.name}*`,
+                    `📅 Fecha: ${formatDate(tourDate)}`,
+                    `⏰ Hora de salida: ${tour.departureTime}`,
+                    `📍 Punto de encuentro: ${tour.departurePoint}`,
+                    `👥 Personas: ${numAdults} adulto(s)${numChildren > 0 ? `, ${numChildren} nino(s)` : ''}`,
+                    `💰 Total: $${totalPrice.toLocaleString()} COP`,
                     ``,
-                    `Codigo de reserva: *${bookingResult.bookingCode}*`,
-                    `Codigo QR: ${bookingResult.qrCode}`,
+                    `🎫 Codigo de reserva: *${bookingResult.bookingCode}*`,
+                    ``,
+                    `📱 Tu codigo QR:`,
+                    `${qrImageUrl}`,
+                    ``,
+                    `📅 Agregar a tu calendario:`,
+                    `${googleCalUrl}`,
                     ``,
                     `Presenta este mensaje o tu codigo QR el dia del tour.`,
                     ``,
-                    `Gracias por confiar en TuresColombia! Disfruta tu experiencia`,
+                    `Gracias por confiar en TuresColombia! 🌴`,
                   ].join('\n');
-                  const cleanPhone = clientPhone.replace(/\D/g, '');
-                  const phoneWithCountry = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
                   const whatsappUrl = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(whatsappMsg)}`;
 
                   return (
                     <div className="text-center">
-                      <div className="bg-green-50 border border-green-200 rounded-xl p-5 mb-4">
+                      <div className="p-5 mb-4 rounded-card" style={{ background: 'linear-gradient(135deg, #2D6A4F, #00B4CC)' }}>
                         <div className="text-3xl mb-2">✅</div>
-                        <h3 className="font-bold text-green-800 text-lg mb-1">Reserva creada</h3>
-                        <p className="text-green-700 text-sm">Codigo: <span className="font-mono font-bold">{bookingResult.bookingCode}</span></p>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-4 mb-4 text-left text-sm space-y-1">
-                        <div><span className="text-gray-500">Tour:</span> <span className="font-medium">{tour.name}</span></div>
-                        <div><span className="text-gray-500">Fecha:</span> <span className="font-medium">{formatDate(tourDate)}</span></div>
-                        <div><span className="text-gray-500">Cliente:</span> <span className="font-medium">{clientName} {clientLastName}</span></div>
-                        <div><span className="text-gray-500">WhatsApp:</span> <span className="font-medium">{clientPhone}</span></div>
-                        {clientHotel && <div><span className="text-gray-500">Hospedaje:</span> <span className="font-medium">{clientHotel}</span></div>}
-                        <div><span className="text-gray-500">Personas:</span> <span className="font-medium">{numAdults} adulto(s){numChildren > 0 ? `, ${numChildren} nino(s)` : ''}</span></div>
-                        <div className="pt-2 border-t border-gray-200 mt-2">
-                          <span className="text-gray-500">Total:</span> <span className="font-bold text-primary-500 text-lg">${totalPrice.toLocaleString()}</span>
-                        </div>
-                        <div><span className="text-gray-500">QR:</span> <span className="font-mono text-xs">{bookingResult.qrCode}</span></div>
+                        <h3 className="font-display font-bold text-white text-xl mb-1">Reserva confirmada!</h3>
+                        <p className="text-white/80 text-sm font-sans">Codigo: <span className="font-mono font-bold text-white">{bookingResult.bookingCode}</span></p>
                       </div>
 
-                      {/* Boton WhatsApp — el jalador toca y le llega al cliente */}
-                      <a
-                        href={whatsappUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold py-4 px-6 rounded-2xl text-lg transition-all hover:-translate-y-0.5 shadow-lg mb-3"
-                      >
+                      {/* QR Code visual */}
+                      <div className="bg-white rounded-2xl p-4 mb-4 shadow-card">
+                        <p className="text-xs font-sans font-semibold uppercase tracking-wider mb-3" style={{ color: '#C9A05C', letterSpacing: '2px' }}>Tu codigo QR</p>
+                        <img src={qrImageUrl} alt="QR Code" className="mx-auto mb-2" style={{ width: '160px', height: '160px' }} />
+                        <p className="text-xs font-mono" style={{ color: '#6B5329' }}>{bookingResult.bookingCode}</p>
+                      </div>
+
+                      {/* Resumen */}
+                      <div className="rounded-2xl p-4 mb-4 text-left text-sm space-y-1" style={{ background: '#FDF3E3' }}>
+                        <div><span style={{ color: '#C9A05C' }}>Tour:</span> <span className="font-medium" style={{ color: '#0A1628' }}>{tour.name}</span></div>
+                        <div><span style={{ color: '#C9A05C' }}>Fecha:</span> <span className="font-medium" style={{ color: '#0A1628' }}>{formatDate(tourDate)}</span></div>
+                        <div><span style={{ color: '#C9A05C' }}>Salida:</span> <span className="font-medium" style={{ color: '#0A1628' }}>{tour.departureTime} - {tour.departurePoint}</span></div>
+                        <div><span style={{ color: '#C9A05C' }}>Personas:</span> <span className="font-medium" style={{ color: '#0A1628' }}>{numAdults} adulto(s){numChildren > 0 ? `, ${numChildren} nino(s)` : ''}</span></div>
+                        <div className="pt-2 border-t mt-2" style={{ borderColor: '#FAEBD1' }}>
+                          <span style={{ color: '#C9A05C' }}>Total:</span> <span className="font-bold text-lg" style={{ color: '#0D5C8A' }}>${totalPrice.toLocaleString()} COP</span>
+                        </div>
+                      </div>
+
+                      {/* Agregar al calendario */}
+                      <div className="grid grid-cols-2 gap-2 mb-4">
+                        <a href={googleCalUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 py-3 px-4 rounded-pill text-sm font-semibold transition-all hover:-translate-y-0.5"
+                          style={{ background: '#FDF3E3', color: '#0D5C8A', border: '1.5px solid #FAEBD1' }}>
+                          📅 Google Calendar
+                        </a>
+                        <a href={icsUrl} download={`tour-${bookingResult.bookingCode}.ics`}
+                          className="flex items-center justify-center gap-2 py-3 px-4 rounded-pill text-sm font-semibold transition-all hover:-translate-y-0.5"
+                          style={{ background: '#FDF3E3', color: '#0D5C8A', border: '1.5px solid #FAEBD1' }}>
+                          🍎 Apple Calendar
+                        </a>
+                      </div>
+
+                      {/* Boton WhatsApp */}
+                      <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
+                        className="w-full flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold py-4 px-6 rounded-pill text-lg transition-all hover:-translate-y-0.5 shadow-lg mb-3">
                         <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                         Enviar confirmacion al cliente
                       </a>
 
                       <button onClick={() => { setBookingResult(null); setClientName(''); setClientLastName(''); setClientPhone(''); setClientHotel(''); setTourDate(''); }}
-                        className="btn-outline w-full">
+                        className="w-full py-3 rounded-pill text-sm font-semibold transition-all" style={{ color: '#0D5C8A', border: '1.5px solid #FAEBD1' }}>
                         Hacer otra reserva
                       </button>
                     </div>
