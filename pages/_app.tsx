@@ -17,6 +17,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta name="apple-mobile-web-app-title" content="TuresColombia" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.svg" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
         {/* Open Graph — preview en WhatsApp, Facebook, LinkedIn */}
         <meta property="og:type" content="website" />

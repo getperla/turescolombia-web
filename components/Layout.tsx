@@ -1,11 +1,19 @@
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
+import api from '../lib/api';
 import Logo from './Logo';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      api.get('/notifications/count').then(r => setUnreadCount(r.data?.count || 0)).catch(() => {});
+    }
+  }, [user]);
 
   const dashboardPath = user
     ? user.role === 'admin' ? '/dashboard/admin'
@@ -45,6 +53,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     </Link>
                   )}
                   <div className="flex items-center gap-2 ml-3 pl-3 border-l border-white/20">
+                    {unreadCount > 0 && (
+                      <span className="w-5 h-5 rounded-full text-white text-xs font-bold flex items-center justify-center" style={{ background: '#FF5F5F', fontSize: '10px' }}>{unreadCount}</span>
+                    )}
                     <span className="text-sm text-white/60">{user.name}</span>
                     <button onClick={logout} className="text-xs bg-white/10 hover:bg-white/20 text-white/80 px-3 py-1.5 rounded-pill transition-all">
                       Salir
