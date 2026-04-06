@@ -1,0 +1,26 @@
+{
+  "name": "TuresColombia",
+  "short_name": "TuresColombia",
+  "description": "Tours verificados en el Caribe colombiano. Santa Marta, Tayrona, Sierra Nevada.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDF3E3",
+  "theme_color": "#0A1628",
+  "orientation": "portrait",
+  "categories": ["travel", "tourism"],
+  "lang": "es-CO",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
