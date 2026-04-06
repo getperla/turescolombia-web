@@ -30,21 +30,10 @@ export default function Layout({ children, hideSearch }: { children: React.React
               <Logo />
             </Link>
 
-            {/* Search bar — desktop (Airbnb style) */}
-            {!hideSearch && (
-              <Link href="/tours" className="hidden md:flex items-center border rounded-full shadow-sm hover:shadow-md transition-shadow px-2 py-1.5 mx-4" style={{ borderColor: '#DDDDDD' }}>
-                <span className="px-4 text-sm font-semibold" style={{ color: '#222222' }}>Santa Marta</span>
-                <span className="w-px h-6 bg-gray-200"></span>
-                <span className="px-4 text-sm font-semibold" style={{ color: '#222222' }}>Cualquier fecha</span>
-                <span className="w-px h-6 bg-gray-200"></span>
-                <span className="px-4 text-sm" style={{ color: '#717171' }}>Buscar tours</span>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center ml-1" style={{ background: '#F5882A' }}>
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-              </Link>
-            )}
+            {/* Nav links — simple */}
+            <div className="hidden md:flex items-center gap-1">
+              <Link href="/explorar" className="text-sm font-semibold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors" style={{ color: '#222' }}>Tours</Link>
+            </div>
 
             {/* Right nav */}
             <div className="flex items-center gap-2">
@@ -97,14 +86,6 @@ export default function Layout({ children, hideSearch }: { children: React.React
                 </>
               )}
 
-              {/* Mobile search */}
-              {!hideSearch && (
-                <Link href="/tours" className="md:hidden w-10 h-10 rounded-full flex items-center justify-center border" style={{ borderColor: '#DDDDDD' }}>
-                  <svg className="w-5 h-5" style={{ color: '#222222' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </Link>
-              )}
             </div>
           </div>
         </div>
@@ -124,7 +105,7 @@ export default function Layout({ children, hideSearch }: { children: React.React
             <div>
               <h4 className="font-semibold mb-2" style={{ color: '#222222' }}>Explorar</h4>
               <Link href="/tours" className="block hover:underline mb-1">Tours</Link>
-              <Link href="/jaladores" className="block hover:underline mb-1">Asesores</Link>
+              <Link href="/jaladores" className="block hover:underline mb-1">Jaladores</Link>
             </div>
             <div>
               <h4 className="font-semibold mb-2" style={{ color: '#222222' }}>Cuenta</h4>

@@ -56,7 +56,7 @@ export default function LoginPage() {
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&prompt=select_account`;
   };
 
-  const roleTitle = role === 'jalador' ? 'Asesor Turistico'
+  const roleTitle = role === 'jalador' ? 'Jalador'
     : role === 'operator' ? 'Operador'
     : role === 'admin' ? 'Administrador'
     : '';
@@ -177,28 +177,6 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* BETA quick access */}
-          <div className="mt-6 rounded-card p-5" style={{ background: 'white', border: '1.5px solid #FAEBD1' }}>
-            <div className="text-center mb-3">
-              <span className="badge text-white" style={{ background: '#F5882A' }}>BETA</span>
-              <p className="text-xs font-sans mt-2" style={{ color: '#C9A05C' }}>Acceso rapido para pruebas</p>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: 'Turista', email: 'turista@test.com', icon: '🏖️', bg: '#E8F4FA', color: '#0D5C8A' },
-                { label: 'Jalador', email: 'pedro.jalador@turescolombia.co', icon: '💰', bg: '#FEF3E8', color: '#F5882A' },
-                { label: 'Operador', email: 'operador@santamartatours.co', icon: '🏢', bg: '#E8F5EF', color: '#2D6A4F' },
-                { label: 'Admin', email: 'admin@turescolombia.co', icon: '⚙️', bg: '#E8EBF0', color: '#0A1628' },
-              ].map((acc) => (
-                <button key={acc.email} onClick={() => { setLoading(true); doLogin(acc.email, 'password123').then(() => setLoading(false)); }}
-                  disabled={loading}
-                  className="py-3 px-3 rounded-2xl text-sm font-sans font-semibold transition-all hover:-translate-y-0.5 disabled:opacity-50"
-                  style={{ background: acc.bg, color: acc.color }}>
-                  {acc.icon} {acc.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </Layout>

@@ -8,7 +8,7 @@ type Role = 'tourist' | 'jalador' | 'operator';
 
 const roles: { id: Role; title: string; desc: string; icon: string; gradient: string }[] = [
   { id: 'tourist', title: 'Turista', desc: 'Quiero explorar y reservar tours', icon: '🏖️', gradient: 'linear-gradient(135deg, #0D5C8A, #00B4CC)' },
-  { id: 'jalador', title: 'Asesor Turistico', desc: 'Quiero vender tours y ganar comisiones', icon: '💰', gradient: 'linear-gradient(135deg, #F5882A, #FF5F5F)' },
+  { id: 'jalador', title: 'Jalador', desc: 'Quiero vender tours y ganar comisiones', icon: '💰', gradient: 'linear-gradient(135deg, #F5882A, #FF5F5F)' },
   { id: 'operator', title: 'Operador', desc: 'Tengo tours y quiero publicarlos', icon: '🏢', gradient: 'linear-gradient(135deg, #2D6A4F, #00B4CC)' },
 ];
 

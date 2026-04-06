@@ -6,7 +6,7 @@ import Logo from '../components/Logo';
 
 const roles = [
   { id: 'tourist', title: 'Soy Turista', subtitle: 'Quiero explorar y reservar tours', icon: '🏖️', href: '/explorar', bg: '#F5882A' },
-  { id: 'jalador', title: 'Soy Asesor', subtitle: 'Quiero vender tours y ganar comisiones', icon: '💰', href: '/login?role=jalador', bg: '#222222' },
+  { id: 'jalador', title: 'Soy Jalador', subtitle: 'Quiero vender tours y ganar comisiones', icon: '💰', href: '/login?role=jalador', bg: '#222222' },
   { id: 'operator', title: 'Soy Operador', subtitle: 'Tengo tours y quiero publicarlos', icon: '🏢', href: '/login?role=operator', bg: '#222222' },
 ];
 

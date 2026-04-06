@@ -40,7 +40,7 @@ export default function JaladoresPage({ jaladores }: Props) {
             Jaladores Certificados
           </h1>
           <p className="text-lg text-primary-100">
-            Asesores turisticos digitales verificados en toda Colombia. Tu guia hacia la mejor experiencia.
+            Jaladores digitales verificados en toda Colombia. Tu guia hacia la mejor experiencia.
           </p>
         </div>
         <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute bottom-0 left-0 w-full">
