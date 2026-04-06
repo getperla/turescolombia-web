@@ -7,7 +7,7 @@ export default function Logo({ size = 'md', showText = true }: { size?: 'sm' | '
       {/* Pearl logo with subtle animation */}
       <div className="relative shrink-0" style={{ width: imgSize, height: imgSize }}>
         <img
-          src="/logo-perla.png"
+          src="/logo-perla.svg"
           alt="La Perla"
           width={imgSize}
           height={imgSize}
