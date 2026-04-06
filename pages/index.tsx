@@ -34,20 +34,26 @@ export default function Home() {
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header simple */}
       <div className="flex justify-between items-center px-6 py-4">
-        <Logo size="lg" />
+        <Logo />
         <Link href="/login" className="text-sm font-semibold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors" style={{ color: '#222222' }}>
           Entrar
         </Link>
       </div>
 
-      {/* Hero */}
+      {/* Hero con logo grande */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 pb-12">
         <div className="text-center max-w-lg mb-10">
-          <h1 className="font-bold text-4xl md:text-5xl mb-4 leading-tight" style={{ color: '#222222', fontFamily: '"DM Sans", sans-serif' }}>
-            Vive el Caribe colombiano
+          <div className="flex justify-center mb-6">
+            <Logo size="xl" showText={false} />
+          </div>
+          <h1 className="font-bold text-4xl md:text-5xl mb-2 leading-tight" style={{ color: '#222222', fontFamily: '"DM Sans", sans-serif' }}>
+            La <span style={{ color: '#C9A05C' }}>Perla</span>
           </h1>
-          <p className="text-lg" style={{ color: '#717171' }}>
-            Tours verificados en Santa Marta, Tayrona y Sierra Nevada.
+          <p className="text-lg mb-1" style={{ color: '#717171' }}>
+            Tours verificados en el Caribe colombiano
+          </p>
+          <p className="text-sm" style={{ color: '#B0B0B0' }}>
+            Santa Marta · Tayrona · Sierra Nevada
           </p>
         </div>
 
