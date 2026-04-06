@@ -4,156 +4,136 @@ import { useAuth } from '../lib/auth';
 import api from '../lib/api';
 import Logo from './Logo';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function Layout({ children, hideSearch }: { children: React.ReactNode; hideSearch?: boolean }) {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    if (user) {
-      api.get('/notifications/count').then(r => setUnreadCount(r.data?.count || 0)).catch(() => {});
-    }
+    if (user) { api.get('/notifications/count').then(r => setUnreadCount(r.data?.count || 0)).catch(() => {}); }
   }, [user]);
 
   const dashboardPath = user
     ? user.role === 'admin' ? '/dashboard/admin'
     : user.role === 'operator' ? '/dashboard/operator'
     : user.role === 'jalador' ? '/dashboard/jalador'
-    : null
-    : null;
+    : null : null;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#FDF3E3' }}>
-      {/* Navbar — oscuro premium */}
-      <header className="sticky top-0 z-50" style={{ background: '#0A1628' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#FFFFFF' }}>
+      {/* Header — Airbnb style */}
+      <header className="sticky top-0 z-50 bg-white border-b" style={{ borderColor: '#EBEBEB' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="text-white hover:opacity-90 transition-opacity">
+          <div className="flex justify-between items-center h-16 md:h-20">
+            {/* Logo */}
+            <Link href="/" className="shrink-0">
               <Logo />
             </Link>
 
-            {/* Desktop nav */}
-            <nav className="hidden md:flex items-center gap-1">
-              <Link href="/tours" className="px-4 py-2 rounded-pill text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all">
-                Tours
+            {/* Search bar — desktop (Airbnb style) */}
+            {!hideSearch && (
+              <Link href="/tours" className="hidden md:flex items-center border rounded-full shadow-sm hover:shadow-md transition-shadow px-2 py-1.5 mx-4" style={{ borderColor: '#DDDDDD' }}>
+                <span className="px-4 text-sm font-semibold" style={{ color: '#222222' }}>Santa Marta</span>
+                <span className="w-px h-6 bg-gray-200"></span>
+                <span className="px-4 text-sm font-semibold" style={{ color: '#222222' }}>Cualquier fecha</span>
+                <span className="w-px h-6 bg-gray-200"></span>
+                <span className="px-4 text-sm" style={{ color: '#717171' }}>Buscar tours</span>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center ml-1" style={{ background: '#F5882A' }}>
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
               </Link>
-              <Link href="/jaladores" className="px-4 py-2 rounded-pill text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all">
-                Asesores
-              </Link>
+            )}
+
+            {/* Right nav */}
+            <div className="flex items-center gap-2">
               {user ? (
                 <>
-                  {user.role === 'tourist' && (
-                    <Link href="/mis-reservas" className="px-4 py-2 rounded-pill text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all">
-                      Mis Reservas
-                    </Link>
-                  )}
                   {dashboardPath && (
-                    <Link href={dashboardPath} className="px-4 py-2 rounded-pill text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all">
+                    <Link href={dashboardPath} className="hidden md:block text-sm font-semibold px-4 py-2.5 rounded-full hover:bg-gray-100 transition-colors" style={{ color: '#222222' }}>
                       Mi Panel
                     </Link>
                   )}
-                  <div className="flex items-center gap-2 ml-3 pl-3 border-l border-white/20">
+                  <div className="relative flex items-center gap-1 border rounded-full px-3 py-1.5 cursor-pointer hover:shadow-md transition-shadow" style={{ borderColor: '#DDDDDD' }} onClick={() => setMenuOpen(!menuOpen)}>
+                    <svg className="w-4 h-4" style={{ color: '#222222' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ background: '#222222' }}>
+                      {user.name?.charAt(0).toUpperCase()}
+                    </div>
                     {unreadCount > 0 && (
-                      <span className="w-5 h-5 rounded-full text-white text-xs font-bold flex items-center justify-center" style={{ background: '#FF5F5F', fontSize: '10px' }}>{unreadCount}</span>
+                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-white text-xs font-bold flex items-center justify-center" style={{ background: '#FF5F5F', fontSize: '10px' }}>{unreadCount}</span>
                     )}
-                    <span className="text-sm text-white/60">{user.name}</span>
-                    <button onClick={logout} className="text-xs bg-white/10 hover:bg-white/20 text-white/80 px-3 py-1.5 rounded-pill transition-all">
-                      Salir
-                    </button>
                   </div>
+                  {/* Dropdown */}
+                  {menuOpen && (
+                    <div className="absolute right-4 top-16 bg-white rounded-2xl shadow-xl border py-2 w-56 z-50" style={{ borderColor: '#EBEBEB' }}>
+                      <div className="px-4 py-2 border-b" style={{ borderColor: '#EBEBEB' }}>
+                        <div className="text-sm font-semibold" style={{ color: '#222222' }}>{user.name}</div>
+                        <div className="text-xs" style={{ color: '#717171' }}>{user.email}</div>
+                      </div>
+                      {user.role === 'tourist' && <Link href="/mis-reservas" className="block px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }} onClick={() => setMenuOpen(false)}>Mis Reservas</Link>}
+                      {dashboardPath && <Link href={dashboardPath} className="block px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }} onClick={() => setMenuOpen(false)}>Mi Panel</Link>}
+                      <Link href="/perfil" className="block px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }} onClick={() => setMenuOpen(false)}>Mi Perfil</Link>
+                      <div className="border-t my-1" style={{ borderColor: '#EBEBEB' }}></div>
+                      <button onClick={() => { logout(); setMenuOpen(false); }} className="block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }}>Cerrar sesion</button>
+                    </div>
+                  )}
                 </>
               ) : (
-                <div className="flex items-center gap-2 ml-3 pl-3 border-l border-white/20">
-                  <Link href="/login" className="text-sm font-medium text-white/70 hover:text-white transition-colors px-3 py-2">
-                    Entrar
-                  </Link>
-                  <Link href="/register" className="text-sm font-semibold px-5 py-2 rounded-pill transition-all hover:-translate-y-0.5" style={{ background: '#F5882A', color: 'white' }}>
+                <>
+                  <Link href="/register" className="hidden md:block text-sm font-semibold px-4 py-2.5 rounded-full hover:bg-gray-100 transition-colors" style={{ color: '#222222' }}>
                     Registrarse
                   </Link>
-                </div>
+                  <Link href="/login" className="flex items-center gap-2 border rounded-full px-3 py-1.5 hover:shadow-md transition-shadow" style={{ borderColor: '#DDDDDD' }}>
+                    <svg className="w-4 h-4" style={{ color: '#222222' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#717171' }}>
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </div>
+                  </Link>
+                </>
               )}
-            </nav>
 
-            {/* Mobile hamburger */}
-            <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden p-2 text-white">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {menuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
+              {/* Mobile search */}
+              {!hideSearch && (
+                <Link href="/tours" className="md:hidden w-10 h-10 rounded-full flex items-center justify-center border" style={{ borderColor: '#DDDDDD' }}>
+                  <svg className="w-5 h-5" style={{ color: '#222222' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </Link>
+              )}
+            </div>
           </div>
         </div>
-
-        {/* Mobile menu */}
-        {menuOpen && (
-          <div className="md:hidden px-4 py-3 space-y-1" style={{ background: '#0A1628', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-            <Link href="/tours" className="block py-3 px-4 text-lg font-medium text-white/80 rounded-2xl hover:bg-white/10" onClick={() => setMenuOpen(false)}>
-              Tours
-            </Link>
-            <Link href="/jaladores" className="block py-3 px-4 text-lg font-medium text-white/80 rounded-2xl hover:bg-white/10" onClick={() => setMenuOpen(false)}>
-              Asesores
-            </Link>
-            {user ? (
-              <>
-                {user.role === 'tourist' && (
-                  <Link href="/mis-reservas" className="block py-3 px-4 text-lg font-medium text-white/80 rounded-2xl hover:bg-white/10" onClick={() => setMenuOpen(false)}>
-                    Mis Reservas
-                  </Link>
-                )}
-                {dashboardPath && (
-                  <Link href={dashboardPath} className="block py-3 px-4 text-lg font-medium text-white/80 rounded-2xl hover:bg-white/10" onClick={() => setMenuOpen(false)}>
-                    Mi Panel
-                  </Link>
-                )}
-                <button onClick={logout} className="block w-full text-left py-3 px-4 text-lg font-medium rounded-2xl text-white/40 hover:bg-white/10">
-                  Salir ({user.name})
-                </button>
-              </>
-            ) : (
-              <div className="pt-2 space-y-2 border-t border-white/10 mt-2">
-                <Link href="/login" className="block py-3 px-4 text-lg font-medium text-white/80 rounded-2xl hover:bg-white/10" onClick={() => setMenuOpen(false)}>
-                  Entrar
-                </Link>
-                <Link href="/register" className="block py-3 px-4 text-lg font-semibold rounded-pill text-center text-white" style={{ background: '#F5882A' }} onClick={() => setMenuOpen(false)}>
-                  Registrarse
-                </Link>
-              </div>
-            )}
-          </div>
-        )}
       </header>
 
       {/* Main */}
       <main className="flex-1">{children}</main>
 
-      {/* Footer — oscuro premium */}
-      <footer style={{ background: 'linear-gradient(135deg, #0A1628, #0D5C8A)' }} className="text-white/60 py-12">
+      {/* Footer — clean */}
+      <footer className="border-t py-8" style={{ borderColor: '#EBEBEB', background: '#F7F7F7' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm" style={{ color: '#717171' }}>
             <div>
-              <div className="mb-3 text-white"><Logo /></div>
-              <p className="text-sm leading-relaxed">Vive las mejores experiencias turisticas de Colombia. Tours verificados, pagos seguros.</p>
+              <h4 className="font-semibold mb-2" style={{ color: '#222222' }}>TuresColombia</h4>
+              <p>Tours verificados en el Caribe colombiano. Reserva facil, paga seguro.</p>
             </div>
             <div>
-              <h4 className="text-white font-display font-semibold text-lg mb-3">Explorar</h4>
-              <div className="space-y-2 text-sm">
-                <Link href="/tours" className="block hover:text-white transition-colors">Tours</Link>
-                <Link href="/jaladores" className="block hover:text-white transition-colors">Asesores turisticos</Link>
-              </div>
+              <h4 className="font-semibold mb-2" style={{ color: '#222222' }}>Explorar</h4>
+              <Link href="/tours" className="block hover:underline mb-1">Tours</Link>
+              <Link href="/jaladores" className="block hover:underline mb-1">Asesores</Link>
             </div>
             <div>
-              <h4 className="text-white font-display font-semibold text-lg mb-3">Tu cuenta</h4>
-              <div className="space-y-2 text-sm">
-                <Link href="/register" className="block hover:text-white transition-colors">Registrarse</Link>
-                <Link href="/login" className="block hover:text-white transition-colors">Entrar</Link>
-              </div>
+              <h4 className="font-semibold mb-2" style={{ color: '#222222' }}>Cuenta</h4>
+              <Link href="/register" className="block hover:underline mb-1">Registrarse</Link>
+              <Link href="/login" className="block hover:underline mb-1">Entrar</Link>
             </div>
           </div>
-          <div className="border-t border-white/10 mt-8 pt-6 text-center text-sm text-white/40">
-            Tours verificados · Asesores de confianza · Pagos seguros
+          <div className="border-t mt-6 pt-6 text-center text-xs" style={{ borderColor: '#EBEBEB', color: '#717171' }}>
+            © 2026 TuresColombia · Tours verificados · Pagos seguros
           </div>
         </div>
       </footer>

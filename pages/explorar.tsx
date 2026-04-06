@@ -1,164 +1,136 @@
+import { useState } from 'react';
+import Head from 'next/head';
 import Link from 'next/link';
 import { GetServerSideProps } from 'next';
 import { getTours, getCategories, Tour, Category } from '../lib/api';
 import Layout from '../components/Layout';
 
-type Props = {
-  tours: Tour[];
-  categories: Category[];
+const categoryIcons: Record<string, string> = {
+  playas: '🏖️',
+  ciudad: '🏛️',
+  aventura: '⛰️',
+  nautico: '⛵',
+  fiesta: '🎉',
+  naturaleza: '🌿',
+  multidia: '🏕️',
 };
 
-export default function Explorar({ tours, categories }: Props) {
+type Props = { tours: Tour[]; categories: Category[] };
+
+export default function Explorar({ tours: initialTours, categories }: Props) {
+  const [tours, setTours] = useState<Tour[]>(initialTours);
+  const [activeCategory, setActiveCategory] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const selectCategory = async (catId: number | null) => {
+    setActiveCategory(catId);
+    setLoading(true);
+    try {
+      const params: Record<string, string> = { sortBy: 'rating', limit: '20' };
+      if (catId) params.categoryId = String(catId);
+      const res = await getTours(params);
+      setTours(res.data || []);
+    } catch {}
+    setLoading(false);
+  };
+
   return (
     <Layout>
-      {/* Hero */}
-      <section className="relative overflow-hidden text-white py-20 md:py-28 px-4" style={{ background: 'linear-gradient(135deg, #0A1628, #0D5C8A)' }}>
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="glass inline-block px-5 py-2 text-sm font-sans font-medium mb-8 tracking-wider uppercase" style={{ letterSpacing: '3px', fontSize: '11px' }}>
-            Santa Marta · Tayrona · Sierra Nevada
-          </div>
-          <h1 className="font-display font-bold mb-6 leading-tight" style={{ fontSize: 'clamp(36px, 7vw, 72px)' }}>
-            Descubre el
-            <br />
-            <span className="italic" style={{ color: '#F5882A' }}>Caribe colombiano</span>
-          </h1>
-          <p className="font-sans text-lg md:text-xl text-white/70 mb-10 max-w-xl mx-auto leading-relaxed" style={{ fontWeight: 300 }}>
-            Tours verificados en los destinos mas increibles de Colombia.
-            Reserva facil, paga seguro, vive al maximo.
-          </p>
-          <Link href="/tours" className="btn-primary text-lg">
-            Ver todos los tours
-          </Link>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-            <path d="M0,50 C360,80 720,20 1080,50 C1260,65 1380,40 1440,50 L1440,80 L0,80 Z" fill="#FDF3E3"/>
-          </svg>
-        </div>
-      </section>
+      <Head><title>Explorar tours en Santa Marta — TuresColombia</title></Head>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Categorias */}
-        {categories.length > 0 && (
-          <section className="mb-14">
-            <h2 className="section-title mb-2">Que quieres vivir?</h2>
-            <p className="section-subtitle mb-6">Escoge una aventura y empieza a sonar</p>
-            <div className="flex gap-3 overflow-x-auto pb-3">
-              {categories.map((cat, i) => {
-                const colors = ['#0D5C8A', '#F5882A', '#2D6A4F', '#00B4CC', '#FF5F5F', '#0A4A6F', '#E07020'];
-                return (
-                  <Link key={cat.id} href={`/tours?categoryId=${cat.id}`}
-                    className="shrink-0 px-6 py-3 text-white text-sm font-semibold transition-all hover:-translate-y-1"
-                    style={{ background: colors[i % colors.length], borderRadius: '50px' }}>
-                    {cat.name}
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* Tours populares */}
-        <section className="mb-14">
-          <div className="flex justify-between items-end mb-8">
-            <div>
-              <h2 className="section-title">Tours <span className="italic" style={{ color: '#F5882A' }}>populares</span></h2>
-              <p className="section-subtitle">Los favoritos de nuestros viajeros</p>
-            </div>
-            <Link href="/tours" className="text-sm font-semibold flex items-center gap-1 transition-colors hover:-translate-y-0.5" style={{ color: '#0D5C8A' }}>
-              Ver todos
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-            </Link>
+      {/* Categories bar — Airbnb style */}
+      <div className="sticky top-16 md:top-20 z-40 bg-white border-b" style={{ borderColor: '#EBEBEB' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-8 overflow-x-auto py-3 scrollbar-hide">
+            <button
+              onClick={() => selectCategory(null)}
+              className="flex flex-col items-center gap-1 shrink-0 pb-2 transition-all"
+              style={{ borderBottom: !activeCategory ? '2px solid #222222' : '2px solid transparent', opacity: !activeCategory ? 1 : 0.6 }}
+            >
+              <span className="text-xl">🌍</span>
+              <span className="text-xs font-semibold whitespace-nowrap" style={{ color: '#222222' }}>Todos</span>
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => selectCategory(cat.id)}
+                className="flex flex-col items-center gap-1 shrink-0 pb-2 transition-all"
+                style={{ borderBottom: activeCategory === cat.id ? '2px solid #222222' : '2px solid transparent', opacity: activeCategory === cat.id ? 1 : 0.6 }}
+              >
+                <span className="text-xl">{categoryIcons[cat.slug] || '🎯'}</span>
+                <span className="text-xs font-semibold whitespace-nowrap" style={{ color: '#222222' }}>{cat.name}</span>
+              </button>
+            ))}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
+        </div>
+      </div>
+
+      {/* Tour grid — Airbnb cards */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1,2,3,4,5,6,7,8].map(i => (
+              <div key={i} className="animate-pulse">
+                <div className="rounded-xl h-64 mb-3" style={{ background: '#F0F0F0' }}></div>
+                <div className="h-4 rounded w-3/4 mb-2" style={{ background: '#F0F0F0' }}></div>
+                <div className="h-3 rounded w-1/2" style={{ background: '#F0F0F0' }}></div>
+              </div>
+            ))}
+          </div>
+        ) : tours.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="text-5xl mb-4">🏝️</div>
+            <p className="text-lg font-semibold" style={{ color: '#222222' }}>No hay tours en esta categoria</p>
+            <p className="text-sm mt-1" style={{ color: '#717171' }}>Intenta con otra categoria</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {tours.map((tour) => (
-              <Link key={tour.id} href={`/tour/${tour.slug}`} className="card group">
-                <div className="h-52 relative overflow-hidden">
+              <Link key={tour.id} href={`/tour/${tour.slug}`} className="group">
+                {/* Image */}
+                <div className="relative rounded-xl overflow-hidden aspect-[4/3] mb-3">
                   {tour.coverImageUrl ? (
                     <img src={tour.coverImageUrl} alt={tour.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   ) : (
-                    <div className="w-full h-full bg-hero-dark"></div>
+                    <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, #0A1628, #0D5C8A)' }}></div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-                  <div className="absolute bottom-4 left-5 right-5">
-                    <h4 className="text-white font-display font-bold text-lg drop-shadow-lg">{tour.name}</h4>
-                  </div>
-                  {tour.category && (
-                    <div className="absolute top-4 left-4">
-                      <span className="badge text-white" style={{ background: '#F5882A' }}>{tour.category.name}</span>
-                    </div>
-                  )}
-                  {tour.avgRating > 0 && (
-                    <div className="absolute top-4 right-4 bg-white text-oscuro-500 text-xs font-bold px-2.5 py-1 rounded-pill shadow-sm">
-                      {tour.avgRating.toFixed(1)}
+                  {/* Favorite heart */}
+                  <button className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center" onClick={(e) => e.preventDefault()}>
+                    <svg className="w-6 h-6 drop-shadow-md" fill="none" stroke="white" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </button>
+                  {tour.isFeatured && (
+                    <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold" style={{ background: 'white', color: '#222222' }}>
+                      Destacado
                     </div>
                   )}
                 </div>
-                <div className="p-6">
-                  <p className="text-sm line-clamp-2 mb-4 leading-relaxed" style={{ color: '#6B5329' }}>
-                    {tour.shortDescription || tour.description.substring(0, 90) + '...'}
-                  </p>
-                  <div className="text-xs mb-4 flex items-center gap-3" style={{ color: '#C9A05C' }}>
-                    <span>{tour.duration}</span><span>·</span><span>{tour.departurePoint}</span>
+
+                {/* Info */}
+                <div>
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="font-semibold text-sm leading-tight" style={{ color: '#222222' }}>{tour.name}</h3>
+                    {tour.avgRating > 0 && (
+                      <div className="flex items-center gap-1 shrink-0 ml-2">
+                        <svg className="w-3.5 h-3.5" fill="#222222" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <span className="text-sm font-medium" style={{ color: '#222222' }}>{tour.avgRating.toFixed(1)}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex justify-between items-center pt-4 border-t" style={{ borderColor: '#FAEBD1' }}>
-                    <div>
-                      <span className="text-xs" style={{ color: '#C9A05C' }}>Desde</span>
-                      <span className="block text-xl font-bold" style={{ color: '#0D5C8A' }}>${tour.priceAdult.toLocaleString()}</span>
-                    </div>
-                    <span className="text-xs px-3 py-1.5 rounded-pill font-medium" style={{ background: '#FDF3E3', color: '#6B5329' }}>
-                      {tour.operator.companyName}
-                    </span>
+                  <p className="text-sm" style={{ color: '#717171' }}>{tour.operator.companyName}</p>
+                  <p className="text-sm" style={{ color: '#717171' }}>{tour.duration} · {tour.departurePoint}</p>
+                  <div className="mt-1.5">
+                    <span className="font-semibold text-sm" style={{ color: '#222222' }}>${tour.priceAdult.toLocaleString()} COP</span>
+                    <span className="text-sm" style={{ color: '#717171' }}> / persona</span>
                   </div>
                 </div>
               </Link>
             ))}
           </div>
-        </section>
-
-        {/* Por que TuresColombia */}
-        <section className="rounded-card p-8 md:p-12 mb-14 text-white" style={{ background: 'linear-gradient(135deg, #0A1628, #0D5C8A)' }}>
-          <h2 className="font-display font-bold text-2xl md:text-3xl text-center mb-10">
-            Por que <span className="italic" style={{ color: '#F5882A' }}>TuresColombia</span>?
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="glass w-16 h-16 mx-auto mb-3 flex items-center justify-center text-2xl">🛡</div>
-              <div className="text-2xl font-bold" style={{ color: '#00B4CC' }}>100%</div>
-              <div className="text-white/50 text-sm mt-1">Pago seguro</div>
-            </div>
-            <div>
-              <div className="glass w-16 h-16 mx-auto mb-3 flex items-center justify-center text-2xl">✓</div>
-              <div className="text-2xl font-bold" style={{ color: '#00B4CC' }}>17+</div>
-              <div className="text-white/50 text-sm mt-1">Tours verificados</div>
-            </div>
-            <div>
-              <div className="glass w-16 h-16 mx-auto mb-3 flex items-center justify-center text-2xl">📱</div>
-              <div className="text-2xl font-bold" style={{ color: '#00B4CC' }}>QR</div>
-              <div className="text-white/50 text-sm mt-1">Comprobante digital</div>
-            </div>
-            <div>
-              <div className="glass w-16 h-16 mx-auto mb-3 flex items-center justify-center text-2xl">★</div>
-              <div className="text-2xl font-bold" style={{ color: '#00B4CC' }}>4.7</div>
-              <div className="text-white/50 text-sm mt-1">Rating promedio</div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Jaladores */}
-        <section className="relative overflow-hidden rounded-card p-8 md:p-12 text-white text-center mb-4" style={{ background: 'linear-gradient(135deg, #F5882A, #FF5F5F)' }}>
-          <h2 className="font-display font-bold text-2xl md:text-3xl mb-3">
-            Quieres ganar dinero vendiendo tours?
-          </h2>
-          <p className="text-white/80 mb-8 max-w-lg mx-auto leading-relaxed font-sans" style={{ fontWeight: 300 }}>
-            Registrate como Asesor y gana mas del 20% de comision por cada venta.
-          </p>
-          <Link href="/register" className="btn-white inline-block text-lg">
-            Registrarme como Asesor
-          </Link>
-        </section>
-      </main>
+        )}
+      </div>
     </Layout>
   );
 }
@@ -166,7 +138,7 @@ export default function Explorar({ tours, categories }: Props) {
 export const getServerSideProps: GetServerSideProps = async () => {
   try {
     const [toursRes, categories] = await Promise.all([
-      getTours({ sortBy: 'rating', limit: '6' }),
+      getTours({ sortBy: 'rating', limit: '20' }),
       getCategories(),
     ]);
     return { props: { tours: toursRes.data || [], categories: categories || [] } };

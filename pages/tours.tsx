@@ -48,15 +48,15 @@ export default function ToursPage({ tours: initialTours, categories, total, init
     <Layout>
       <Head><title>Tours en Colombia — TuresColombia</title></Head>
 
-      {/* Header */}
-      <section className="text-white py-12 px-4" style={{ background: 'linear-gradient(135deg, #0A1628, #0D5C8A)' }}>
+      {/* Header — Airbnb search */}
+      <section className="py-8 px-4 border-b" style={{ borderColor: '#EBEBEB' }}>
         <div className="max-w-5xl mx-auto text-center">
-          <h1 className="font-display font-bold text-3xl md:text-4xl mb-6">
-            Tours en <span className="italic" style={{ color: '#F5882A' }}>Colombia</span>
+          <h1 className="font-bold text-2xl md:text-3xl mb-6" style={{ color: '#222222' }}>
+            Tours en Santa Marta
           </h1>
           <form onSubmit={(e) => { e.preventDefault(); applyFilters(1); }} className="max-w-2xl mx-auto flex gap-2">
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar tours..."
-              className="flex-1 px-5 py-3.5 rounded-pill text-sm outline-none font-sans" style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }} />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar tours, playas, aventuras..."
+              className="input flex-1" />
             <button type="submit" className="btn-primary px-6">Buscar</button>
           </form>
           {/* Category chips */}
