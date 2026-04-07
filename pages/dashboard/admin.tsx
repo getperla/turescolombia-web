@@ -25,6 +25,10 @@ export default function AdminDashboard() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifs, setShowNotifs] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [editType, setEditType] = useState<'jalador' | 'operator' | null>(null);
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [editSaving, setEditSaving] = useState(false);
 
   const refresh = useCallback(() => {
     api.get('/dashboard/admin').then(r => setData(r.data)).catch(() => setData(null));
@@ -66,6 +70,71 @@ export default function AdminDashboard() {
 
   const markAllRead = async () => {
     await api.post('/notifications/read-all'); refresh();
+  };
+
+  const openEditJalador = (j: any) => {
+    setEditType('jalador');
+    setEditItem(j);
+    setEditForm({
+      name: j.user?.name || '',
+      email: j.user?.email || '',
+      phone: j.user?.phone || '',
+      bio: j.bio || '',
+      zone: j.zone || '',
+      languages: (j.languages || []).join(', '),
+      bankName: j.bankName || '',
+      bankAccount: j.bankAccount || '',
+      nequiPhone: j.nequiPhone || '',
+      payoutMethod: j.payoutMethod || '',
+    });
+  };
+
+  const openEditOperator = (op: any) => {
+    setEditType('operator');
+    setEditItem(op);
+    setEditForm({
+      name: op.user?.name || '',
+      email: op.user?.email || '',
+      phone: op.user?.phone || '',
+      companyName: op.companyName || '',
+      rntNumber: op.rntNumber || '',
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editItem || !editType) return;
+    setEditSaving(true);
+    try {
+      if (editType === 'jalador') {
+        await api.put(`/admin/jaladores/${editItem.id}`, {
+          name: editForm.name,
+          email: editForm.email,
+          phone: editForm.phone || undefined,
+          bio: editForm.bio,
+          zone: editForm.zone,
+          languages: editForm.languages.split(',').map(l => l.trim()).filter(Boolean),
+          bankName: editForm.bankName || undefined,
+          bankAccount: editForm.bankAccount || undefined,
+          nequiPhone: editForm.nequiPhone || undefined,
+          payoutMethod: editForm.payoutMethod || undefined,
+        });
+      } else {
+        await api.put(`/admin/operators/${editItem.id}`, {
+          name: editForm.name,
+          email: editForm.email,
+          phone: editForm.phone || undefined,
+          companyName: editForm.companyName,
+          rntNumber: editForm.rntNumber || undefined,
+        });
+      }
+      setActionMsg('Actualizado');
+      setEditItem(null);
+      setEditType(null);
+      loadList(tab);
+    } catch (e: any) {
+      setActionMsg(e.response?.data?.message || 'Error al guardar');
+    }
+    setEditSaving(false);
   };
 
   const exportCSV = (data: any[], filename: string) => {
@@ -191,6 +260,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {badge(j.status)}
+                  <Btn label="Editar" bg="#F7F7F7" c="#222" onClick={() => openEditJalador(j)} />
                   {j.status === 'pending' && <Btn label="Aprobar" bg="#2D6A4F" onClick={() => doAction('approve-jalador', j.id)} />}
                   {j.status === 'active' && <Btn label="Suspender" bg="#FFF0F0" c="#CC3333" onClick={() => doAction('suspend', j.user?.id)} />}
                   {j.status === 'suspended' && <Btn label="Reactivar" bg="#E8F5EF" c="#2D6A4F" onClick={() => doAction('reactivate', j.user?.id)} />}
@@ -216,6 +286,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {badge(op.isApproved ? 'active' : 'pending')}
+                  <Btn label="Editar" bg="#F7F7F7" c="#222" onClick={() => openEditOperator(op)} />
                   {!op.isApproved && <Btn label="Aprobar" bg="#2D6A4F" onClick={() => doAction('approve-operator', op.id)} />}
                 </div>
               </div>
@@ -344,8 +415,84 @@ export default function AdminDashboard() {
             ))}
           </>
         )}
+        {/* === MODAL EDICION === */}
+        {editItem && editType && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: '#EBEBEB' }}>
+                <h2 className="font-bold text-lg" style={{ color: '#222' }}>
+                  Editar {editType === 'jalador' ? 'Jalador' : 'Operador'}
+                </h2>
+                <button onClick={() => { setEditItem(null); setEditType(null); }} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100" style={{ color: '#717171' }}>✕</button>
+              </div>
+
+              <div className="p-5 space-y-4">
+                {/* Datos de usuario */}
+                <div className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#717171' }}>Datos personales</div>
+                <EditField label="Nombre" value={editForm.name} onChange={v => setEditForm({ ...editForm, name: v })} />
+                <EditField label="Email" value={editForm.email} onChange={v => setEditForm({ ...editForm, email: v })} type="email" />
+                <EditField label="Telefono" value={editForm.phone} onChange={v => setEditForm({ ...editForm, phone: v })} type="tel" placeholder="+57 300 000 0000" />
+
+                {/* Campos de jalador */}
+                {editType === 'jalador' && (
+                  <>
+                    <div className="text-xs font-bold uppercase tracking-wider mt-6 mb-2" style={{ color: '#717171' }}>Perfil de Jalador</div>
+                    <EditField label="Bio" value={editForm.bio} onChange={v => setEditForm({ ...editForm, bio: v })} textarea />
+                    <EditField label="Zona de trabajo" value={editForm.zone} onChange={v => setEditForm({ ...editForm, zone: v })} placeholder="Centro Historico, Taganga..." />
+                    <EditField label="Idiomas (separados por coma)" value={editForm.languages} onChange={v => setEditForm({ ...editForm, languages: v })} placeholder="Espanol, Ingles" />
+
+                    <div className="text-xs font-bold uppercase tracking-wider mt-6 mb-2" style={{ color: '#717171' }}>Datos de pago</div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: '#222' }}>Metodo de pago</label>
+                      <select value={editForm.payoutMethod} onChange={e => setEditForm({ ...editForm, payoutMethod: e.target.value })} className="input">
+                        <option value="">Seleccionar</option>
+                        <option value="bank_transfer">Transferencia bancaria</option>
+                        <option value="nequi">Nequi</option>
+                        <option value="daviplata">Daviplata</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <EditField label="Banco" value={editForm.bankName} onChange={v => setEditForm({ ...editForm, bankName: v })} />
+                      <EditField label="Numero de cuenta" value={editForm.bankAccount} onChange={v => setEditForm({ ...editForm, bankAccount: v })} />
+                    </div>
+                    <EditField label="Nequi (telefono)" value={editForm.nequiPhone} onChange={v => setEditForm({ ...editForm, nequiPhone: v })} type="tel" />
+                  </>
+                )}
+
+                {/* Campos de operador */}
+                {editType === 'operator' && (
+                  <>
+                    <div className="text-xs font-bold uppercase tracking-wider mt-6 mb-2" style={{ color: '#717171' }}>Datos de empresa</div>
+                    <EditField label="Nombre de empresa" value={editForm.companyName} onChange={v => setEditForm({ ...editForm, companyName: v })} />
+                    <EditField label="Numero RNT" value={editForm.rntNumber} onChange={v => setEditForm({ ...editForm, rntNumber: v })} placeholder="RNT-XXXXX" />
+                  </>
+                )}
+              </div>
+
+              <div className="flex gap-3 p-5 border-t" style={{ borderColor: '#EBEBEB' }}>
+                <button onClick={() => { setEditItem(null); setEditType(null); }} className="flex-1 py-3 rounded-lg text-sm font-semibold" style={{ background: '#F7F7F7', color: '#222' }}>Cancelar</button>
+                <button onClick={saveEdit} disabled={editSaving} className="flex-1 py-3 rounded-lg text-sm font-semibold text-white disabled:opacity-50" style={{ background: '#222' }}>
+                  {editSaving ? 'Guardando...' : 'Guardar cambios'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
+  );
+}
+
+function EditField({ label, value, onChange, type, placeholder, textarea }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; textarea?: boolean }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold mb-1" style={{ color: '#222' }}>{label}</label>
+      {textarea ? (
+        <textarea value={value} onChange={e => onChange(e.target.value)} className="input" rows={3} placeholder={placeholder} />
+      ) : (
+        <input type={type || 'text'} value={value} onChange={e => onChange(e.target.value)} className="input" placeholder={placeholder} />
+      )}
+    </div>
   );
 }
 
