@@ -95,10 +95,10 @@ export default function PerfilPage() {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl font-bold text-secondary-700 mb-6">Mi Perfil</h1>
+        <h1 className="font-bold text-xl mb-6" style={{ color: '#222' }}>Mi Perfil</h1>
 
-        {msg && <div className="bg-green-50 text-green-700 px-4 py-3 rounded-xl text-sm mb-4 border border-green-100">✅ {msg}</div>}
-        {error && <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm mb-4 border border-red-100">{error}</div>}
+        {msg && <div className="px-4 py-3 rounded-xl text-sm mb-4" style={{ background: '#E8F5EF', color: '#2D6A4F' }}>{msg}</div>}
+        {error && <div className="px-4 py-3 rounded-xl text-sm mb-4" style={{ background: '#FFF0F0', color: '#CC3333' }}>{error}</div>}
 
         {/* Account info card */}
         <div className="bg-white border border-primary-100 rounded-2xl p-6 mb-6 shadow-sm">

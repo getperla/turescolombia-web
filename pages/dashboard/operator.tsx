@@ -1,136 +1,142 @@
 import { useState, useEffect } from 'react';
+import Head from 'next/head';
 import Link from 'next/link';
 import api from '../../lib/api';
 import Layout from '../../components/Layout';
+import { useRequireAuth } from '../../lib/auth';
 
-const statusStyles: Record<string, string> = {
-  confirmed: 'bg-primary-100 text-primary-700',
-  in_progress: 'bg-amber-100 text-amber-600',
-  completed: 'bg-green-100 text-green-700',
-  pending: 'bg-gray-100 text-gray-600',
-  cancelled: 'bg-red-100 text-red-600',
+const statusMap: Record<string, { label: string; bg: string; color: string }> = {
+  pending: { label: 'Pendiente', bg: '#FEF3E8', color: '#F5882A' },
+  confirmed: { label: 'Confirmada', bg: '#E8F4FA', color: '#0D5C8A' },
+  in_progress: { label: 'En curso', bg: '#FEF3E8', color: '#E07020' },
+  completed: { label: 'Completada', bg: '#E8F5EF', color: '#2D6A4F' },
+  cancelled: { label: 'Cancelada', bg: '#FFF0F0', color: '#CC3333' },
 };
 
-const OperatorDashboard = () => {
+export default function OperatorDashboard() {
+  const { authorized } = useRequireAuth(['operator']);
   const [data, setData] = useState<any>(null);
-  const [error, setError] = useState('');
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [tab, setTab] = useState<'dashboard' | 'bookings' | 'tours'>('dashboard');
+  const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const { data } = await api.get('/dashboard/operator');
-        setData(data);
-      } catch {
-        setError('No se pudo cargar el dashboard. Verifica que hayas iniciado sesion como operador.');
-      }
-    };
-    load();
-  }, []);
+    if (!authorized) return;
+    api.get('/dashboard/operator').then(r => setData(r.data)).catch(() => {});
+    api.get('/bookings/operator').then(r => setBookings(r.data || [])).catch(() => {});
+  }, [authorized]);
 
-  if (error) return (
-    <Layout>
-      <div className="max-w-3xl mx-auto py-12 px-4">
-        <p className="text-red-600 mb-4">{error}</p>
-        <Link href="/" className="text-primary-500 hover:underline">Volver al inicio</Link>
-      </div>
-    </Layout>
-  );
+  const confirmBooking = async (id: number) => {
+    try { await api.post(`/bookings/${id}/confirm`); setMsg('Confirmada'); api.get('/bookings/operator').then(r => setBookings(r.data || [])); } catch (e: any) { setMsg(e.response?.data?.message || 'Error'); }
+  };
 
-  if (!data) return (
-    <Layout>
-      <div className="max-w-3xl mx-auto py-16 px-4 text-center">
-        <p className="text-gray-400">Cargando...</p>
-      </div>
-    </Layout>
-  );
+  const completeBooking = async (id: number) => {
+    try { await api.post(`/bookings/${id}/complete`); setMsg('Completada'); api.get('/bookings/operator').then(r => setBookings(r.data || [])); } catch (e: any) { setMsg(e.response?.data?.message || 'Error'); }
+  };
 
-  const { operator, tours, today, revenue, rating, pendingBookings } = data;
+  if (!authorized) return null;
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-secondary-700">{operator.companyName}</h1>
-          <p className="text-gray-400 text-sm mt-1">
-            RNT: {operator.rntNumber} {operator.rntVerified ? '✅ Verificado' : '⏳ Pendiente'} &middot; Score: {operator.score}
-          </p>
+      <Head><title>Panel Operador — La Perla</title></Head>
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="font-bold text-xl" style={{ color: '#222' }}>Panel del Operador</h1>
+          {msg && <span className="text-xs px-2 py-1 rounded" style={{ background: '#E8F5EF', color: '#2D6A4F' }}>{msg}</span>}
         </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-5 text-center border border-primary-100 shadow-sm">
-            <div className="w-12 h-12 mx-auto mb-2 bg-primary-100 rounded-xl flex items-center justify-center text-xl">🏖️</div>
-            <div className="text-2xl font-bold text-primary-600">{tours.active}</div>
-            <div className="text-sm text-gray-400">Tours activos</div>
-          </div>
-          <div className="bg-white rounded-2xl p-5 text-center border border-green-100 shadow-sm">
-            <div className="w-12 h-12 mx-auto mb-2 bg-green-100 rounded-xl flex items-center justify-center text-xl">💰</div>
-            <div className="text-2xl font-bold text-secondary-500">${Number(revenue.netRevenue).toLocaleString()}</div>
-            <div className="text-sm text-gray-400">Ingresos netos</div>
-          </div>
-          <div className="bg-white rounded-2xl p-5 text-center border border-amber-100 shadow-sm">
-            <div className="w-12 h-12 mx-auto mb-2 bg-amber-100 rounded-xl flex items-center justify-center text-xl">⏳</div>
-            <div className="text-2xl font-bold text-amber-600">{pendingBookings}</div>
-            <div className="text-sm text-gray-400">Reservas pendientes</div>
-          </div>
-          <div className="bg-white rounded-2xl p-5 text-center border border-red-100 shadow-sm">
-            <div className="w-12 h-12 mx-auto mb-2 bg-red-100 rounded-xl flex items-center justify-center text-xl">⭐</div>
-            <div className="text-2xl font-bold text-red-500">{rating.average?.toFixed(1) || '0'}</div>
-            <div className="text-sm text-gray-400">{rating.totalReviews} resenas</div>
-          </div>
+        {/* Tabs */}
+        <div className="flex gap-1 mb-6 border-b" style={{ borderColor: '#EBEBEB' }}>
+          {[
+            { key: 'dashboard', label: 'Resumen' },
+            { key: 'bookings', label: 'Reservas' },
+            { key: 'tours', label: 'Mis Tours' },
+          ].map(t => (
+            <button key={t.key} onClick={() => setTab(t.key as any)}
+              className="px-4 py-3 text-sm font-semibold transition-all"
+              style={{ borderBottom: tab === t.key ? '2px solid #222' : '2px solid transparent', color: tab === t.key ? '#222' : '#717171' }}>
+              {t.label}
+            </button>
+          ))}
         </div>
 
-        {/* Today's bookings */}
-        <h3 className="text-lg font-bold text-secondary-700 mb-3">
-          Reservas de hoy ({today.bookings?.length || 0} reservas, {today.totalGuests} personas)
-        </h3>
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden mb-6 shadow-sm">
-          {today.bookings?.length > 0 ? (
-            <table className="w-full">
-              <thead>
-                <tr className="bg-primary-50 text-left text-sm text-primary-700">
-                  <th className="px-4 py-3 border-b border-primary-100 font-semibold">Tour</th>
-                  <th className="px-4 py-3 border-b border-primary-100 font-semibold">Salida</th>
-                  <th className="px-4 py-3 border-b border-primary-100 font-semibold">Turista</th>
-                  <th className="px-4 py-3 border-b border-primary-100 font-semibold text-center">Personas</th>
-                  <th className="px-4 py-3 border-b border-primary-100 font-semibold">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {today.bookings.map((b: any) => (
-                  <tr key={b.id} className="border-b border-gray-50 last:border-0 hover:bg-primary-50/30 transition-colors">
-                    <td className="px-4 py-3 text-sm font-medium">{b.tour?.name}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{b.tour?.departureTime}</td>
-                    <td className="px-4 py-3 text-sm">{b.tourist?.user?.name}</td>
-                    <td className="px-4 py-3 text-sm text-center font-medium">{b.numAdults + b.numChildren}</td>
-                    <td className="px-4 py-3">
-                      <span className={`badge ${statusStyles[b.status] || 'bg-gray-100 text-gray-600'}`}>
-                        {b.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="py-12 text-center">
-              <div className="text-3xl mb-2">🏝️</div>
-              <p className="text-gray-400">No hay reservas para hoy</p>
+        {/* Dashboard */}
+        {tab === 'dashboard' && data && (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              {[
+                { label: 'Tours activos', value: data.tours?.active || 0 },
+                { label: 'Reservas hoy', value: data.bookings?.today || 0 },
+                { label: 'Reservas mes', value: data.bookings?.month || 0 },
+                { label: 'Ingresos', value: `$${Number(data.revenue?.total || 0).toLocaleString()}` },
+              ].map((k, i) => (
+                <div key={i} className="p-4 rounded-xl text-center" style={{ background: '#F7F7F7' }}>
+                  <div className="text-xl font-bold" style={{ color: '#222' }}>{k.value}</div>
+                  <div className="text-xs" style={{ color: '#717171' }}>{k.label}</div>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
 
-        <div className="flex gap-3">
-          <button className="btn-primary">
-            Escanear QR
-          </button>
-          <Link href="/dashboard/operator/tours" className="btn-outline">
-            Gestionar tours
-          </Link>
-        </div>
+            {/* Today's bookings */}
+            <h3 className="font-bold mb-3" style={{ color: '#222' }}>Reservas recientes</h3>
+            <div className="space-y-2">
+              {bookings.slice(0, 10).map(b => {
+                const s = statusMap[b.status] || statusMap.pending;
+                return (
+                  <div key={b.id} className="flex items-center gap-3 p-3 rounded-xl border" style={{ borderColor: '#EBEBEB' }}>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm" style={{ color: '#222' }}>{b.tour?.name}</div>
+                      <div className="text-xs" style={{ color: '#717171' }}>{b.bookingCode} · {b.tourist?.user?.name} · {new Date(b.tourDate).toLocaleDateString('es-CO')}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{ background: s.bg, color: s.color }}>{s.label}</span>
+                      <span className="font-bold text-sm" style={{ color: '#222' }}>${Number(b.totalAmount).toLocaleString()}</span>
+                      {b.status === 'pending' && <button onClick={() => confirmBooking(b.id)} className="text-xs px-2 py-1 rounded font-semibold text-white" style={{ background: '#2D6A4F' }}>Confirmar</button>}
+                      {(b.status === 'confirmed' || b.status === 'in_progress') && <button onClick={() => completeBooking(b.id)} className="text-xs px-2 py-1 rounded font-semibold text-white" style={{ background: '#0D5C8A' }}>Completar</button>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Bookings tab */}
+        {tab === 'bookings' && (
+          <div className="space-y-2">
+            {bookings.map(b => {
+              const s = statusMap[b.status] || statusMap.pending;
+              return (
+                <div key={b.id} className="flex items-center gap-3 p-3 rounded-xl border" style={{ borderColor: '#EBEBEB' }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm" style={{ color: '#222' }}>{b.tour?.name}</div>
+                    <div className="text-xs" style={{ color: '#717171' }}>{b.bookingCode} · {b.tourist?.user?.name} · {new Date(b.tourDate).toLocaleDateString('es-CO')} · {b.numAdults} adulto(s)</div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{ background: s.bg, color: s.color }}>{s.label}</span>
+                    <span className="font-bold text-sm" style={{ color: '#222' }}>${Number(b.totalAmount).toLocaleString()}</span>
+                    {b.status === 'pending' && <button onClick={() => confirmBooking(b.id)} className="text-xs px-2 py-1 rounded font-semibold text-white" style={{ background: '#2D6A4F' }}>Confirmar</button>}
+                    {(b.status === 'confirmed' || b.status === 'in_progress') && <button onClick={() => completeBooking(b.id)} className="text-xs px-2 py-1 rounded font-semibold text-white" style={{ background: '#0D5C8A' }}>Completar</button>}
+                  </div>
+                </div>
+              );
+            })}
+            {bookings.length === 0 && <p className="text-center py-12 text-sm" style={{ color: '#717171' }}>Sin reservas</p>}
+          </div>
+        )}
+
+        {/* Tours tab */}
+        {tab === 'tours' && (
+          <div>
+            <Link href="/dashboard/operator/tours/crear" className="inline-block mb-4 px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: '#F5882A' }}>
+              + Crear tour
+            </Link>
+            <Link href="/dashboard/operator/tours" className="inline-block mb-4 ml-2 px-4 py-2 rounded-lg text-sm font-semibold" style={{ background: '#F7F7F7', color: '#222' }}>
+              Ver todos mis tours
+            </Link>
+          </div>
+        )}
       </div>
     </Layout>
   );
-};
-
-export default OperatorDashboard;
+}
