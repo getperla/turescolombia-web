@@ -38,10 +38,11 @@ export default function AdminDashboard() {
     setList([]);
     setListError('');
     try {
-      if (type === 'jaladores') setList((await api.get('/users/jaladores')).data || []);
-      else if (type === 'operators') setList((await api.get('/users/operators')).data || []);
-      else if (type === 'tours') setList((await api.get('/tours', { params: { limit: '100' } })).data?.data || []);
-      else if (type === 'bookings') setList((await api.get('/bookings/operator')).data || []);
+      let result: any;
+      if (type === 'jaladores') { result = (await api.get('/users/jaladores')).data; setList(Array.isArray(result) ? result : result?.data || []); }
+      else if (type === 'operators') { result = (await api.get('/users/operators')).data; setList(Array.isArray(result) ? result : result?.data || []); }
+      else if (type === 'tours') { result = (await api.get('/tours', { params: { limit: '100' } })).data; setList(Array.isArray(result) ? result : result?.data || []); }
+      else if (type === 'bookings') { result = (await api.get('/bookings/operator')).data; setList(Array.isArray(result) ? result : result?.data || []); }
     } catch {
       setListError('No se pudo conectar al servidor. Verifica que el backend este corriendo.');
     }
