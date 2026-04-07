@@ -21,12 +21,13 @@ export default function AdminDashboard() {
   const [list, setList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState('');
+  const [listError, setListError] = useState('');
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifs, setShowNotifs] = useState(false);
   const [unread, setUnread] = useState(0);
 
   const refresh = useCallback(() => {
-    api.get('/dashboard/admin').then(r => setData(r.data)).catch(() => {});
+    api.get('/dashboard/admin').then(r => setData(r.data)).catch(() => setData(null));
     api.get('/notifications').then(r => { setNotifications(r.data || []); setUnread((r.data || []).filter((n: any) => !n.isRead).length); }).catch(() => {});
   }, []);
 
@@ -34,15 +35,20 @@ export default function AdminDashboard() {
 
   const loadList = async (type: Tab) => {
     setLoading(true);
+    setList([]);
+    setListError('');
     try {
       if (type === 'jaladores') setList((await api.get('/users/jaladores')).data || []);
       else if (type === 'operators') setList((await api.get('/users/operators')).data || []);
       else if (type === 'tours') setList((await api.get('/tours', { params: { limit: '100' } })).data?.data || []);
       else if (type === 'bookings') setList((await api.get('/bookings/operator')).data || []);
-    } catch {} setLoading(false);
+    } catch {
+      setListError('No se pudo conectar al servidor. Verifica que el backend este corriendo.');
+    }
+    setLoading(false);
   };
 
-  const openTab = (t: Tab) => { setTab(t); setActionMsg(''); if (!['dashboard', 'reports', 'notifications'].includes(t)) loadList(t); };
+  const openTab = (t: Tab) => { setTab(t); setActionMsg(''); setListError(''); if (!['dashboard', 'reports', 'notifications'].includes(t)) loadList(t); };
 
   const doAction = async (action: string, id: number) => {
     setActionMsg('');
@@ -158,6 +164,14 @@ export default function AdminDashboard() {
               </>
             )}
           </>
+        )}
+
+        {/* Error message */}
+        {listError && (
+          <div className="px-4 py-3 rounded-xl text-sm mb-4 flex items-center gap-2" style={{ background: '#FFF0F0', color: '#CC3333' }}>
+            <span>⚠️</span> {listError}
+            <button onClick={() => loadList(tab)} className="ml-auto text-xs font-semibold underline">Reintentar</button>
+          </div>
         )}
 
         {/* === JALADORES === */}

@@ -55,8 +55,10 @@ export default function Layout({ children, hideSearch }: { children: React.React
                       <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-white text-xs font-bold flex items-center justify-center" style={{ background: '#FF5F5F', fontSize: '10px' }}>{unreadCount}</span>
                     )}
                   </div>
-                  {/* Dropdown */}
+                  {/* Dropdown overlay + menu */}
                   {menuOpen && (
+                    <>
+                    <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                     <div className="absolute right-4 top-16 bg-white rounded-2xl shadow-xl border py-2 w-56 z-50" style={{ borderColor: '#EBEBEB' }}>
                       <div className="px-4 py-2 border-b" style={{ borderColor: '#EBEBEB' }}>
                         <div className="text-sm font-semibold" style={{ color: '#222222' }}>{user.name}</div>
@@ -68,6 +70,7 @@ export default function Layout({ children, hideSearch }: { children: React.React
                       <div className="border-t my-1" style={{ borderColor: '#EBEBEB' }}></div>
                       <button onClick={() => { logout(); setMenuOpen(false); }} className="block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }}>Cerrar sesion</button>
                     </div>
+                    </>
                   )}
                 </>
               ) : (
@@ -99,7 +102,7 @@ export default function Layout({ children, hideSearch }: { children: React.React
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm" style={{ color: '#717171' }}>
             <div>
-              <h4 className="font-semibold mb-2" style={{ color: '#222222' }}>TuresColombia</h4>
+              <h4 className="font-semibold mb-2" style={{ color: '#222222' }}>La Perla</h4>
               <p>Tours verificados en el Caribe colombiano. Reserva facil, paga seguro.</p>
             </div>
             <div>
@@ -114,7 +117,7 @@ export default function Layout({ children, hideSearch }: { children: React.React
             </div>
           </div>
           <div className="border-t mt-6 pt-6 text-center text-xs" style={{ borderColor: '#EBEBEB', color: '#717171' }}>
-            © 2026 TuresColombia · Tours verificados · Pagos seguros
+            © 2026 La Perla · Tours verificados · Pagos seguros
           </div>
         </div>
       </footer>
