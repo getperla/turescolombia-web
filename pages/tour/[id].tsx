@@ -59,9 +59,9 @@ export default function TourDetail({ tour }: Props) {
     <Layout>
       <Head>
         <title>{tour.name} — La Perla</title>
-        <meta property="og:title" content={`${tour.name} — $${tour.priceAdult.toLocaleString()} COP`} />
+        <meta property="og:title" content={`${tour.name} — $${tour.priceAdult.toLocaleString()} COP | La Perla`} />
         <meta property="og:description" content={tour.shortDescription || tour.description.substring(0, 160)} />
-        <meta property="og:image" content={tour.coverImageUrl || ''} />
+        <meta property="og:image" content={tour.coverImageUrl || `https://tourmarta-web.vercel.app/api/og?title=${encodeURIComponent(tour.name)}`} />
       </Head>
 
       {/* Photo grid — Airbnb style */}

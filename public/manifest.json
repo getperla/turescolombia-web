@@ -1,7 +1,7 @@
 {
-  "name": "TuresColombia",
-  "short_name": "TuresColombia",
-  "description": "Tours verificados en el Caribe colombiano. Santa Marta, Tayrona, Sierra Nevada.",
+  "name": "La Perla — Tours en Santa Marta",
+  "short_name": "La Perla",
+  "description": "Reserva tours verificados en Santa Marta, Tayrona y Sierra Nevada. Pago seguro, confirmacion por WhatsApp.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FDF3E3",
