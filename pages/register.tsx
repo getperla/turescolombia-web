@@ -42,8 +42,8 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (password !== confirmPassword) { setError('Las contrasenas no coinciden'); return; }
-    if (password.length < 6) { setError('La contrasena debe tener minimo 6 caracteres'); return; }
+    if (password !== confirmPassword) { setError('Las contraseñas no coinciden'); return; }
+    if (password.length < 6) { setError('La contraseña debe tener mínimo 6 caracteres'); return; }
 
     setLoading(true);
     try {
@@ -128,7 +128,7 @@ export default function RegisterPage() {
                         <input type="text" value={zone} onChange={(e) => setZone(e.target.value)} className="input" placeholder="ej: Rodadero, Taganga, Centro" />
                       </div>
                       <div>
-                        <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Cuentanos de ti</label>
+                        <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Cuéntanos de ti</label>
                         <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="input" rows={2} placeholder="Que experiencia tienes vendiendo tours?" />
                       </div>
                     </>
@@ -148,12 +148,12 @@ export default function RegisterPage() {
                   )}
 
                   <div>
-                    <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Contrasena</label>
+                    <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Contraseña</label>
                     <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="input" placeholder="Minimo 6 caracteres" />
                   </div>
                   <div>
-                    <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Repetir contrasena</label>
-                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="input" placeholder="Confirma tu contrasena" />
+                    <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Repetir contraseña</label>
+                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="input" placeholder="Confirma tu contraseña" />
                   </div>
 
                   {error && (

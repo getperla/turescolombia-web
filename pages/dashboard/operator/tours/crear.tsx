@@ -166,7 +166,7 @@ export default function CrearTour() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Restricciones (una linea por item)</label>
-              <textarea value={form.restrictions} onChange={set('restrictions')} className="input" rows={2} placeholder="No apto para menores de 5 anos&#10;Saber nadar" />
+              <textarea value={form.restrictions} onChange={set('restrictions')} className="input" rows={2} placeholder="No apto para menores de 5 años&#10;Saber nadar" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>

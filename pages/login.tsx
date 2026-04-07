@@ -33,7 +33,7 @@ export default function LoginPage() {
         router.push('/explorar');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Correo o contrasena incorrectos.');
+      setError(err.response?.data?.message || 'Correo o contraseña incorrectos.');
     }
   };
 
@@ -116,8 +116,8 @@ export default function LoginPage() {
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="tu@correo.com" className="input" />
               </div>
               <div>
-                <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Contrasena</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Tu contrasena" className="input" />
+                <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Contraseña</label>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Tu contraseña" className="input" />
               </div>
 
               {error && (
@@ -131,7 +131,7 @@ export default function LoginPage() {
 
             <div className="mt-6 text-center text-sm font-sans" style={{ color: '#C9A05C' }}>
               No tienes cuenta?{' '}
-              <Link href={`/register${role ? `?role=${role}` : ''}`} className="font-bold hover:underline" style={{ color: '#0D5C8A' }}>Registrate gratis</Link>
+              <Link href={`/register${role ? `?role=${role}` : ''}`} className="font-bold hover:underline" style={{ color: '#0D5C8A' }}>Regístrate gratis</Link>
             </div>
           </div>
 
@@ -139,8 +139,8 @@ export default function LoginPage() {
           {(role === 'jalador' || !role) && (
             <div className="mt-6 rounded-card p-6" style={{ background: 'linear-gradient(135deg, #F5882A, #FF5F5F)' }}>
               <div className="text-center mb-4">
-                <h3 className="font-display font-bold text-white text-lg">Acceso rapido Jalador</h3>
-                <p className="text-sm text-white/70 font-sans">Entra con tu codigo, sin contrasena</p>
+                <h3 className="font-display font-bold text-white text-lg">Acceso rápido Jalador</h3>
+                <p className="text-sm text-white/70 font-sans">Entra con tu codigo, sin contraseña</p>
               </div>
               <div className="space-y-3">
                 <input type="text" placeholder="Tu codigo (ej: PED-0001)" id="magic-ref"
@@ -179,7 +179,7 @@ export default function LoginPage() {
 
           {/* Acceso rápido DEV */}
           <div className="mt-4 rounded-xl p-4" style={{ background: '#F7F7F7', border: '1px solid #EBEBEB' }}>
-            <p className="text-xs text-center mb-3" style={{ color: '#B0B0B0' }}>Acceso rapido</p>
+            <p className="text-xs text-center mb-3" style={{ color: '#B0B0B0' }}>Acceso rápido</p>
             <div className="grid grid-cols-2 gap-2">
               {[
                 { label: '🏖️ Turista', email: 'turista@test.com' },

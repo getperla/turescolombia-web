@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { AuthProvider } from '../lib/auth';
+import BetaGate from '../components/BetaGate';
 import '../styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -35,7 +36,9 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta name="twitter:description" content="Reserva tours en Tayrona, Sierra Nevada y el Caribe colombiano. Pago seguro, confirmacion por WhatsApp." />
         <meta name="twitter:image" content="https://tourmarta-web.vercel.app/api/og" />
       </Head>
-      <Component {...pageProps} />
+      <BetaGate>
+        <Component {...pageProps} />
+      </BetaGate>
     </AuthProvider>
   );
 }

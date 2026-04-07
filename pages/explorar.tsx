@@ -6,7 +6,7 @@ import { getTours, getCategories, Tour, Category } from '../lib/api';
 import Layout from '../components/Layout';
 
 const categoryIcons: Record<string, string> = {
-  playas: '🏖️', ciudad: '🏛️', aventura: '⛰️', nautico: '⛵', fiesta: '🎉', naturaleza: '🌿', multidia: '🏕️',
+  playas: '🏖️', ciudad: '🏛️', aventura: '⛰️', náutico: '⛵', fiesta: '🎉', naturaleza: '🌿', multidia: '🏕️',
 };
 
 type Props = { tours: Tour[]; categories: Category[] };

@@ -99,7 +99,7 @@ export default function JaladoresPage({ jaladores }: Props) {
                     </div>
                     <div>
                       <div className="text-lg font-bold text-primary-600">{j.yearsExperience}</div>
-                      <div className="text-xs text-gray-400">Anos exp.</div>
+                      <div className="text-xs text-gray-400">Años exp.</div>
                     </div>
                   </div>
 
