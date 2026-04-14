@@ -56,15 +56,25 @@ const JaladorDashboard = () => {
           </button>
         </div>
 
+        {/* Tarjeta motivacional — comisiones ganadas */}
+        <div className="relative rounded-2xl p-5 mb-4 overflow-hidden" style={{ background: 'linear-gradient(135deg, #F5882A 0%, #E07020 100%)' }}>
+          <div className="absolute top-0 right-0 text-6xl opacity-10">🎉</div>
+          <div className="relative">
+            <div className="text-xs font-semibold uppercase tracking-wider text-white/90 mb-1">¡Vas muy bien {data?.jalador?.user?.name?.split(' ')[0] || 'crack'}!</div>
+            <div className="text-2xl font-bold text-white mb-1">Te has ganado ${Number(commissions.pending).toLocaleString()}</div>
+            <div className="text-xs text-white/90">en comisiones este mes 💰 Sigue así</div>
+          </div>
+        </div>
+
         {/* KPIs compactos */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-6">
           {[
-            { value: sales.today, label: 'Hoy' },
-            { value: sales.week, label: 'Semana' },
-            { value: sales.month, label: 'Mes' },
-            { value: `$${Number(commissions.pending).toLocaleString()}`, label: 'Pendiente' },
+            { value: sales.today, label: 'Ventas hoy', icon: '🔥' },
+            { value: sales.week, label: 'Esta semana', icon: '📈' },
+            { value: sales.month, label: 'Este mes', icon: '⭐' },
           ].map((kpi, i) => (
-            <div key={i} className="text-center py-3 rounded-xl" style={{ background: '#F7F7F7' }}>
+            <div key={i} className="text-center py-3 rounded-xl border" style={{ borderColor: '#EBEBEB' }}>
+              <div className="text-xs mb-0.5">{kpi.icon}</div>
               <div className="text-lg font-bold" style={{ color: '#222' }}>{kpi.value}</div>
               <div className="text-xs" style={{ color: '#717171' }}>{kpi.label}</div>
             </div>
