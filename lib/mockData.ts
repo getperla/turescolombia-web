@@ -169,13 +169,13 @@ export function getMockResponse(method: string, url: string): any {
   ];
   if (m === 'GET' && /\/tours\/slug\/[\w-]+$/.test(path)) {
     const slug = path.split('/').pop();
-    return mockTours.find(t => t.slug === slug) || mockTours[0];
+    return enrichTour(mockTours.find(t => t.slug === slug) || mockTours[0]);
   }
   if (m === 'GET' && /\/tours\/\d+$/.test(path)) {
     const id = Number(path.split('/').pop());
-    return mockTours.find(t => t.id === id) || mockTours[0];
+    return enrichTour(mockTours.find(t => t.id === id) || mockTours[0]);
   }
-  if (m === 'GET' && path.endsWith('/tours')) return { data: mockTours, total: mockTours.length };
+  if (m === 'GET' && path.endsWith('/tours')) return { data: mockTours.map(enrichTour), total: mockTours.length };
 
   // Bookings
   if (m === 'GET' && path.endsWith('/bookings/operator')) return mockBookings;
@@ -200,4 +200,38 @@ export function getMockResponse(method: string, url: string): any {
 export function isDemoMode(): boolean {
   if (typeof window === 'undefined') return false;
   return localStorage.getItem('turescol_token') === 'beta-demo-token';
+}
+
+// Adds all the extra fields that the tour detail page expects.
+// The base mockTours only have the minimal fields for list views.
+function enrichTour(t: MockTour): any {
+  const gallery = [
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800',
+    'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800',
+    'https://images.unsplash.com/photo-1559554704-d4934ae2c12b?w=800',
+    'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800',
+    'https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?w=800',
+  ];
+  return {
+    ...t,
+    shortDescription: `Disfruta de ${t.name} con ${t.operator.companyName}. Una experiencia inolvidable en el Caribe colombiano.`,
+    description: `${t.name} es una experiencia única organizada por ${t.operator.companyName}. Disfruta de paisajes increíbles, guía profesional, transporte incluido y todas las comodidades para un día perfecto. Ideal para familias, parejas y grupos de amigos que buscan descubrir lo mejor del Caribe colombiano en un ambiente seguro y acogedor.`,
+    priceChild: Math.round(t.priceAdult * 0.7),
+    maxPeople: 20,
+    departurePoint: 'Hotel en Santa Marta',
+    departureTime: '07:00',
+    returnTime: '17:00',
+    location: 'Santa Marta, Magdalena',
+    duration: '10 horas',
+    durationHours: 10,
+    includes: ['Transporte ida y vuelta', 'Guía bilingüe', 'Almuerzo típico', 'Equipo de snorkel', 'Hidratación', 'Seguro del viaje'],
+    excludes: ['Bebidas alcohólicas', 'Propinas', 'Gastos personales'],
+    restrictions: ['No recomendado para mujeres embarazadas', 'Menores acompañados por un adulto'],
+    observations: 'Llevar bloqueador solar, gorra y traje de baño. Punto de encuentro confirmado por WhatsApp.',
+    galleryUrls: gallery,
+    totalReviews: Math.floor(t.totalBookings * 0.6),
+    isFeatured: true,
+    operator: { ...t.operator, logoUrl: '', score: 92 },
+    category: { id: 1, name: 'Playa', slug: 'playa' },
+  };
 }
