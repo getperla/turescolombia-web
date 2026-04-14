@@ -128,8 +128,22 @@ export function getMockResponse(method: string, url: string): any {
 
   // Dashboard
   if (m === 'GET' && path.endsWith('/dashboard/admin')) return mockDashboardAdmin;
-  if (m === 'GET' && (path.endsWith('/dashboard/operator') || path.endsWith('/dashboard/jalador') || path.endsWith('/dashboard/tourist'))) {
-    return { totalBookings: 12, activeTours: 4, revenue: 2400000, pendingBookings: 3 };
+  if (m === 'GET' && path.endsWith('/dashboard/jalador')) {
+    return {
+      jalador: { id: 1, refCode: 'DEMO2024', bio: 'Guía demo', zone: 'Centro Histórico', score: 92, totalSales: 45, badge: 'gold' },
+      sales: { today: 2, week: 8, month: 32, total: 145 },
+      commissions: { pending: 450000, paid: 1250000, total: 1700000 },
+    };
+  }
+  if (m === 'GET' && path.endsWith('/dashboard/operator')) {
+    return {
+      tours: { active: 4, total: 6, pendingReview: 1 },
+      bookings: { today: 3, week: 12, month: 48, total: 210 },
+      revenue: { total: 8450000, thisMonth: 2300000 },
+    };
+  }
+  if (m === 'GET' && path.endsWith('/dashboard/tourist')) {
+    return { upcomingBookings: 2, pastBookings: 5, favoriteCount: 3 };
   }
 
   // Notifications
