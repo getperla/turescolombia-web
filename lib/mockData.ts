@@ -188,8 +188,31 @@ export function getMockResponse(method: string, url: string): any {
   // Reviews
   if (m === 'GET' && /\/reviews\/tour\/\d+$/.test(path)) return { data: [], total: 0 };
 
-  // Profile
-  if (m === 'GET' && path.endsWith('/auth/profile')) return { id: 1, name: 'Demo User', email: 'demo@laperla.co', role: 'admin' };
+  // Profile — devolvemos un perfil de jalador completo para la demo
+  if (m === 'GET' && path.endsWith('/auth/profile')) {
+    return {
+      id: 1,
+      name: 'Jalador Demo',
+      email: 'jalador@laperla.co',
+      phone: '+57 300 123 4567',
+      whatsappPhone: '+57 300 123 4567',
+      role: 'jalador',
+      jalador: {
+        id: 1,
+        refCode: 'DEMO2024',
+        bio: 'Guía turístico con experiencia en Santa Marta y la Sierra Nevada',
+        zone: 'Centro Histórico',
+        languages: ['Español', 'Inglés'],
+        score: 92,
+        totalSales: 45,
+        badge: 'gold',
+        bankName: 'Bancolombia',
+        bankAccount: '1234567890',
+        nequiPhone: '+57 300 123 4567',
+        payoutMethod: 'nequi',
+      },
+    };
+  }
   if (m === 'PUT' && path.endsWith('/users/me')) return { ok: true };
   if (m === 'PUT' && path.endsWith('/users/jaladores/me')) return { ok: true };
 
