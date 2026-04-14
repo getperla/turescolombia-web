@@ -78,6 +78,9 @@ export default function BetaGate({ children }: { children: ReactNode }) {
     setLoginError('');
 
     const creds = demoCredentials[role];
+    const target = roles.find(r => r.id === role);
+    const path = target?.path || '/explorar';
+
     try {
       // Try to actually login with demo credentials
       const api = (await import('../lib/api')).default;
@@ -87,23 +90,20 @@ export default function BetaGate({ children }: { children: ReactNode }) {
       localStorage.setItem('turescol_token', data.access_token);
       if (data.refresh_token) localStorage.setItem('turescol_refresh', data.refresh_token);
       localStorage.setItem('turescol_user', JSON.stringify(data.user));
-
-      // Save beta flag
-      localStorage.setItem(BETA_KEY, JSON.stringify({ role, betaMode: true }));
-
-      // Navigate to dashboard
-      const target = roles.find(r => r.id === role);
-      router.push(target?.path || '/explorar');
     } catch {
-      // If login fails, still allow beta access with minimal data
+      // If login fails, still allow beta access with a fake token + user
+      // NOTE: a token is required so that AuthProvider loads the user on next mount
       const fakeUser = { id: 0, name: `Demo ${role}`, email: creds.email, role };
+      localStorage.setItem('turescol_token', 'beta-demo-token');
       localStorage.setItem('turescol_user', JSON.stringify(fakeUser));
-      localStorage.setItem(BETA_KEY, JSON.stringify({ role, betaMode: true }));
-
-      const target = roles.find(r => r.id === role);
-      router.push(target?.path || '/explorar');
     }
-    setLoggingIn(null);
+
+    // Save beta flag
+    localStorage.setItem(BETA_KEY, JSON.stringify({ role, betaMode: true }));
+
+    // Hard navigation forces AuthProvider to re-read localStorage on remount,
+    // otherwise its internal state stays null and useRequireAuth kicks us back to /login
+    window.location.href = path;
   };
 
   if (loading) {
