@@ -3,11 +3,23 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
 import api from '../lib/api';
 import Logo from './Logo';
+import { isBetaActive } from './BetaGate';
 
 export default function Layout({ children, hideSearch }: { children: React.ReactNode; hideSearch?: boolean }) {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [betaMode, setBetaMode] = useState(false);
+
+  useEffect(() => { setBetaMode(isBetaActive()); }, [user]);
+
+  const switchRole = () => {
+    localStorage.removeItem('turescol_token');
+    localStorage.removeItem('turescol_refresh');
+    localStorage.removeItem('turescol_user');
+    localStorage.removeItem('laperla_beta');
+    window.location.href = '/';
+  };
 
   useEffect(() => {
     if (user) { api.get('/notifications/count').then(r => setUnreadCount(r.data?.count || 0)).catch(() => {}); }
@@ -37,6 +49,17 @@ export default function Layout({ children, hideSearch }: { children: React.React
 
             {/* Right nav */}
             <div className="flex items-center gap-2">
+              {betaMode && user && (
+                <button
+                  onClick={switchRole}
+                  title="Cambiar de rol demo"
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-full transition-colors"
+                  style={{ background: '#FEF3E8', color: '#F5882A', border: '1px solid #F5882A' }}
+                >
+                  <span>🔄</span>
+                  <span className="hidden sm:inline">Cambiar rol</span>
+                </button>
+              )}
               {user ? (
                 <>
                   {dashboardPath && (

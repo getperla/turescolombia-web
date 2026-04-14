@@ -29,7 +29,6 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   // Load user from localStorage on mount
   useEffect(() => {
@@ -59,9 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('turescol_token');
     localStorage.removeItem('turescol_refresh');
     localStorage.removeItem('turescol_user');
+    localStorage.removeItem('laperla_beta');
     setUser(null);
-    router.push('/');
-  }, [router]);
+    // Hard reload to reset the whole app state and re-show BetaGate
+    window.location.href = '/';
+  }, []);
 
   const updateUser = useCallback((updates: Partial<AuthUser>) => {
     setUser(prev => {
