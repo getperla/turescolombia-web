@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getMockResponse, isDemoMode } from './mockData';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -7,12 +8,29 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Interceptor para agregar token de auth
+// Interceptor para agregar token de auth y manejar modo demo
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('turescol_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Demo mode: short-circuit with a fake adapter that returns mock data
+    if (isDemoMode()) {
+      config.adapter = async (cfg) => {
+        const url = cfg.url || '';
+        const method = cfg.method || 'get';
+        // Simulate small network delay so the UI feels natural
+        await new Promise((r) => setTimeout(r, 120));
+        return {
+          data: getMockResponse(method, url),
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: cfg,
+          request: {},
+        };
+      };
     }
   }
   return config;
