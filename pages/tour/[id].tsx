@@ -1,14 +1,15 @@
-import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { getTourBySlug, getTour, getTourReviews, Tour, ReviewItem } from '../../lib/api';
 import api from '../../lib/api';
 import Layout from '../../components/Layout';
 
-type Props = { tour: Tour };
-
-export default function TourDetail({ tour }: Props) {
+export default function TourDetail() {
+  const router = useRouter();
+  const [tour, setTour] = useState<Tour | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [numAdults, setNumAdults] = useState(1);
   const [numChildren, setNumChildren] = useState(0);
   const [tourDate, setTourDate] = useState('');
@@ -26,9 +27,46 @@ export default function TourDetail({ tour }: Props) {
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [reviewsTotal, setReviewsTotal] = useState(0);
 
+  // Fetch tour client-side so the mock/demo interceptor can handle it
   useEffect(() => {
+    const param = router.query.id as string | undefined;
+    if (!param) return;
+    const isNumeric = /^\d+$/.test(param);
+    const fetcher = isNumeric ? getTour(Number(param)) : getTourBySlug(param);
+    fetcher
+      .then((t) => setTour(t))
+      .catch(() => setNotFound(true));
+  }, [router.query.id]);
+
+  useEffect(() => {
+    if (!tour) return;
     getTourReviews(tour.id).then(res => { setReviews(res.data || []); setReviewsTotal(res.total || 0); }).catch(() => {});
-  }, [tour.id]);
+  }, [tour]);
+
+  if (notFound) {
+    return (
+      <Layout>
+        <div className="max-w-3xl mx-auto py-16 px-4 text-center">
+          <p className="font-semibold text-lg mb-4" style={{ color: '#222' }}>Tour no encontrado</p>
+          <Link href="/explorar" className="btn-primary inline-block">Ver todos los tours</Link>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!tour) {
+    return (
+      <Layout>
+        <div className="max-w-5xl mx-auto px-4 pt-6">
+          <div className="animate-pulse space-y-3">
+            <div className="h-80 rounded-xl" style={{ background: '#F0F0F0' }} />
+            <div className="h-6 w-1/2 rounded" style={{ background: '#F0F0F0' }} />
+            <div className="h-4 w-1/3 rounded" style={{ background: '#F0F0F0' }} />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   const totalPrice = (tour.priceAdult * numAdults) + ((tour.priceChild || tour.priceAdult * 0.7) * numChildren);
   const allImages = [tour.coverImageUrl, ...(tour.galleryUrls || [])].filter(Boolean) as string[];
@@ -283,12 +321,3 @@ export default function TourDetail({ tour }: Props) {
     </Layout>
   );
 }
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const param = context.params?.id as string;
-  try {
-    const isNumeric = /^\d+$/.test(param);
-    const tour = isNumeric ? await getTour(Number(param)) : await getTourBySlug(param);
-    return { props: { tour } };
-  } catch { return { notFound: true }; }
-};
