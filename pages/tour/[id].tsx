@@ -23,8 +23,9 @@ export default function TourDetail() {
   const [loading, setLoading] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
-  const [paymentStep, setPaymentStep] = useState<'form' | 'payment' | 'processing'>('form');
+  const [paymentStep, setPaymentStep] = useState<'form' | 'payment' | 'pse-bank' | 'processing'>('form');
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [pseBank, setPseBank] = useState('');
 
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [reviewsTotal, setReviewsTotal] = useState(0);
@@ -83,12 +84,13 @@ export default function TourDetail() {
 
   const processPayment = async () => {
     if (!paymentMethod) { setMessage('Selecciona un método de pago'); return; }
+    if (paymentMethod === 'pse' && !pseBank) { setPaymentStep('pse-bank'); return; }
     setMessage('');
     setPaymentStep('processing');
     setLoading(true);
 
-    // Simular procesamiento del pago (2 segundos)
-    await new Promise(r => setTimeout(r, 2000));
+    // Simular procesamiento del pago (en producción aquí se llama al gateway)
+    await new Promise(r => setTimeout(r, 2500));
 
     try {
       const { data } = await api.post('/bookings', {
@@ -311,11 +313,58 @@ export default function TourDetail() {
                 /* Procesando pago */
                 <div className="text-center py-8">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: '#FEF3E8' }}>
-                    <div className="w-8 h-8 border-3 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#F5882A', borderTopColor: 'transparent', borderWidth: 3 }}></div>
+                    <div className="w-8 h-8 rounded-full animate-spin" style={{ border: '3px solid #F5882A', borderTopColor: 'transparent' }}></div>
                   </div>
                   <div className="font-bold text-lg mb-1" style={{ color: '#222' }}>Procesando pago...</div>
-                  <div className="text-sm" style={{ color: '#717171' }}>Verificando tu pago por {paymentMethod === 'nequi' ? 'Nequi' : paymentMethod === 'bancolombia' ? 'Bancolombia' : paymentMethod === 'daviplata' ? 'Daviplata' : 'Tarjeta'}</div>
+                  <div className="text-sm" style={{ color: '#717171' }}>
+                    Verificando tu pago por {paymentMethod === 'pse' ? `PSE — ${pseBank || 'tu banco'}` : paymentMethod === 'nequi' ? 'Nequi' : paymentMethod === 'daviplata' ? 'Daviplata' : paymentMethod === 'transfiya' ? 'Transfiya' : 'Tarjeta'}
+                  </div>
                   <div className="text-xs mt-3" style={{ color: '#B0B0B0' }}>No cierres esta ventana</div>
+                </div>
+              ) : paymentStep === 'pse-bank' ? (
+                /* Paso 2b: Selección de banco para PSE */
+                <div className="space-y-4">
+                  <button onClick={() => setPaymentStep('payment')} className="flex items-center gap-1 text-sm font-semibold" style={{ color: '#717171' }}>
+                    ← Volver
+                  </button>
+                  <div className="text-center pb-3">
+                    <div className="w-12 h-12 mx-auto mb-2 rounded-full flex items-center justify-center" style={{ background: '#E8F4FA' }}>
+                      <span className="text-xl">🏦</span>
+                    </div>
+                    <div className="font-bold" style={{ color: '#222' }}>Pago PSE</div>
+                    <div className="text-xs" style={{ color: '#717171' }}>Selecciona tu banco</div>
+                  </div>
+                  <div className="space-y-1.5 max-h-60 overflow-y-auto">
+                    {[
+                      'Bancolombia', 'Banco de Bogotá', 'Davivienda', 'BBVA Colombia',
+                      'Banco de Occidente', 'Banco Popular', 'Banco Agrario',
+                      'Scotiabank Colpatria', 'Banco Itaú', 'Banco Caja Social',
+                      'Banco Falabella', 'Banco Pichincha', 'Banco GNB Sudameris',
+                      'Bancoomeva', 'Banco Serfinanza', 'Lulo Bank', 'Nu Colombia',
+                    ].map(bank => (
+                      <button
+                        key={bank}
+                        onClick={() => setPseBank(bank)}
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-lg border text-left text-sm transition-all"
+                        style={{
+                          borderColor: pseBank === bank ? '#0D5C8A' : '#EBEBEB',
+                          background: pseBank === bank ? '#E8F4FA' : 'white',
+                          color: '#222',
+                        }}
+                      >
+                        <span className="font-semibold">{bank}</span>
+                        {pseBank === bank && <span style={{ color: '#0D5C8A' }}>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => { if (pseBank) { setPaymentStep('processing'); setLoading(true); processPayment(); } }}
+                    disabled={!pseBank}
+                    className="w-full py-3.5 rounded-lg text-white font-semibold text-base disabled:opacity-40 transition-all"
+                    style={{ background: 'linear-gradient(135deg, #0D5C8A, #084461)' }}
+                  >
+                    Pagar con {pseBank || 'PSE'} — ${totalPrice.toLocaleString()}
+                  </button>
                 </div>
               ) : paymentStep === 'payment' ? (
                 /* Paso 2: Selección de pago */
@@ -331,21 +380,22 @@ export default function TourDetail() {
 
                   {/* Resumen rápido */}
                   <div className="p-3 rounded-lg text-xs space-y-1" style={{ background: '#F7F7F7' }}>
-                    <div className="flex justify-between"><span style={{ color: '#717171' }}>Tour</span><span className="font-semibold" style={{ color: '#222' }}>{tour.name}</span></div>
+                    <div className="flex justify-between"><span style={{ color: '#717171' }}>Tour</span><span className="font-semibold truncate ml-2" style={{ color: '#222' }}>{tour.name}</span></div>
                     <div className="flex justify-between"><span style={{ color: '#717171' }}>Fecha</span><span style={{ color: '#222' }}>{tourDate}</span></div>
                     <div className="flex justify-between"><span style={{ color: '#717171' }}>Personas</span><span style={{ color: '#222' }}>{numAdults} adulto(s){numChildren > 0 ? `, ${numChildren} niño(s)` : ''}</span></div>
                     <div className="flex justify-between"><span style={{ color: '#717171' }}>Cliente</span><span style={{ color: '#222' }}>{clientName} {clientLastName}</span></div>
                   </div>
 
-                  {/* Métodos de pago */}
+                  {/* Métodos de pago — Colombia */}
                   <div>
-                    <div className="text-xs font-semibold mb-2" style={{ color: '#222' }}>Selecciona método de pago</div>
+                    <div className="text-xs font-semibold mb-2" style={{ color: '#222' }}>Selecciona cómo pagar</div>
                     <div className="space-y-2">
                       {[
-                        { id: 'nequi', name: 'Nequi', icon: '📱', color: '#E6007E', desc: 'Paga desde tu celular' },
-                        { id: 'bancolombia', name: 'Bancolombia', icon: '🏦', color: '#FDDA24', desc: 'Transferencia bancaria', textColor: '#333' },
-                        { id: 'daviplata', name: 'Daviplata', icon: '💚', color: '#ED1C24', desc: 'Paga con Daviplata' },
-                        { id: 'card', name: 'Tarjeta', icon: '💳', color: '#0D5C8A', desc: 'Crédito o débito' },
+                        { id: 'pse', name: 'PSE', icon: '🏦', color: '#0D5C8A', desc: 'Pago seguro desde tu banco', tag: 'Más usado' },
+                        { id: 'nequi', name: 'Nequi', icon: '📱', color: '#E6007E', desc: 'Aprueba desde la app Nequi' },
+                        { id: 'daviplata', name: 'Daviplata', icon: '💚', color: '#ED1C24', desc: 'Paga con tu Daviplata' },
+                        { id: 'transfiya', name: 'Transfiya', icon: '⚡', color: '#6B21A8', desc: 'Pago instantáneo por llave', tag: 'Nuevo' },
+                        { id: 'card', name: 'Tarjeta', icon: '💳', color: '#717171', desc: 'Visa, Mastercard, débito o crédito' },
                       ].map(pm => (
                         <button
                           key={pm.id}
@@ -359,7 +409,12 @@ export default function TourDetail() {
                         >
                           <span className="text-xl">{pm.icon}</span>
                           <div className="flex-1">
-                            <div className="font-semibold text-sm" style={{ color: '#222' }}>{pm.name}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-sm" style={{ color: '#222' }}>{pm.name}</span>
+                              {(pm as any).tag && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ background: pm.color }}>{(pm as any).tag}</span>
+                              )}
+                            </div>
                             <div className="text-xs" style={{ color: '#717171' }}>{pm.desc}</div>
                           </div>
                           {paymentMethod === pm.id && <span style={{ color: pm.color }}>✓</span>}
