@@ -77,13 +77,13 @@ export const mockOperators: MockOperator[] = [
 
 export const mockTours: MockTour[] = [
   { id: 1, name: 'Playa Blanca y Isla Barú', slug: 'playa-blanca-baru', priceAdult: 120000, coverImageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400', totalBookings: 145, avgRating: 4.8, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
-  { id: 2, name: 'Tayrona Full Day', slug: 'tayrona-full-day', priceAdult: 180000, coverImageUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400', totalBookings: 210, avgRating: 4.9, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
+  { id: 2, name: 'Tayrona Full Day', slug: 'tayrona-full-day', priceAdult: 180000, coverImageUrl: '/tours/TAYRONA%20FULL%20DAY.jpg', totalBookings: 210, avgRating: 4.9, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
   { id: 3, name: 'Ciudad Perdida 4 días', slug: 'ciudad-perdida-4d', priceAdult: 1450000, coverImageUrl: '/tours/CIUDAD%20PERDIDO.jpg', totalBookings: 58, avgRating: 4.7, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
   { id: 4, name: 'Minca Cascadas y Café', slug: 'minca-cascadas-cafe', priceAdult: 95000, coverImageUrl: '/tours/MINCA%20CASCADAS.jpg', totalBookings: 87, avgRating: 4.6, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
   { id: 5, name: 'Isla Aguja Snorkel', slug: 'isla-aguja-snorkel', priceAdult: 150000, coverImageUrl: '/tours/ISLA%20AGUJA%20SNORKEL.jpg', totalBookings: 112, avgRating: 4.8, status: 'active', operator: { id: 4, companyName: 'Santa Marta Diving' } },
   { id: 6, name: 'Sendero Sierra Nevada', slug: 'sendero-sierra-nevada', priceAdult: 220000, coverImageUrl: '/tours/SENDERO%20CAMINATA%20SIERRA%20NEVADA.jpg', totalBookings: 34, avgRating: 4.5, status: 'pending_review', operator: { id: 2, companyName: 'Sierra Aventuras' } },
-  { id: 7, name: 'Tour Centro Histórico', slug: 'centro-historico', priceAdult: 45000, coverImageUrl: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?w=400', totalBookings: 95, avgRating: 4.4, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
-  { id: 8, name: 'Pesca Artesanal Taganga', slug: 'pesca-taganga', priceAdult: 85000, coverImageUrl: 'https://images.unsplash.com/photo-1514222134-b57cbb8ce073?w=400', totalBookings: 42, avgRating: 4.3, status: 'active', operator: { id: 4, companyName: 'Santa Marta Diving' } },
+  { id: 7, name: 'Tour Centro Histórico', slug: 'centro-historico', priceAdult: 45000, coverImageUrl: '/tours/CENTRO%20HISTORICO.jpg', totalBookings: 95, avgRating: 4.4, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
+  { id: 8, name: 'Pesca Artesanal Taganga', slug: 'pesca-taganga', priceAdult: 85000, coverImageUrl: '/tours/PESCA%20TAGANGA.jpg', totalBookings: 42, avgRating: 4.3, status: 'active', operator: { id: 4, companyName: 'Santa Marta Diving' } },
 ];
 
 export const mockBookings: MockBooking[] = [
@@ -245,10 +245,22 @@ export function isDemoMode(): boolean {
   return localStorage.getItem('turescol_token') === 'beta-demo-token';
 }
 
+// Galerias por tour — primera es la cover, despues adicionales
+const tourGalleries: Record<string, string[]> = {
+  'centro-historico': ['/tours/CENTRO%20HISTORICO.jpg', '/tours/CENTRO%20HISTORICO%202.jpg'],
+  'tayrona-full-day': ['/tours/TAYRONA%20FULL%20DAY.jpg'],
+  'pesca-taganga': ['/tours/PESCA%20TAGANGA.jpg'],
+  'ciudad-perdida-4d': ['/tours/CIUDAD%20PERDIDO.jpg'],
+  'minca-cascadas-cafe': ['/tours/MINCA%20CASCADAS.jpg'],
+  'isla-aguja-snorkel': ['/tours/ISLA%20AGUJA%20SNORKEL.jpg'],
+  'sendero-sierra-nevada': ['/tours/SENDERO%20CAMINATA%20SIERRA%20NEVADA.jpg'],
+};
+
 // Adds all the extra fields that the tour detail page expects.
 // The base mockTours only have the minimal fields for list views.
 function enrichTour(t: MockTour): any {
-  const gallery = [
+  const customGallery = tourGalleries[t.slug];
+  const gallery = customGallery || [
     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800',
     'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800',
     'https://images.unsplash.com/photo-1559554704-d4934ae2c12b?w=800',
