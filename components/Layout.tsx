@@ -4,12 +4,14 @@ import { useAuth } from '../lib/auth';
 import api from '../lib/api';
 import Logo from './Logo';
 import { isBetaActive } from './BetaGate';
+import { useFavorites } from '../lib/useFavorites';
 
 export default function Layout({ children, hideSearch }: { children: React.ReactNode; hideSearch?: boolean }) {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [betaMode, setBetaMode] = useState(false);
+  const { count: favCount } = useFavorites();
 
   useEffect(() => { setBetaMode(isBetaActive()); }, [user]);
 
@@ -45,6 +47,10 @@ export default function Layout({ children, hideSearch }: { children: React.React
             {/* Nav links — simple */}
             <div className="hidden md:flex items-center gap-1">
               <Link href="/explorar" className="text-sm font-semibold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors" style={{ color: '#222' }}>Tours</Link>
+              <Link href="/favoritos" className="relative text-sm font-semibold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors" style={{ color: '#222' }}>
+                Favoritos
+                {favCount > 0 && <span className="absolute -top-1 -right-0 w-4 h-4 rounded-full text-white text-[10px] font-bold flex items-center justify-center" style={{ background: '#FF385C' }}>{favCount}</span>}
+              </Link>
             </div>
 
             {/* Right nav */}

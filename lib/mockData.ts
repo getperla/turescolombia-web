@@ -196,8 +196,17 @@ export function getMockResponse(method: string, url: string): any {
   if (m === 'POST' && /\/admin\/.+\/(approve|reject|suspend|reactivate)$/.test(path)) return { ok: true };
   if (m === 'PUT' && /\/admin\/(jaladores|operators)\/\d+$/.test(path)) return { ok: true };
 
-  // Reviews
-  if (m === 'GET' && /\/reviews\/tour\/\d+$/.test(path)) return { data: [], total: 0 };
+  // Reviews — datos realistas para social proof
+  if (m === 'GET' && /\/reviews\/tour\/\d+$/.test(path)) return {
+    data: [
+      { id: 1, tourRating: 5, tourComment: 'Increíble experiencia! El guía fue muy atento y los paisajes son de otro mundo. 100% recomendado para familias.', createdAt: new Date(Date.now() - 86400000 * 3).toISOString(), author: { id: 201, name: 'Carolina Mejía' }, operatorReply: 'Gracias Carolina! Nos alegra que hayan disfrutado. Los esperamos pronto.' },
+      { id: 2, tourRating: 4, tourComment: 'Muy buen tour, bien organizado. Solo que la salida se retrasó 20 minutos. El almuerzo estuvo delicioso.', createdAt: new Date(Date.now() - 86400000 * 7).toISOString(), author: { id: 202, name: 'Andrés Vargas' } },
+      { id: 3, tourRating: 5, tourComment: 'Lo mejor que hicimos en Santa Marta! El snorkel fue espectacular y el equipo muy profesional.', createdAt: new Date(Date.now() - 86400000 * 14).toISOString(), author: { id: 203, name: 'Laura Quintero' } },
+      { id: 4, tourRating: 5, tourComment: 'Llevé a mi familia completa y todos quedaron felices. Las playas son paradisíacas.', createdAt: new Date(Date.now() - 86400000 * 21).toISOString(), author: { id: 204, name: 'Roberto Castro' }, operatorReply: 'Qué bueno Roberto! Las familias siempre son bienvenidas.' },
+      { id: 5, tourRating: 4, tourComment: 'Buen precio por lo que ofrecen. Recomiendo llevar protector solar porque el sol pega fuerte.', createdAt: new Date(Date.now() - 86400000 * 30).toISOString(), author: { id: 205, name: 'Valentina Ríos' } },
+    ],
+    total: 5,
+  };
 
   // Profile — devolvemos un perfil de jalador completo para la demo
   if (m === 'GET' && path.endsWith('/auth/profile')) {
