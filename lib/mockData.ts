@@ -76,7 +76,7 @@ export const mockOperators: MockOperator[] = [
 ];
 
 export const mockTours: MockTour[] = [
-  { id: 1, name: 'Playa Blanca y Isla Barú', slug: 'playa-blanca-baru', priceAdult: 120000, coverImageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400', totalBookings: 145, avgRating: 4.8, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
+  { id: 1, name: 'Playa Blanca Rodadero', slug: 'playa-blanca-rodadero', priceAdult: 120000, coverImageUrl: '/tours/PLAYA%20BLANCA%20RODADERO.jpg', totalBookings: 145, avgRating: 4.8, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
   { id: 2, name: 'Tayrona Full Day', slug: 'tayrona-full-day', priceAdult: 180000, coverImageUrl: '/tours/TAYRONA%20FULL%20DAY.jpg', totalBookings: 210, avgRating: 4.9, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
   { id: 3, name: 'Ciudad Perdida 4 días', slug: 'ciudad-perdida-4d', priceAdult: 1450000, coverImageUrl: '/tours/CIUDAD%20PERDIDO.jpg', totalBookings: 58, avgRating: 4.7, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
   { id: 4, name: 'Minca Cascadas y Café', slug: 'minca-cascadas-cafe', priceAdult: 95000, coverImageUrl: '/tours/MINCA%20CASCADAS.jpg', totalBookings: 87, avgRating: 4.6, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
@@ -87,18 +87,18 @@ export const mockTours: MockTour[] = [
 ];
 
 export const mockBookings: MockBooking[] = [
-  { id: 1, bookingCode: 'LP-001234', tourDate: new Date(Date.now() + 86400000 * 2).toISOString(), totalAmount: 240000, status: 'confirmed', tour: { id: 1, name: 'Playa Blanca y Isla Barú' }, tourist: { user: { name: 'Juan Pablo' } } },
+  { id: 1, bookingCode: 'LP-001234', tourDate: new Date(Date.now() + 86400000 * 2).toISOString(), totalAmount: 240000, status: 'confirmed', tour: { id: 1, name: 'Playa Blanca Rodadero' }, tourist: { user: { name: 'Juan Pablo' } } },
   { id: 2, bookingCode: 'LP-001235', tourDate: new Date(Date.now() + 86400000 * 5).toISOString(), totalAmount: 360000, status: 'pending', tour: { id: 2, name: 'Tayrona Full Day' }, tourist: { user: { name: 'Isabella Martínez' } } },
   { id: 3, bookingCode: 'LP-001236', tourDate: new Date(Date.now() - 86400000).toISOString(), totalAmount: 180000, status: 'completed', tour: { id: 4, name: 'Minca Cascadas y Café' }, tourist: { user: { name: 'Felipe Gómez' } } },
   { id: 4, bookingCode: 'LP-001237', tourDate: new Date(Date.now() + 86400000 * 7).toISOString(), totalAmount: 1450000, status: 'confirmed', tour: { id: 3, name: 'Ciudad Perdida 4 días' }, tourist: { user: { name: 'Valentina Ruiz' } } },
   { id: 5, bookingCode: 'LP-001238', tourDate: new Date(Date.now() + 86400000 * 3).toISOString(), totalAmount: 150000, status: 'confirmed', tour: { id: 5, name: 'Isla Aguja Snorkel' }, tourist: { user: { name: 'Mateo Torres' } } },
   { id: 6, bookingCode: 'LP-001239', tourDate: new Date(Date.now() - 86400000 * 3).toISOString(), totalAmount: 90000, status: 'cancelled', tour: { id: 7, name: 'Tour Centro Histórico' }, tourist: { user: { name: 'Sofía Herrera' } } },
-  { id: 7, bookingCode: 'LP-001240', tourDate: new Date(Date.now() + 86400000).toISOString(), totalAmount: 480000, status: 'confirmed', tour: { id: 1, name: 'Playa Blanca y Isla Barú' }, tourist: { user: { name: 'Samuel Parra' } } },
+  { id: 7, bookingCode: 'LP-001240', tourDate: new Date(Date.now() + 86400000).toISOString(), totalAmount: 480000, status: 'confirmed', tour: { id: 1, name: 'Playa Blanca Rodadero' }, tourist: { user: { name: 'Samuel Parra' } } },
   { id: 8, bookingCode: 'LP-001241', tourDate: new Date(Date.now() + 86400000 * 10).toISOString(), totalAmount: 85000, status: 'pending', tour: { id: 8, name: 'Pesca Artesanal Taganga' }, tourist: { user: { name: 'Camila Rojas' } } },
 ];
 
 export const mockNotifications: MockNotification[] = [
-  { id: 1, type: 'booking_confirmed', title: 'Nueva reserva confirmada', body: 'Juan Pablo reservó Playa Blanca y Isla Barú', isRead: false, createdAt: new Date(Date.now() - 3600000).toISOString() },
+  { id: 1, type: 'booking_confirmed', title: 'Nueva reserva confirmada', body: 'Juan Pablo reservó Playa Blanca Rodadero', isRead: false, createdAt: new Date(Date.now() - 3600000).toISOString() },
   { id: 2, type: 'sale_completed', title: 'Venta completada', body: 'Pedro González completó una venta de $180.000', isRead: false, createdAt: new Date(Date.now() - 7200000).toISOString() },
   { id: 3, type: 'review_received', title: 'Nueva reseña', body: 'Tour Tayrona Full Day recibió 5 estrellas', isRead: false, createdAt: new Date(Date.now() - 14400000).toISOString() },
   { id: 4, type: 'commission_paid', title: 'Comisión pagada', body: 'Se pagó $36.000 de comisión a María López', isRead: true, createdAt: new Date(Date.now() - 86400000).toISOString() },
@@ -249,6 +249,7 @@ export function isDemoMode(): boolean {
 const tourGalleries: Record<string, string[]> = {
   'centro-historico': ['/tours/CENTRO%20HISTORICO%20DE%20SANTA%20MARTA%201.jpg', '/tours/CENTRO%20HISTORICO%20DE%20SANTA%20MARTA%202.jpg'],
   'tayrona-full-day': ['/tours/TAYRONA%20FULL%20DAY.jpg'],
+  'playa-blanca-rodadero': ['/tours/PLAYA%20BLANCA%20RODADERO.jpg'],
   'pesca-taganga': ['/tours/PESCA%20ARTESANAL%20TAGANGA.jpg'],
   'ciudad-perdida-4d': ['/tours/CIUDAD%20PERDIDO.jpg'],
   'minca-cascadas-cafe': ['/tours/MINCA%20CASCADAS.jpg'],
