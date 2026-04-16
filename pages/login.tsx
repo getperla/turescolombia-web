@@ -2,14 +2,18 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '../components/Layout';
-import Logo from '../components/Logo';
 import { useAuth } from '../lib/auth';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [loginMode, setLoginMode] = useState<'email' | 'phone'>('email');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -17,21 +21,19 @@ export default function LoginPage() {
   const role = router.query.role as string || '';
   const redirect = (router.query.redirect as string) || null;
 
+  const navigateByRole = (userRole: string) => {
+    if (redirect) router.push(redirect);
+    else if (userRole === 'admin') router.push('/dashboard/admin');
+    else if (userRole === 'operator') router.push('/dashboard/operator');
+    else if (userRole === 'jalador') router.push('/dashboard/jalador');
+    else router.push('/explorar');
+  };
+
   const doLogin = async (loginEmail: string, loginPassword: string) => {
     setError('');
     try {
       const user = await login(loginEmail, loginPassword);
-      if (redirect) {
-        router.push(redirect);
-      } else if (user.role === 'admin') {
-        router.push('/dashboard/admin');
-      } else if (user.role === 'operator') {
-        router.push('/dashboard/operator');
-      } else if (user.role === 'jalador') {
-        router.push('/dashboard/jalador');
-      } else {
-        router.push('/explorar');
-      }
+      navigateByRole(user.role);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Correo o contraseña incorrectos.');
     }
@@ -40,20 +42,78 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await doLogin(email, password);
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
+        if (err) throw err;
+        if (data.session) {
+          localStorage.setItem('turescol_token', data.session.access_token);
+          localStorage.setItem('turescol_user', JSON.stringify({
+            id: data.user?.id, name: data.user?.user_metadata?.name || email.split('@')[0],
+            email, role: data.user?.user_metadata?.role || 'tourist',
+          }));
+          navigateByRole(data.user?.user_metadata?.role || 'tourist');
+        }
+      } catch (err: any) { setError(err.message || 'Correo o contraseña incorrectos.'); }
+    } else {
+      await doLogin(email, password);
+    }
     setLoading(false);
   };
 
-  const handleGoogleLogin = () => {
-    // Google OAuth redirect
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      setError('Google login no esta configurado aun');
-      return;
+  const handleGoogleLogin = async () => {
+    if (isSupabaseConfigured()) {
+      const { error: err } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (err) setError(err.message);
+    } else {
+      setError('Para habilitar Google, configura Supabase (ver documentación)');
     }
-    const redirectUri = encodeURIComponent(window.location.origin + '/auth/google/callback');
-    const scope = encodeURIComponent('email profile');
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&prompt=select_account`;
+  };
+
+  const handlePhoneOtp = async () => {
+    if (!phone.trim()) { setError('Ingresa tu número de WhatsApp'); return; }
+    setLoading(true);
+    setError('');
+    if (isSupabaseConfigured()) {
+      const cleanPhone = phone.replace(/\D/g, '');
+      const fullPhone = cleanPhone.startsWith('57') ? `+${cleanPhone}` : `+57${cleanPhone}`;
+      const { error: err } = await supabase.auth.signInWithOtp({ phone: fullPhone });
+      if (err) setError(err.message);
+      else setOtpSent(true);
+    } else {
+      setOtpSent(true);
+    }
+    setLoading(false);
+  };
+
+  const verifyOtp = async () => {
+    if (!otpCode.trim()) { setError('Ingresa el código'); return; }
+    setLoading(true);
+    setError('');
+    if (isSupabaseConfigured()) {
+      const cleanPhone = phone.replace(/\D/g, '');
+      const fullPhone = cleanPhone.startsWith('57') ? `+${cleanPhone}` : `+57${cleanPhone}`;
+      const { data, error: err } = await supabase.auth.verifyOtp({ phone: fullPhone, token: otpCode, type: 'sms' });
+      if (err) { setError(err.message); }
+      else if (data.session) {
+        localStorage.setItem('turescol_token', data.session.access_token);
+        localStorage.setItem('turescol_user', JSON.stringify({
+          id: data.user?.id, name: data.user?.user_metadata?.name || 'Usuario',
+          email: data.user?.email || '', role: data.user?.user_metadata?.role || 'tourist',
+        }));
+        navigateByRole(data.user?.user_metadata?.role || 'tourist');
+      }
+    } else {
+      // Demo mode
+      localStorage.setItem('turescol_token', 'beta-demo-token');
+      localStorage.setItem('turescol_user', JSON.stringify({ id: 0, name: 'Usuario WhatsApp', email: '', role: 'tourist' }));
+      localStorage.setItem('laperla_beta', JSON.stringify({ role: 'tourist', betaMode: true }));
+      window.location.href = '/explorar';
+    }
+    setLoading(false);
   };
 
   const roleTitle = role === 'jalador' ? 'Jalador'
@@ -90,7 +150,7 @@ export default function LoginPage() {
             {/* Google Login */}
             <button
               onClick={handleGoogleLogin}
-              className="w-full flex items-center justify-center gap-3 py-3.5 px-6 rounded-pill font-sans font-semibold text-sm transition-all hover:-translate-y-0.5 mb-4"
+              className="w-full flex items-center justify-center gap-3 py-3.5 px-6 rounded-pill font-sans font-semibold text-sm transition-all hover:-translate-y-0.5 mb-3"
               style={{ background: 'white', border: '1.5px solid #FAEBD1', color: '#0A1628' }}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -103,31 +163,83 @@ export default function LoginPage() {
             </button>
 
             {/* Separador */}
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-4 mb-3">
               <div className="flex-1 h-px" style={{ background: '#FAEBD1' }}></div>
-              <span className="text-xs font-sans" style={{ color: '#C9A05C' }}>o con correo</span>
+              <span className="text-xs font-sans" style={{ color: '#C9A05C' }}>o con</span>
               <div className="flex-1 h-px" style={{ background: '#FAEBD1' }}></div>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Correo</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="tu@correo.com" className="input" />
-              </div>
-              <div>
-                <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Contraseña</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Tu contraseña" className="input" />
-              </div>
-
-              {error && (
-                <div className="px-4 py-3 rounded-2xl text-sm font-sans" style={{ background: '#FFF0F0', color: '#CC3333' }}>{error}</div>
-              )}
-
-              <button type="submit" disabled={loading} className="w-full btn-primary text-base disabled:opacity-50">
-                {loading ? 'Entrando...' : 'Entrar'}
+            {/* Toggle email / telefono */}
+            <div className="flex rounded-full p-1 mb-4" style={{ background: '#F7F7F7' }}>
+              <button onClick={() => { setLoginMode('email'); setError(''); }}
+                className="flex-1 py-2 rounded-full text-xs font-semibold transition-all"
+                style={{ background: loginMode === 'email' ? 'white' : 'transparent', color: loginMode === 'email' ? '#222' : '#717171', boxShadow: loginMode === 'email' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
+                ✉️ Correo
               </button>
-            </form>
+              <button onClick={() => { setLoginMode('phone'); setError(''); setOtpSent(false); }}
+                className="flex-1 py-2 rounded-full text-xs font-semibold transition-all"
+                style={{ background: loginMode === 'phone' ? 'white' : 'transparent', color: loginMode === 'phone' ? '#222' : '#717171', boxShadow: loginMode === 'phone' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
+                📱 WhatsApp
+              </button>
+            </div>
+
+            {loginMode === 'email' ? (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Correo</label>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="tu@correo.com" className="input" />
+                </div>
+                <div>
+                  <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Contraseña</label>
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Tu contraseña" className="input" />
+                </div>
+                {error && <div className="px-4 py-3 rounded-2xl text-sm font-sans" style={{ background: '#FFF0F0', color: '#CC3333' }}>{error}</div>}
+                <button type="submit" disabled={loading} className="w-full btn-primary text-base disabled:opacity-50">
+                  {loading ? 'Entrando...' : 'Entrar'}
+                </button>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                {!otpSent ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Tu número de WhatsApp</label>
+                      <div className="flex gap-2">
+                        <span className="flex items-center px-3 rounded-lg border text-sm font-semibold" style={{ borderColor: '#DDDDDD', color: '#222', background: '#F7F7F7' }}>🇨🇴 +57</span>
+                        <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="300 000 0000" className="input flex-1" />
+                      </div>
+                      <p className="text-xs mt-1" style={{ color: '#B0B0B0' }}>Te enviaremos un código por SMS para verificar</p>
+                    </div>
+                    {error && <div className="px-4 py-3 rounded-2xl text-sm font-sans" style={{ background: '#FFF0F0', color: '#CC3333' }}>{error}</div>}
+                    <button onClick={handlePhoneOtp} disabled={loading}
+                      className="w-full py-3 rounded-lg text-white font-semibold text-base disabled:opacity-50"
+                      style={{ background: '#25D366' }}>
+                      {loading ? 'Enviando...' : '📱 Enviar código por SMS'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-center p-4 rounded-xl" style={{ background: '#E8F5EF' }}>
+                      <span className="text-2xl">✅</span>
+                      <p className="text-sm font-semibold mt-1" style={{ color: '#2D6A4F' }}>Código enviado a +57 {phone}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Código de verificación</label>
+                      <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} placeholder="123456"
+                        className="input text-center text-2xl font-mono tracking-widest" maxLength={6} />
+                    </div>
+                    {error && <div className="px-4 py-3 rounded-2xl text-sm font-sans" style={{ background: '#FFF0F0', color: '#CC3333' }}>{error}</div>}
+                    <button onClick={verifyOtp} disabled={loading} className="w-full btn-primary text-base disabled:opacity-50">
+                      {loading ? 'Verificando...' : 'Verificar y entrar'}
+                    </button>
+                    <button onClick={() => { setOtpSent(false); setOtpCode(''); setError(''); }}
+                      className="w-full text-sm font-semibold" style={{ color: '#0D5C8A' }}>
+                      Cambiar número
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
 
             <div className="mt-6 text-center text-sm font-sans" style={{ color: '#C9A05C' }}>
               No tienes cuenta?{' '}
