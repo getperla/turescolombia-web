@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import { getTourBySlug, getTour, getTourReviews, Tour, ReviewItem } from '../../lib/api';
 import api from '../../lib/api';
 import Layout from '../../components/Layout';
+import { isDemoPayment, openWompiCheckout, generateReference } from '../../lib/wompi';
 
 export default function TourDetail() {
   const router = useRouter();
@@ -86,10 +87,27 @@ export default function TourDetail() {
     if (!paymentMethod) { setMessage('Selecciona un método de pago'); return; }
     if (paymentMethod === 'pse' && !pseBank) { setPaymentStep('pse-bank'); return; }
     setMessage('');
+
+    // Si Wompi está configurado con llave real → redirigir al checkout de Wompi
+    if (!isDemoPayment()) {
+      const ref = generateReference();
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const result = await openWompiCheckout({
+        amountInCents: totalPrice * 100,
+        reference: ref,
+        customerEmail: `${clientName.replace(/\s/g, '').toLowerCase()}@temp.co`,
+        customerName: `${clientName} ${clientLastName}`.trim(),
+        customerPhone: clientPhone.replace(/\D/g, ''),
+        redirectUrl: `${baseUrl}/pago-resultado`,
+        description: `${tour!.name} — ${numAdults} adulto(s)`,
+      });
+      // Si retornó 'wompi', la página ya fue redirigida a Wompi
+      if (result === 'wompi') return;
+    }
+
+    // MODO DEMO — simular pago
     setPaymentStep('processing');
     setLoading(true);
-
-    // Simular procesamiento del pago (en producción aquí se llama al gateway)
     await new Promise(r => setTimeout(r, 2500));
 
     try {
@@ -102,9 +120,8 @@ export default function TourDetail() {
       });
       setBookingResult(data);
     } catch {
-      // Demo mode: crear reserva fake si la API falla
       setBookingResult({
-        bookingCode: `LP-${String(Date.now()).slice(-6)}`,
+        bookingCode: generateReference(),
         qrCode: `laperla-booking-${Date.now()}`,
       });
     }
