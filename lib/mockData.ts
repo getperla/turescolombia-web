@@ -181,6 +181,17 @@ export function getMockResponse(method: string, url: string): any {
   if (m === 'GET' && path.endsWith('/bookings/operator')) return mockBookings;
   if (m === 'GET' && path.endsWith('/bookings/my')) return mockBookings.slice(0, 3);
 
+  // Bookings create
+  if (m === 'POST' && path.endsWith('/bookings')) {
+    return {
+      id: Math.floor(Math.random() * 10000),
+      bookingCode: `LP-${String(Date.now()).slice(-6)}`,
+      qrCode: `laperla-booking-${Date.now()}`,
+      status: 'confirmed',
+    };
+  }
+  if (m === 'POST' && /\/bookings\/\d+\/(confirm|complete|cancel)$/.test(path)) return { ok: true };
+
   // Admin actions — always return ok
   if (m === 'POST' && /\/admin\/.+\/(approve|reject|suspend|reactivate)$/.test(path)) return { ok: true };
   if (m === 'PUT' && /\/admin\/(jaladores|operators)\/\d+$/.test(path)) return { ok: true };
