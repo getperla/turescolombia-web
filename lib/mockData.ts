@@ -81,9 +81,18 @@ export const mockTours: MockTour[] = [
   { id: 3, name: 'Ciudad Perdida 4 días', slug: 'ciudad-perdida-4d', priceAdult: 1450000, coverImageUrl: '/tours/CIUDAD%20PERDIDO.jpg', totalBookings: 58, avgRating: 4.7, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
   { id: 4, name: 'Minca Cascadas y Café', slug: 'minca-cascadas-cafe', priceAdult: 95000, coverImageUrl: '/tours/MINCA%20CASCADAS.jpg', totalBookings: 87, avgRating: 4.6, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
   { id: 5, name: 'Isla Aguja Snorkel', slug: 'isla-aguja-snorkel', priceAdult: 150000, coverImageUrl: '/tours/ISLA%20AGUJA%20SNORKEL.jpg', totalBookings: 112, avgRating: 4.8, status: 'active', operator: { id: 4, companyName: 'Santa Marta Diving' } },
-  { id: 6, name: 'Sendero Sierra Nevada', slug: 'sendero-sierra-nevada', priceAdult: 220000, coverImageUrl: '/tours/SENDERO%20CAMINATA%20SIERRA%20NEVADA.jpg', totalBookings: 34, avgRating: 4.5, status: 'pending_review', operator: { id: 2, companyName: 'Sierra Aventuras' } },
+  { id: 6, name: 'Sendero Sierra Nevada', slug: 'sendero-sierra-nevada', priceAdult: 220000, coverImageUrl: '/tours/SENDERO%20CAMINATA%20SIERRA%20NEVADA.jpg', totalBookings: 34, avgRating: 4.5, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
   { id: 7, name: 'Tour Centro Histórico', slug: 'centro-historico', priceAdult: 45000, coverImageUrl: '/tours/CENTRO%20HISTORICO%20DE%20SANTA%20MARTA%201.jpg', totalBookings: 95, avgRating: 4.4, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
   { id: 8, name: 'Pesca Artesanal Taganga', slug: 'pesca-taganga', priceAdult: 85000, coverImageUrl: '/tours/PESCA%20ARTESANAL%20TAGANGA.jpg', totalBookings: 42, avgRating: 4.3, status: 'active', operator: { id: 4, companyName: 'Santa Marta Diving' } },
+  { id: 9, name: 'Bahía Concha', slug: 'bahia-concha', priceAdult: 115000, coverImageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400', totalBookings: 78, avgRating: 4.6, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
+  { id: 10, name: 'Playa Cristal', slug: 'playa-cristal', priceAdult: 160000, coverImageUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400', totalBookings: 156, avgRating: 4.7, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
+  { id: 11, name: 'Cabo San Juan', slug: 'cabo-san-juan', priceAdult: 160000, coverImageUrl: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400', totalBookings: 134, avgRating: 4.8, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
+  { id: 12, name: 'Guachaca y Buritaca', slug: 'guachaca-buritaca', priceAdult: 120000, coverImageUrl: 'https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?w=400', totalBookings: 45, avgRating: 4.5, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
+  { id: 13, name: 'Palomino', slug: 'palomino', priceAdult: 120000, coverImageUrl: 'https://images.unsplash.com/photo-1559554704-d4934ae2c12b?w=400', totalBookings: 67, avgRating: 4.6, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
+  { id: 14, name: 'Cabo de la Vela', slug: 'cabo-de-la-vela', priceAdult: 350000, coverImageUrl: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400', totalBookings: 23, avgRating: 4.9, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
+  { id: 15, name: 'Chiva Rumbera', slug: 'chiva-rumbera', priceAdult: 25000, coverImageUrl: 'https://images.unsplash.com/photo-1514222134-b57cbb8ce073?w=400', totalBookings: 189, avgRating: 4.3, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
+  { id: 16, name: 'Playa Cristal en Lancha', slug: 'playa-cristal-lancha', priceAdult: 160000, coverImageUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400', totalBookings: 89, avgRating: 4.7, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
+  { id: 17, name: 'Cabo San Juan en Lancha', slug: 'cabo-san-juan-lancha', priceAdult: 200000, coverImageUrl: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400', totalBookings: 56, avgRating: 4.8, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
 ];
 
 export const mockBookings: MockBooking[] = [
@@ -268,20 +277,34 @@ function enrichTour(t: MockTour): any {
     'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800',
     'https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?w=800',
   ];
+  const tourDescriptions: Record<string, { short: string; long: string; includes: string[]; excludes: string[]; departure: string; departureTime: string; returnTime: string; duration: string }> = {
+    'bahia-concha': { short: 'Transporte en chiva, entrada al Parque Tayrona, guía, almuerzo y seguro.', long: 'Bahía Concha es una de las playas más hermosas del Parque Tayrona. Llegarás en la clásica chiva colombiana, disfrutarás de aguas cristalinas, arena blanca y un almuerzo típico. Guía profesional incluido.', includes: ['Transporte ida/vuelta en chiva', 'Entrada al Parque Tayrona', 'Guía profesional', 'Almuerzo típico', 'Seguro'], excludes: ['Bebidas alcohólicas', 'Propinas', 'Gastos personales'], departure: 'Hotel en Santa Marta', departureTime: '08:30', returnTime: '16:00', duration: '7.5 horas' },
+    'playa-cristal': { short: 'Transporte climatizado, entrada Parque Tayrona, guía, seguro y lancha.', long: 'Playa Cristal es famosa por sus aguas transparentes perfectas para snorkel. Transporte climatizado desde tu hotel, entrada al parque y lancha incluida. Uno de los destinos favoritos de Santa Marta.', includes: ['Transporte climatizado ida/vuelta', 'Entrada al Parque Tayrona', 'Guía profesional', 'Seguro', 'Lancha'], excludes: ['Almuerzo', 'Bebidas', 'Equipo de snorkel'], departure: 'Hotel en Santa Marta', departureTime: '06:30', returnTime: '16:00', duration: '9.5 horas' },
+    'cabo-san-juan': { short: 'Entrada al Parque Tayrona, guía y seguro. La playa más icónica de Tayrona.', long: 'Cabo San Juan es la playa más emblemática del Parque Tayrona, con su famosa roca mirador y aguas turquesas. Transporte ida y vuelta, entrada al parque, guía profesional y seguro incluidos. Una experiencia inolvidable.', includes: ['Transporte ida/vuelta', 'Entrada al Parque Tayrona', 'Guía profesional', 'Seguro'], excludes: ['Almuerzo', 'Bebidas', 'Hamacas/camping'], departure: 'Hotel en Santa Marta', departureTime: '06:30', returnTime: '16:00', duration: '9.5 horas' },
+    'guachaca-buritaca': { short: 'Transporte climatizado, entradas, guía, desayuno, almuerzo y seguro.', long: 'Recorre los ríos y playas de Guachaca y Buritaca, dos joyas escondidas entre la Sierra Nevada y el mar. Incluye desayuno, almuerzo típico, transporte climatizado y guía. Perfecto para quienes buscan naturaleza sin multitudes.', includes: ['Transporte climatizado ida/vuelta', 'Entradas', 'Guía profesional', 'Desayuno', 'Almuerzo', 'Seguro'], excludes: ['Bebidas alcohólicas', 'Propinas'], departure: 'Hotel en Santa Marta', departureTime: '08:30', returnTime: '17:00', duration: '8.5 horas' },
+    'palomino': { short: 'Transporte climatizado, guía, desayuno, almuerzo y seguro.', long: 'Palomino es donde el río se encuentra con el mar Caribe. Disfruta del famoso tubing por el río Palomino, playas paradisíacas y la mejor gastronomía local. Transporte climatizado, desayuno, almuerzo y guía incluidos.', includes: ['Transporte climatizado ida/vuelta', 'Guía profesional', 'Desayuno', 'Almuerzo', 'Seguro'], excludes: ['Tubing (pago aparte)', 'Bebidas alcohólicas', 'Propinas'], departure: 'Hotel en Santa Marta', departureTime: '08:30', returnTime: '16:00', duration: '7.5 horas' },
+    'cabo-de-la-vela': { short: 'Tour de 2 días: transporte, guía, hospedaje en ranchería, 3 comidas.', long: 'Viaja al punto más norte de Sudamérica. Cabo de la Vela en La Guajira es un desierto que se encuentra con el mar Caribe. Incluye transporte climatizado, guía, hospedaje en ranchería Wayúu, desayuno, almuerzo y cena del primer día, más desayuno y almuerzo del segundo día. Una experiencia cultural única.', includes: ['Transporte climatizado ida/vuelta', 'Guía profesional', 'Hospedaje en ranchería Wayúu', 'Desayuno día 1 y 2', 'Almuerzo día 1 y 2', 'Cena día 1'], excludes: ['Bebidas', 'Propinas', 'Artesanías'], departure: 'Hotel en Santa Marta', departureTime: '04:00', returnTime: '18:00 (día siguiente)', duration: '2 días' },
+    'chiva-rumbera': { short: 'City tour rumbero por Santa Marta en la clásica chiva colombiana, 2 horas.', long: '¡La mejor rumba de Santa Marta sobre ruedas! Recorre la ciudad en la clásica chiva colombiana con música en vivo, luces y la mejor energía del Caribe. Dos horas de puro goce. Disponible en horario nocturno.', includes: ['Recorrido en chiva por la ciudad', 'Música en vivo', '2 horas de recorrido'], excludes: ['Bebidas', 'Comida'], departure: 'Centro de Santa Marta', departureTime: '20:00', returnTime: '22:00', duration: '2 horas' },
+    'playa-cristal-lancha': { short: 'Acceso directo en lancha a Playa Cristal, entrada Parque Tayrona y guía.', long: 'Llega directo a Playa Cristal en lancha desde Taganga, sin caminata. La forma más rápida y cómoda de disfrutar esta playa de aguas cristalinas. Entrada al Parque Tayrona y guía incluidos.', includes: ['Transporte en lancha ida/vuelta', 'Entrada al Parque Tayrona', 'Guía profesional'], excludes: ['Almuerzo', 'Bebidas', 'Equipo de snorkel'], departure: 'Taganga', departureTime: '08:30', returnTime: '16:00', duration: '7.5 horas' },
+    'cabo-san-juan-lancha': { short: 'Acceso directo en lancha a Cabo San Juan, entrada Parque Tayrona, guía y seguro.', long: 'La forma más exclusiva de llegar a Cabo San Juan: en lancha directa desde Taganga. Sin caminatas, sin filas. Entrada al Parque Tayrona, guía profesional y seguro incluidos. Disfruta de la playa más icónica de Tayrona con más tiempo.', includes: ['Transporte en lancha ida/vuelta', 'Entrada al Parque Tayrona', 'Guía profesional', 'Seguro'], excludes: ['Almuerzo', 'Bebidas', 'Hamacas'], departure: 'Taganga', departureTime: '08:30', returnTime: '16:00', duration: '7.5 horas' },
+  };
+
+  const tourInfo = tourDescriptions[t.slug];
+
   return {
     ...t,
-    shortDescription: `Disfruta de ${t.name} con ${t.operator.companyName}. Una experiencia inolvidable en el Caribe colombiano.`,
-    description: `${t.name} es una experiencia única organizada por ${t.operator.companyName}. Disfruta de paisajes increíbles, guía profesional, transporte incluido y todas las comodidades para un día perfecto. Ideal para familias, parejas y grupos de amigos que buscan descubrir lo mejor del Caribe colombiano en un ambiente seguro y acogedor.`,
+    shortDescription: tourInfo?.short || `Disfruta de ${t.name} con ${t.operator.companyName}. Una experiencia inolvidable en el Caribe colombiano.`,
+    description: tourInfo?.long || `${t.name} es una experiencia única organizada por ${t.operator.companyName}. Disfruta de paisajes increíbles, guía profesional, transporte incluido y todas las comodidades para un día perfecto. Ideal para familias, parejas y grupos de amigos que buscan descubrir lo mejor del Caribe colombiano en un ambiente seguro y acogedor.`,
     priceChild: Math.round(t.priceAdult * 0.7),
     maxPeople: 20,
-    departurePoint: 'Hotel en Santa Marta',
-    departureTime: '07:00',
-    returnTime: '17:00',
+    departurePoint: tourInfo?.departure || 'Hotel en Santa Marta',
+    departureTime: tourInfo?.departureTime || '07:00',
+    returnTime: tourInfo?.returnTime || '17:00',
     location: 'Santa Marta, Magdalena',
-    duration: '10 horas',
+    duration: tourInfo?.duration || '10 horas',
     durationHours: 10,
-    includes: ['Transporte ida y vuelta', 'Guía bilingüe', 'Almuerzo típico', 'Equipo de snorkel', 'Hidratación', 'Seguro del viaje'],
-    excludes: ['Bebidas alcohólicas', 'Propinas', 'Gastos personales'],
+    includes: tourInfo?.includes || ['Transporte ida y vuelta', 'Guía bilingüe', 'Almuerzo típico', 'Equipo de snorkel', 'Hidratación', 'Seguro del viaje'],
+    excludes: tourInfo?.excludes || ['Bebidas alcohólicas', 'Propinas', 'Gastos personales'],
     restrictions: ['No recomendado para mujeres embarazadas', 'Menores acompañados por un adulto'],
     observations: 'Llevar bloqueador solar, gorra y traje de baño. Punto de encuentro confirmado por WhatsApp.',
     galleryUrls: gallery,
