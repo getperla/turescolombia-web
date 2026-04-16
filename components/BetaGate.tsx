@@ -101,7 +101,10 @@ export default function BetaGate({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-pulse"><Logo size="lg" /></div>
+        <div className="text-center">
+          <div className="flex justify-center mb-4"><Logo size="xl" showText={false} spinning /></div>
+          <p className="text-sm font-semibold" style={{ color: '#C9A05C' }}>Cargando...</p>
+        </div>
       </div>
     );
   }
