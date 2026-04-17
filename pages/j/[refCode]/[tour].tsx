@@ -1,18 +1,16 @@
-import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { getTourBySlug, getTour, Tour, Jalador } from '../../../lib/api';
 import api from '../../../lib/api';
 import Layout from '../../../components/Layout';
 
-type Props = {
-  tour: Tour;
-  jalador: Jalador | null;
-  refCode: string;
-};
-
-export default function JaladorTourLink({ tour, jalador, refCode }: Props) {
+export default function JaladorTourLink() {
+  const router = useRouter();
+  const [tour, setTour] = useState<Tour | null>(null);
+  const [jalador, setJalador] = useState<Jalador | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [numAdults, setNumAdults] = useState(1);
   const [numChildren, setNumChildren] = useState(0);
   const [tourDate, setTourDate] = useState('');
@@ -23,6 +21,60 @@ export default function JaladorTourLink({ tour, jalador, refCode }: Props) {
   const [message, setMessage] = useState('');
   const [bookingResult, setBookingResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+  const refCode = (router.query.refCode as string) || '';
+
+  // Fetch tour y jalador client-side (para que el mock funcione)
+  useEffect(() => {
+    const tourParam = router.query.tour as string | undefined;
+    if (!tourParam) return;
+    const isNumeric = /^\d+$/.test(tourParam);
+    const fetcher = isNumeric ? getTour(Number(tourParam)) : getTourBySlug(tourParam);
+    fetcher
+      .then((t) => setTour(t))
+      .catch(() => setNotFound(true));
+  }, [router.query.tour]);
+
+  useEffect(() => {
+    if (!refCode) return;
+    api.get(`/users/jaladores/ref/${refCode}`)
+      .then((r) => setJalador(r.data))
+      .catch(() => {});
+  }, [refCode]);
+
+  if (notFound) {
+    return (
+      <Layout>
+        <div className="max-w-3xl mx-auto py-16 px-4 text-center">
+          <div className="text-6xl mb-4">🏝️</div>
+          <h1 className="font-bold text-3xl mb-2" style={{ color: '#0A1628' }}>
+            Playa no <em style={{ color: '#F5882A' }}>encontrada</em>
+          </h1>
+          <p className="mb-6" style={{ color: '#C9A05C' }}>
+            Parece que esta ruta no existe. Pero hay muchos tours increibles esperandote.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Link href="/explorar" className="px-6 py-3 rounded-lg font-semibold text-white" style={{ background: '#F5882A' }}>Explorar tours</Link>
+            <Link href="/" className="px-6 py-3 rounded-lg font-semibold border" style={{ borderColor: '#F5882A', color: '#0D5C8A' }}>Ir al inicio</Link>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!tour) {
+    return (
+      <Layout>
+        <div className="max-w-5xl mx-auto px-4 pt-6">
+          <div className="animate-pulse space-y-3">
+            <div className="h-56 rounded-xl" style={{ background: '#F0F0F0' }} />
+            <div className="h-6 w-1/2 rounded" style={{ background: '#F0F0F0' }} />
+            <div className="h-4 w-1/3 rounded" style={{ background: '#F0F0F0' }} />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   const totalPrice = (tour.priceAdult * numAdults) + ((tour.priceChild || tour.priceAdult * 0.7) * numChildren);
 
@@ -291,24 +343,3 @@ export default function JaladorTourLink({ tour, jalador, refCode }: Props) {
     </Layout>
   );
 }
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { refCode, tour: tourParam } = context.params as { refCode: string; tour: string };
-
-  try {
-    // Fetch tour
-    const isNumeric = /^\d+$/.test(tourParam);
-    const tour = isNumeric ? await getTour(Number(tourParam)) : await getTourBySlug(tourParam);
-
-    // Fetch jalador info
-    let jalador: Jalador | null = null;
-    try {
-      const { data } = await (await import('../../../lib/api')).default.get(`/users/jaladores/ref/${refCode}`);
-      jalador = data;
-    } catch {}
-
-    return { props: { tour, jalador, refCode } };
-  } catch {
-    return { notFound: true };
-  }
-};

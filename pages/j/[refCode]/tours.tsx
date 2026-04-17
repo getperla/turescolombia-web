@@ -1,17 +1,35 @@
-import { GetServerSideProps } from 'next';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { getTours, getCategories, Tour, Category, Jalador } from '../../../lib/api';
 import api from '../../../lib/api';
 import Layout from '../../../components/Layout';
 
-type Props = {
-  tours: Tour[];
-  categories: Category[];
-  jalador: Jalador | null;
-  refCode: string;
-};
+export default function JaladorTours() {
+  const router = useRouter();
+  const refCode = (router.query.refCode as string) || '';
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [jalador, setJalador] = useState<Jalador | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default function JaladorTours({ tours, categories, jalador, refCode }: Props) {
+  useEffect(() => {
+    Promise.all([
+      getTours({ sortBy: 'rating', limit: '20' }),
+      getCategories(),
+    ]).then(([toursRes, cats]) => {
+      setTours(toursRes.data || []);
+      setCategories(cats || []);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!refCode) return;
+    api.get(`/users/jaladores/ref/${refCode}`)
+      .then((r) => setJalador(r.data))
+      .catch(() => {});
+  }, [refCode]);
+
   return (
     <Layout>
       {/* Header con info del jalador */}
@@ -50,72 +68,59 @@ export default function JaladorTours({ tours, categories, jalador, refCode }: Pr
           </div>
         )}
 
-        {/* Grid de tours */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tours.map((tour) => (
-            <Link key={tour.id} href={`/j/${refCode}/${tour.slug}`} className="card group">
-              <div className="h-48 relative overflow-hidden">
-                {tour.coverImageUrl ? (
-                  <img src={tour.coverImageUrl} alt={tour.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                ) : (
-                  <div className="w-full h-full bg-tropical-gradient"></div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                <div className="absolute bottom-3 left-4 right-4">
-                  <h4 className="text-white font-bold text-base drop-shadow-lg">{tour.name}</h4>
-                </div>
-                {tour.avgRating > 0 && (
-                  <div className="absolute top-3 right-3 bg-sand-400 text-gray-900 text-xs font-bold px-2.5 py-1 rounded-xl">
-                    ⭐ {tour.avgRating.toFixed(1)}
-                  </div>
-                )}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1,2,3,4,5,6].map(i => (
+              <div key={i} className="animate-pulse">
+                <div className="rounded-xl h-48 mb-2" style={{ background: '#F0F0F0' }}></div>
+                <div className="h-4 rounded w-3/4 mb-1" style={{ background: '#F0F0F0' }}></div>
               </div>
-              <div className="p-5">
-                <p className="text-gray-500 text-sm line-clamp-2 mb-3">{tour.shortDescription || tour.description.substring(0, 80) + '...'}</p>
-                <div className="text-xs text-gray-400 mb-3">🕐 {tour.duration} · 📍 {tour.departurePoint}</div>
-                <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                  <div>
-                    <span className="text-xs text-gray-400">Desde</span>
-                    <span className="block text-xl font-bold text-primary-600">${tour.priceAdult.toLocaleString()}</span>
-                  </div>
-                  <span className="bg-primary-500 text-white text-sm font-bold px-4 py-2 rounded-xl group-hover:bg-primary-600 transition-colors">
-                    Reservar
-                  </span>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {tours.length === 0 && (
+            ))}
+          </div>
+        ) : tours.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-5xl mb-3">🏝️</div>
             <p className="text-gray-500 text-lg">No hay tours disponibles en este momento</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tours.map((tour) => (
+              <Link key={tour.id} href={`/j/${refCode}/${tour.slug}`} className="card group">
+                <div className="h-48 relative overflow-hidden">
+                  {tour.coverImageUrl ? (
+                    <img src={tour.coverImageUrl} alt={tour.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  ) : (
+                    <div className="w-full h-full bg-tropical-gradient"></div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                  <div className="absolute bottom-3 left-4 right-4">
+                    <h4 className="text-white font-bold text-base drop-shadow-lg">{tour.name}</h4>
+                  </div>
+                  {tour.avgRating > 0 && (
+                    <div className="absolute top-3 right-3 bg-sand-400 text-gray-900 text-xs font-bold px-2.5 py-1 rounded-xl">
+                      ⭐ {tour.avgRating.toFixed(1)}
+                    </div>
+                  )}
+                </div>
+                <div className="p-5">
+                  <p className="text-gray-500 text-sm line-clamp-2 mb-3">{tour.shortDescription || tour.description?.substring(0, 80) + '...'}</p>
+                  <div className="text-xs text-gray-400 mb-3">🕐 {tour.duration} · 📍 {tour.departurePoint}</div>
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                    <div>
+                      <span className="text-xs text-gray-400">Desde</span>
+                      <span className="block text-xl font-bold text-primary-600">${tour.priceAdult.toLocaleString()}</span>
+                    </div>
+                    <span className="bg-primary-500 text-white text-sm font-bold px-4 py-2 rounded-xl group-hover:bg-primary-600 transition-colors">
+                      Reservar
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </main>
     </Layout>
   );
 }
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { refCode } = context.params as { refCode: string };
-
-  try {
-    const [toursRes, categories] = await Promise.all([
-      getTours({ sortBy: 'rating', limit: '20' }),
-      getCategories(),
-    ]);
-
-    let jalador: Jalador | null = null;
-    try {
-      const { data } = await api.get(`/users/jaladores/ref/${refCode}`);
-      jalador = data;
-    } catch {}
-
-    return { props: { tours: toursRes.data || [], categories: categories || [], jalador, refCode } };
-  } catch {
-    return { props: { tours: [], categories: [], jalador: null, refCode } };
-  }
-};
