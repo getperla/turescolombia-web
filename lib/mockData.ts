@@ -84,15 +84,15 @@ export const mockTours: MockTour[] = [
   { id: 6, name: 'Sendero Sierra Nevada', slug: 'sendero-sierra-nevada', priceAdult: 220000, coverImageUrl: '/tours/SENDERO%20CAMINATA%20SIERRA%20NEVADA.jpg', totalBookings: 34, avgRating: 4.5, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
   { id: 7, name: 'Tour Centro Histórico', slug: 'centro-historico', priceAdult: 45000, coverImageUrl: '/tours/CENTRO%20HISTORICO%20DE%20SANTA%20MARTA%201.jpg', totalBookings: 95, avgRating: 4.4, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
   { id: 8, name: 'Pesca Artesanal Taganga', slug: 'pesca-taganga', priceAdult: 85000, coverImageUrl: '/tours/PESCA%20ARTESANAL%20TAGANGA.jpg', totalBookings: 42, avgRating: 4.3, status: 'active', operator: { id: 4, companyName: 'Santa Marta Diving' } },
-  { id: 9, name: 'Bahía Concha', slug: 'bahia-concha', priceAdult: 115000, coverImageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400', totalBookings: 78, avgRating: 4.6, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
-  { id: 10, name: 'Playa Cristal', slug: 'playa-cristal', priceAdult: 160000, coverImageUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400', totalBookings: 156, avgRating: 4.7, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
-  { id: 11, name: 'Cabo San Juan', slug: 'cabo-san-juan', priceAdult: 160000, coverImageUrl: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400', totalBookings: 134, avgRating: 4.8, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
-  { id: 12, name: 'Guachaca y Buritaca', slug: 'guachaca-buritaca', priceAdult: 120000, coverImageUrl: 'https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?w=400', totalBookings: 45, avgRating: 4.5, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
-  { id: 13, name: 'Palomino', slug: 'palomino', priceAdult: 120000, coverImageUrl: 'https://images.unsplash.com/photo-1559554704-d4934ae2c12b?w=400', totalBookings: 67, avgRating: 4.6, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
-  { id: 14, name: 'Cabo de la Vela', slug: 'cabo-de-la-vela', priceAdult: 350000, coverImageUrl: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400', totalBookings: 23, avgRating: 4.9, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
-  { id: 15, name: 'Chiva Rumbera', slug: 'chiva-rumbera', priceAdult: 25000, coverImageUrl: 'https://images.unsplash.com/photo-1514222134-b57cbb8ce073?w=400', totalBookings: 189, avgRating: 4.3, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
-  { id: 16, name: 'Playa Cristal en Lancha', slug: 'playa-cristal-lancha', priceAdult: 160000, coverImageUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400', totalBookings: 89, avgRating: 4.7, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
-  { id: 17, name: 'Cabo San Juan en Lancha', slug: 'cabo-san-juan-lancha', priceAdult: 200000, coverImageUrl: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400', totalBookings: 56, avgRating: 4.8, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
+  { id: 9, name: 'Bahía Concha', slug: 'bahia-concha', priceAdult: 115000, coverImageUrl: '/tours/BAHIA%20CONCHA%20UNO.jpg', totalBookings: 78, avgRating: 4.6, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
+  { id: 10, name: 'Playa Cristal', slug: 'playa-cristal', priceAdult: 160000, coverImageUrl: '/tours/PLAYA%20CRISTAL%20UNO.jpg', totalBookings: 156, avgRating: 4.7, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
+  { id: 11, name: 'Cabo San Juan', slug: 'cabo-san-juan', priceAdult: 160000, coverImageUrl: '/tours/CABO%20SAN%20JUAN%20UNO.jpg', totalBookings: 134, avgRating: 4.8, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
+  { id: 12, name: 'Guachaca y Buritaca', slug: 'guachaca-buritaca', priceAdult: 120000, coverImageUrl: '/tours/BURITACA%20UNO.jpg', totalBookings: 45, avgRating: 4.5, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
+  { id: 13, name: 'Palomino', slug: 'palomino', priceAdult: 120000, coverImageUrl: '/tours/PALOMINO%20UNO.png', totalBookings: 67, avgRating: 4.6, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
+  { id: 14, name: 'Cabo de la Vela', slug: 'cabo-de-la-vela', priceAdult: 350000, coverImageUrl: '/tours/CABO%20DE%20LA%20VELA%20UNO.png', totalBookings: 23, avgRating: 4.9, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
+  { id: 15, name: 'Chiva Rumbera', slug: 'chiva-rumbera', priceAdult: 25000, coverImageUrl: '/tours/CHIVA%20RUMBERA%20UNO.jpg', totalBookings: 189, avgRating: 4.3, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
+  { id: 16, name: 'Playa Cristal en Lancha', slug: 'playa-cristal-lancha', priceAdult: 160000, coverImageUrl: '/tours/PLAYA%20CRISTAL%20EN%20LANCHA%20UNO.jpg', totalBookings: 89, avgRating: 4.7, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
+  { id: 17, name: 'Cabo San Juan en Lancha', slug: 'cabo-san-juan-lancha', priceAdult: 200000, coverImageUrl: '/tours/CABO%20SAN%20JUAN%20EN%20LANCHA.jfif', totalBookings: 56, avgRating: 4.8, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
 ];
 
 export const mockBookings: MockBooking[] = [
@@ -256,7 +256,7 @@ export function isDemoMode(): boolean {
 
 // Galerias por tour — primera es la cover, despues adicionales
 const tourGalleries: Record<string, string[]> = {
-  'centro-historico': ['/tours/CENTRO%20HISTORICO%20DE%20SANTA%20MARTA%201.jpg', '/tours/CENTRO%20HISTORICO%20DE%20SANTA%20MARTA%202.jpg'],
+  // Tours con foto unica
   'tayrona-full-day': ['/tours/TAYRONA%20FULL%20DAY.jpg'],
   'playa-blanca-rodadero': ['/tours/PLAYA%20BLANCA%20RODADERRO.jpg'],
   'pesca-taganga': ['/tours/PESCA%20ARTESANAL%20TAGANGA.jpg'],
@@ -264,6 +264,47 @@ const tourGalleries: Record<string, string[]> = {
   'minca-cascadas-cafe': ['/tours/MINCA%20CASCADAS.jpg'],
   'isla-aguja-snorkel': ['/tours/ISLA%20AGUJA%20SNORKEL.jpg'],
   'sendero-sierra-nevada': ['/tours/SENDERO%20CAMINATA%20SIERRA%20NEVADA.jpg'],
+  // Tours con multiples fotos
+  'centro-historico': [
+    '/tours/CENTRO%20HISTORICO%20DE%20SANTA%20MARTA%201.jpg',
+    '/tours/CENTRO%20HISTORICO%20DE%20SANTA%20MARTA%202.jpg',
+  ],
+  'bahia-concha': [
+    '/tours/BAHIA%20CONCHA%20UNO.jpg',
+    '/tours/BAHIA%20CONCHA%20DOS.jpg',
+  ],
+  'playa-cristal': [
+    '/tours/PLAYA%20CRISTAL%20UNO.jpg',
+    '/tours/PLAYA%20CRISTAL%20DOS.jpg',
+  ],
+  'cabo-san-juan': [
+    '/tours/CABO%20SAN%20JUAN%20UNO.jpg',
+    '/tours/CABO%20SAN%20JUAN%20DOS.jpg',
+  ],
+  'guachaca-buritaca': [
+    '/tours/BURITACA%20UNO.jpg',
+    '/tours/BURITACA%20DOS.jpg',
+  ],
+  'palomino': [
+    '/tours/PALOMINO%20UNO.png',
+    '/tours/PALOMINO%20DOS.jpg',
+    '/tours/PALOMINO%20TRES.jpg',
+  ],
+  'cabo-de-la-vela': [
+    '/tours/CABO%20DE%20LA%20VELA%20UNO.png',
+    '/tours/CABO%20DE%20LA%20VELA%20DOS.jfif',
+  ],
+  'chiva-rumbera': [
+    '/tours/CHIVA%20RUMBERA%20UNO.jpg',
+    '/tours/CHIVA%20RUMBERA%20DOS.jpg',
+  ],
+  'playa-cristal-lancha': [
+    '/tours/PLAYA%20CRISTAL%20EN%20LANCHA%20UNO.jpg',
+  ],
+  'cabo-san-juan-lancha': [
+    '/tours/CABO%20SAN%20JUAN%20EN%20LANCHA.jfif',
+    '/tours/CABO%20SAN%20JUAN%20EN%20LANCHA%20DOS.jpg',
+  ],
 };
 
 // Adds all the extra fields that the tour detail page expects.
