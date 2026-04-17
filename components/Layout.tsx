@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
-import api from '../lib/api';
+import api, { invalidateDemoModeCache } from '../lib/api';
 import Logo from './Logo';
 import { isBetaActive } from './BetaGate';
 import { useFavorites } from '../lib/useFavorites';
@@ -20,6 +20,7 @@ export default function Layout({ children, hideSearch }: { children: React.React
     localStorage.removeItem('turescol_refresh');
     localStorage.removeItem('turescol_user');
     localStorage.removeItem('laperla_beta');
+    invalidateDemoModeCache();
     window.location.href = '/';
   };
 

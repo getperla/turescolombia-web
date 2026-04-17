@@ -96,7 +96,7 @@ const JaladorDashboard = () => {
                 <Link href={`/tour/${tour.slug}`} className="block">
                   <div className="relative aspect-[4/3] overflow-hidden">
                     {tour.coverImageUrl ? (
-                      <img src={tour.coverImageUrl} alt={tour.name} className="w-full h-full object-cover" />
+                      <img src={tour.coverImageUrl} alt={tour.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                     ) : (
                       <div className="w-full h-full" style={{ background: '#F0F0F0' }}></div>
                     )}

@@ -42,9 +42,13 @@ export default function TourDetail() {
       .catch(() => setNotFound(true));
   }, [router.query.id]);
 
+  // Lazy load de reviews — retrasado 800ms para priorizar rendering inicial
   useEffect(() => {
     if (!tour) return;
-    getTourReviews(tour.id).then(res => { setReviews(res.data || []); setReviewsTotal(res.total || 0); }).catch(() => {});
+    const t = setTimeout(() => {
+      getTourReviews(tour.id).then(res => { setReviews(res.data || []); setReviewsTotal(res.total || 0); }).catch(() => {});
+    }, 800);
+    return () => clearTimeout(t);
   }, [tour]);
 
   if (notFound) {

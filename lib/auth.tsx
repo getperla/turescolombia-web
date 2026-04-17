@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/router';
-import api from './api';
+import api, { invalidateDemoModeCache } from './api';
 
 export type AuthUser = {
   id: number;
@@ -59,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('turescol_refresh');
     localStorage.removeItem('turescol_user');
     localStorage.removeItem('laperla_beta');
+    invalidateDemoModeCache();
     setUser(null);
     // Hard reload to reset the whole app state and re-show BetaGate
     window.location.href = '/';

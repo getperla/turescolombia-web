@@ -1,7 +1,20 @@
 import axios from 'axios';
-import { getMockResponse, isDemoMode } from './mockData';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+
+// Cache global del estado demo — evita leer localStorage en cada request
+let cachedDemoMode: boolean | null = null;
+
+export function invalidateDemoModeCache() {
+  cachedDemoMode = null;
+}
+
+function isDemoModeFast(): boolean {
+  if (cachedDemoMode !== null) return cachedDemoMode;
+  if (typeof window === 'undefined') return false;
+  cachedDemoMode = localStorage.getItem('turescol_token') === 'beta-demo-token';
+  return cachedDemoMode;
+}
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -9,14 +22,16 @@ const api = axios.create({
 });
 
 // Interceptor para agregar token de auth y manejar modo demo
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('turescol_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Demo mode: short-circuit with a fake adapter that returns mock data
-    if (isDemoMode()) {
+    // Demo mode: carga dinamica de mockData SOLO si estamos en demo
+    // Esto evita que mockData.ts (29KB) se bundle en todas las paginas
+    if (isDemoModeFast()) {
+      const { getMockResponse } = await import('./mockData');
       config.adapter = async (cfg) => {
         const url = cfg.url || '';
         const method = cfg.method || 'get';

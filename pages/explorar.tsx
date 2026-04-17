@@ -23,6 +23,7 @@ export default function Explorar() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [priceRange, setPriceRange] = useState(0);
   const [sortBy, setSortBy] = useState<'rating' | 'price-asc' | 'price-desc'>('rating');
@@ -39,10 +40,16 @@ export default function Explorar() {
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
+  // Debounce de busqueda — evita filtrar en cada tecla (300ms)
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
   const filteredTours = useMemo(() => {
-    let result = [...allTours];
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+    let result = allTours;
+    if (debouncedQuery.trim()) {
+      const q = debouncedQuery.toLowerCase();
       result = result.filter(t =>
         t.name.toLowerCase().includes(q) ||
         t.operator.companyName.toLowerCase().includes(q) ||
@@ -55,11 +62,13 @@ export default function Explorar() {
     }
     const range = priceRanges[priceRange];
     result = result.filter(t => t.priceAdult >= range.min && t.priceAdult < range.max);
-    if (sortBy === 'price-asc') result.sort((a, b) => a.priceAdult - b.priceAdult);
-    else if (sortBy === 'price-desc') result.sort((a, b) => b.priceAdult - a.priceAdult);
-    else result.sort((a, b) => b.avgRating - a.avgRating);
-    return result;
-  }, [allTours, searchQuery, activeCategory, priceRange, sortBy]);
+    // Sort — siempre devolvemos array nuevo para no mutar allTours
+    const sorted = [...result];
+    if (sortBy === 'price-asc') sorted.sort((a, b) => a.priceAdult - b.priceAdult);
+    else if (sortBy === 'price-desc') sorted.sort((a, b) => b.priceAdult - a.priceAdult);
+    else sorted.sort((a, b) => b.avgRating - a.avgRating);
+    return sorted;
+  }, [allTours, debouncedQuery, activeCategory, priceRange, sortBy]);
 
   return (
     <Layout>
@@ -201,7 +210,7 @@ export default function Explorar() {
                 <Link href={`/tour/${tour.slug}`} className="block">
                   <div className="relative rounded-xl overflow-hidden aspect-[4/3] mb-2">
                     {tour.coverImageUrl ? (
-                      <img src={tour.coverImageUrl} alt={tour.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                      <img src={tour.coverImageUrl} alt={tour.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" decoding="async" />
                     ) : (
                       <div className="w-full h-full" style={{ background: '#F0F0F0' }}></div>
                     )}

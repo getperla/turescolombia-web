@@ -61,7 +61,7 @@ export default function Favoritos() {
                 <Link href={`/tour/${tour.slug}`} className="block">
                   <div className="relative rounded-xl overflow-hidden aspect-[4/3] mb-2">
                     {tour.coverImageUrl ? (
-                      <img src={tour.coverImageUrl} alt={tour.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                      <img src={tour.coverImageUrl} alt={tour.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" decoding="async" />
                     ) : (
                       <div className="w-full h-full" style={{ background: '#F0F0F0' }}></div>
                     )}

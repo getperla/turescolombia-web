@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Head from 'next/head';
 import api from '../../lib/api';
 import Layout from '../../components/Layout';
@@ -35,7 +35,8 @@ export default function AdminDashboard() {
     api.get('/notifications').then(r => { setNotifications(r.data || []); setUnread((r.data || []).filter((n: any) => !n.isRead).length); }).catch(() => {});
   }, []);
 
-  useEffect(() => { if (authorized) { refresh(); const iv = setInterval(refresh, 30000); return () => clearInterval(iv); } }, [authorized, refresh]);
+  // Auto-refresh cada 60s (antes 30s) — reduce carga y re-renders del chart
+  useEffect(() => { if (authorized) { refresh(); const iv = setInterval(refresh, 60000); return () => clearInterval(iv); } }, [authorized, refresh]);
 
   const loadList = async (type: Tab) => {
     setLoading(true);
@@ -166,8 +167,11 @@ export default function AdminDashboard() {
     return <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{ background: s.bg, color: s.c }}>{status}</span>;
   };
 
-  // Chart data from bookings breakdown
-  const chartData = data?.bookingsByStatus?.map((s: any) => ({ name: s.status, count: s.count })) || [];
+  // Chart data from bookings breakdown — memoizado para evitar recrear array en cada render
+  const chartData = useMemo(
+    () => data?.bookingsByStatus?.map((s: any) => ({ name: s.status, count: s.count })) || [],
+    [data?.bookingsByStatus]
+  );
 
   return (
     <Layout>
