@@ -88,8 +88,8 @@ export const mockTours: MockTour[] = [
   { id: 10, name: 'Playa Cristal', slug: 'playa-cristal', priceAdult: 160000, coverImageUrl: '/tours/PLAYA%20CRISTAL%20UNO.jpg', totalBookings: 156, avgRating: 4.7, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
   { id: 11, name: 'Cabo San Juan', slug: 'cabo-san-juan', priceAdult: 160000, coverImageUrl: '/tours/CABO%20SAN%20JUAN%20UNO.jpg', totalBookings: 134, avgRating: 4.8, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
   { id: 12, name: 'Guachaca y Buritaca', slug: 'guachaca-buritaca', priceAdult: 120000, coverImageUrl: '/tours/BURITACA%20UNO.jpg', totalBookings: 45, avgRating: 4.5, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
-  { id: 13, name: 'Palomino', slug: 'palomino', priceAdult: 120000, coverImageUrl: '/tours/PALOMINO%20UNO.png', totalBookings: 67, avgRating: 4.6, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
-  { id: 14, name: 'Cabo de la Vela', slug: 'cabo-de-la-vela', priceAdult: 350000, coverImageUrl: '/tours/CABO%20DE%20LA%20VELA%20UNO.png', totalBookings: 23, avgRating: 4.9, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
+  { id: 13, name: 'Palomino', slug: 'palomino', priceAdult: 120000, coverImageUrl: '/tours/PALOMINO%20UNO.jpg', totalBookings: 67, avgRating: 4.6, status: 'active', operator: { id: 2, companyName: 'Sierra Aventuras' } },
+  { id: 14, name: 'Cabo de la Vela', slug: 'cabo-de-la-vela', priceAdult: 350000, coverImageUrl: '/tours/CABO%20DE%20LA%20VELA%20UNO.jpg', totalBookings: 23, avgRating: 4.9, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
   { id: 15, name: 'Chiva Rumbera', slug: 'chiva-rumbera', priceAdult: 25000, coverImageUrl: '/tours/CHIVA%20RUMBERA%20UNO.jpg', totalBookings: 189, avgRating: 4.3, status: 'active', operator: { id: 1, companyName: 'Tours Caribe SAS' } },
   { id: 16, name: 'Playa Cristal en Lancha', slug: 'playa-cristal-lancha', priceAdult: 160000, coverImageUrl: '/tours/PLAYA%20CRISTAL%20EN%20LANCHA%20UNO.jpg', totalBookings: 89, avgRating: 4.7, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
   { id: 17, name: 'Cabo San Juan en Lancha', slug: 'cabo-san-juan-lancha', priceAdult: 200000, coverImageUrl: '/tours/CABO%20SAN%20JUAN%20EN%20LANCHA.jfif', totalBookings: 56, avgRating: 4.8, status: 'active', operator: { id: 3, companyName: 'Tayrona Expeditions' } },
@@ -286,12 +286,12 @@ const tourGalleries: Record<string, string[]> = {
     '/tours/BURITACA%20DOS.jpg',
   ],
   'palomino': [
-    '/tours/PALOMINO%20UNO.png',
+    '/tours/PALOMINO%20UNO.jpg',
     '/tours/PALOMINO%20DOS.jpg',
     '/tours/PALOMINO%20TRES.jpg',
   ],
   'cabo-de-la-vela': [
-    '/tours/CABO%20DE%20LA%20VELA%20UNO.png',
+    '/tours/CABO%20DE%20LA%20VELA%20UNO.jpg',
     '/tours/CABO%20DE%20LA%20VELA%20DOS.jfif',
   ],
   'chiva-rumbera': [
