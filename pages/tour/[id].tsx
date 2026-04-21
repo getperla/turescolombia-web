@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { getTourBySlug, getTour, getTourReviews, Tour, ReviewItem } from '../../lib/api';
@@ -151,11 +152,11 @@ export default function TourDetail() {
       <div className="max-w-7xl mx-auto px-4 pt-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 rounded-xl overflow-hidden cursor-pointer" onClick={() => setShowGallery(true)}>
           <div className="md:col-span-2 md:row-span-2 relative aspect-[4/3] md:aspect-auto">
-            {tour.coverImageUrl && <img src={tour.coverImageUrl} alt={tour.name} className="w-full h-full object-cover" />}
+            {tour.coverImageUrl && <Image src={tour.coverImageUrl} alt={tour.name} fill priority sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />}
           </div>
           {allImages.slice(1, 5).map((img, i) => (
             <div key={i} className="hidden md:block relative aspect-[4/3]">
-              <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
+              <Image src={img} alt="" fill sizes="25vw" className="object-cover" />
               {i === 3 && allImages.length > 5 && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                   <span className="text-white font-semibold text-sm">+{allImages.length - 5} fotos</span>
@@ -315,7 +316,7 @@ export default function TourDetail() {
                         <div className="font-bold" style={{ color: '#222' }}>Reserva confirmada</div>
                         <div className="font-mono text-sm font-bold" style={{ color: '#F5882A' }}>{bookingResult.bookingCode}</div>
                       </div>
-                      <img src={qrUrl} alt="QR" className="mx-auto mb-3" style={{ width: 120, height: 120 }} />
+                      <Image src={qrUrl} alt="QR" width={120} height={120} unoptimized className="mx-auto mb-3" />
                       <div className="flex gap-2 mb-3">
                         <a href={googleCalUrl} target="_blank" rel="noopener noreferrer" className="flex-1 py-2 rounded-lg text-xs font-semibold text-center" style={{ background: '#F7F7F7', color: '#222' }}>📅 Calendario</a>
                       </div>
