@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { getTourBySlug, getTour, Tour, Jalador } from '../../../lib/api';
@@ -126,7 +127,7 @@ export default function JaladorTourLink() {
       {/* Hero compacto */}
       <div className="relative h-56 md:h-72 overflow-hidden">
         {tour.coverImageUrl ? (
-          <img src={tour.coverImageUrl} alt={tour.name} className="absolute inset-0 w-full h-full object-cover" />
+          <Image src={tour.coverImageUrl} alt={tour.name} fill priority sizes="100vw" className="object-cover" />
         ) : (
           <div className="absolute inset-0 bg-tropical-gradient"></div>
         )}

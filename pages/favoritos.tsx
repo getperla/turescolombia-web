@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getTours, Tour } from '../lib/api';
 import Layout from '../components/Layout';
 import { useFavorites } from '../lib/useFavorites';
@@ -61,7 +62,7 @@ export default function Favoritos() {
                 <Link href={`/tour/${tour.slug}`} className="block">
                   <div className="relative rounded-xl overflow-hidden aspect-[4/3] mb-2">
                     {tour.coverImageUrl ? (
-                      <img src={tour.coverImageUrl} alt={tour.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" decoding="async" />
+                      <Image src={tour.coverImageUrl} alt={tour.name} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
                     ) : (
                       <div className="w-full h-full" style={{ background: '#F0F0F0' }}></div>
                     )}

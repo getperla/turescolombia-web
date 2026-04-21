@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { getTours, getCategories, Tour, Category, Jalador } from '../../../lib/api';
 import api from '../../../lib/api';
@@ -88,8 +89,8 @@ export default function JaladorTours() {
               <Link key={tour.id} href={`/j/${refCode}/${tour.slug}`} className="card group">
                 <div className="h-48 relative overflow-hidden">
                   {tour.coverImageUrl ? (
-                    <img src={tour.coverImageUrl} alt={tour.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <Image src={tour.coverImageUrl} alt={tour.name} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                      className="object-cover group-hover:scale-110 transition-transform duration-500" />
                   ) : (
                     <div className="w-full h-full bg-tropical-gradient"></div>
                   )}
