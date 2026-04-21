@@ -156,7 +156,7 @@ export default function TourDetail() {
           </div>
           {allImages.slice(1, 5).map((img, i) => (
             <div key={i} className="hidden md:block relative aspect-[4/3]">
-              <Image src={img} alt="" fill sizes="25vw" className="object-cover" />
+              <Image src={img} alt={`${tour.name} — foto ${i + 2}`} fill sizes="25vw" className="object-cover" />
               {i === 3 && allImages.length > 5 && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                   <span className="text-white font-semibold text-sm">+{allImages.length - 5} fotos</span>
@@ -525,7 +525,7 @@ export default function TourDetail() {
           </div>
           <div className="flex-1 flex items-center justify-center px-4">
             <button onClick={() => setGalleryIndex(Math.max(0, galleryIndex - 1))} className="text-white text-3xl px-4 shrink-0">‹</button>
-            <img src={allImages[galleryIndex]} alt="" className="max-h-[80vh] max-w-full object-contain" />
+            <img src={allImages[galleryIndex]} alt={`${tour.name} — foto ${galleryIndex + 1}`} className="max-h-[80vh] max-w-full object-contain" />
             <button onClick={() => setGalleryIndex(Math.min(allImages.length - 1, galleryIndex + 1))} className="text-white text-3xl px-4 shrink-0">›</button>
           </div>
         </div>

@@ -309,7 +309,7 @@ export default function AdminDashboard() {
             {loading ? <Skeleton /> : list.map((t: any) => (
               <div key={t.id} className="flex items-center gap-3 p-3 mb-2 rounded-xl border" style={{ borderColor: '#EBEBEB' }}>
                 <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 relative">
-                  {t.coverImageUrl ? <Image src={t.coverImageUrl} alt="" fill sizes="48px" className="object-cover" /> : <div className="w-full h-full" style={{ background: '#F0F0F0' }}></div>}
+                  {t.coverImageUrl ? <Image src={t.coverImageUrl} alt={t.name} fill sizes="48px" className="object-cover" /> : <div className="w-full h-full" style={{ background: '#F0F0F0' }}></div>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm truncate" style={{ color: '#222' }}>{t.name}</div>
