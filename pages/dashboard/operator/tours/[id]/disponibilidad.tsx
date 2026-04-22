@@ -34,11 +34,6 @@ export default function Disponibilidad() {
   const [endDate, setEndDate] = useState('');
   const [bulkSpots, setBulkSpots] = useState('20');
 
-  useEffect(() => {
-    if (!authorized || !tourId) return;
-    loadData();
-  }, [authorized, tourId]);
-
   const loadData = async () => {
     try {
       const [tourRes, availRes] = await Promise.all([
@@ -47,9 +42,14 @@ export default function Disponibilidad() {
       ]);
       setTourName(tourRes.data.name);
       setSlots(availRes.data || []);
-    } catch {}
+    } catch (e) { console.error('Failed to load tour availability:', e); }
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (!authorized || !tourId) return;
+    loadData();
+  }, [authorized, tourId]);
 
   const handleSingle = async (e: React.FormEvent) => {
     e.preventDefault();

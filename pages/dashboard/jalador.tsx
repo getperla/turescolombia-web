@@ -17,7 +17,7 @@ const JaladorDashboard = () => {
     api.get('/tours', { params: { sortBy: 'price', order: 'desc', limit: '50' } }).then(r => {
       const sorted = (r.data?.data || []).sort((a: Tour, b: Tour) => b.priceAdult - a.priceAdult);
       setTours(sorted);
-    }).catch(() => {});
+    }).catch((e) => console.error('Failed to load tours:', e));
   }, []);
 
   if (error) return (

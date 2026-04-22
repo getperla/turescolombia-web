@@ -47,7 +47,7 @@ export default function TourDetail() {
   useEffect(() => {
     if (!tour) return;
     const t = setTimeout(() => {
-      getTourReviews(tour.id).then(res => { setReviews(res.data || []); setReviewsTotal(res.total || 0); }).catch(() => {});
+      getTourReviews(tour.id).then(res => { setReviews(res.data || []); setReviewsTotal(res.total || 0); }).catch((e) => console.error('Failed to load reviews:', e));
     }, 800);
     return () => clearTimeout(t);
   }, [tour]);

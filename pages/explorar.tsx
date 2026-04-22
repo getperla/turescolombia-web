@@ -38,7 +38,7 @@ export default function Explorar() {
     ]).then(([toursRes, cats]) => {
       setAllTours(toursRes.data || []);
       setCategories(cats || []);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((e) => console.error('Failed to load tours/categories:', e)).finally(() => setLoading(false));
   }, []);
 
   // Debounce de busqueda — evita filtrar en cada tecla (300ms)
