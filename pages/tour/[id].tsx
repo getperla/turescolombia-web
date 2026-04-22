@@ -124,11 +124,11 @@ export default function TourDetail() {
         paymentMethod,
       });
       setBookingResult(data);
-    } catch {
-      setBookingResult({
-        bookingCode: generateReference(),
-        qrCode: `laperla-booking-${Date.now()}`,
-      });
+    } catch (error: any) {
+      setMessage(error.response?.data?.message || 'No pudimos crear la reserva. Intenta de nuevo o contáctanos por WhatsApp.');
+      setPaymentStep('payment');
+      setLoading(false);
+      return;
     }
     setLoading(false);
     setPaymentStep('form');
