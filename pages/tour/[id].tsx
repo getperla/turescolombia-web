@@ -525,6 +525,7 @@ export default function TourDetail() {
           </div>
           <div className="flex-1 flex items-center justify-center px-4">
             <button onClick={() => setGalleryIndex(Math.max(0, galleryIndex - 1))} className="text-white text-3xl px-4 shrink-0">‹</button>
+            {/* eslint-disable-next-line @next/next/no-img-element -- lightbox tiene aspect ratio dinamico + object-contain, next/image requiere width/height conocidos */}
             <img src={allImages[galleryIndex]} alt={`${tour.name} — foto ${galleryIndex + 1}`} className="max-h-[80vh] max-w-full object-contain" />
             <button onClick={() => setGalleryIndex(Math.min(allImages.length - 1, galleryIndex + 1))} className="text-white text-3xl px-4 shrink-0">›</button>
           </div>
