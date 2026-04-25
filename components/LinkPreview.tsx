@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Image from 'next/image';
 import type { Tour } from '../lib/api';
 
@@ -13,7 +14,16 @@ type Props = {
  * abra en WhatsApp/Telegram/etc. Replica el render de OG meta tags que hacen
  * los messengers al pegar un link.
  */
-export default function LinkPreviewModal({ visible, onClose, tour, url }: Props) {
+export default function LinkPreview({ visible, onClose, tour, url }: Props) {
+  useEffect(() => {
+    if (!visible) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [visible, onClose]);
+
   if (!visible) return null;
 
   const domain = (() => {

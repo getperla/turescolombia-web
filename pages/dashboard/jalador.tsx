@@ -4,8 +4,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import api from '../../lib/api';
 import Layout from '../../components/Layout';
-import Toast from '../../components/Toast';
-import LinkPreviewModal from '../../components/LinkPreviewModal';
+import { useToast } from '../../components/Toast';
+import LinkPreview from '../../components/LinkPreview';
 import { shareLink, copyText } from '../../lib/share';
 import { Tour } from '../../lib/api';
 
@@ -13,8 +13,8 @@ const JaladorDashboard = () => {
   const [data, setData] = useState<any>(null);
   const [tours, setTours] = useState<Tour[]>([]);
   const [error, setError] = useState('');
-  const [toast, setToast] = useState<{ msg: string; visible: boolean }>({ msg: '', visible: false });
   const [previewTour, setPreviewTour] = useState<Tour | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     api.get('/dashboard/jalador').then(r => setData(r.data)).catch(() => setError('Inicia sesion como jalador.'));
@@ -23,8 +23,6 @@ const JaladorDashboard = () => {
       setTours(sorted);
     }).catch((e) => console.error('Failed to load tours:', e));
   }, []);
-
-  const showToast = (msg: string) => setToast({ msg, visible: true });
 
   if (error) return (
     <Layout><div className="max-w-3xl mx-auto py-16 px-4 text-center">
@@ -81,13 +79,21 @@ const JaladorDashboard = () => {
 
   const handleCopyTourLink = async (tourUrl: string) => {
     const ok = await copyText(tourUrl);
-    showToast(ok ? '✓ Link copiado' : 'No se pudo copiar');
+    toast(
+      ok
+        ? { message: '✓ Link copiado', type: 'success' }
+        : { message: 'No se pudo copiar', type: 'error' }
+    );
   };
 
   const handleCopyMyLink = async () => {
     const myUrl = `${baseUrl}/j/${jalador.refCode}/tours`;
     const ok = await copyText(myUrl);
-    showToast(ok ? '✓ Tu link de ventas copiado' : 'No se pudo copiar');
+    toast(
+      ok
+        ? { message: '✓ Tu link de ventas copiado', type: 'success' }
+        : { message: 'No se pudo copiar', type: 'error' }
+    );
   };
 
   return (
@@ -209,14 +215,8 @@ const JaladorDashboard = () => {
         </div>
       </div>
 
-      <Toast
-        message={toast.msg}
-        visible={toast.visible}
-        onHide={() => setToast({ msg: '', visible: false })}
-      />
-
       {previewTour && (
-        <LinkPreviewModal
+        <LinkPreview
           visible={!!previewTour}
           onClose={() => setPreviewTour(null)}
           tour={previewTour}
