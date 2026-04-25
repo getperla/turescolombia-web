@@ -4,13 +4,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 import api from '../../lib/api';
 import Layout from '../../components/Layout';
+import Toast from '../../components/Toast';
+import LinkPreviewModal from '../../components/LinkPreviewModal';
+import { shareLink, copyText } from '../../lib/share';
 import { Tour } from '../../lib/api';
 
 const JaladorDashboard = () => {
   const [data, setData] = useState<any>(null);
   const [tours, setTours] = useState<Tour[]>([]);
   const [error, setError] = useState('');
-  const [linkCopied, setLinkCopied] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; visible: boolean }>({ msg: '', visible: false });
+  const [previewTour, setPreviewTour] = useState<Tour | null>(null);
 
   useEffect(() => {
     api.get('/dashboard/jalador').then(r => setData(r.data)).catch(() => setError('Inicia sesion como jalador.'));
@@ -19,6 +23,8 @@ const JaladorDashboard = () => {
       setTours(sorted);
     }).catch((e) => console.error('Failed to load tours:', e));
   }, []);
+
+  const showToast = (msg: string) => setToast({ msg, visible: true });
 
   if (error) return (
     <Layout><div className="max-w-3xl mx-auto py-16 px-4 text-center">
@@ -39,6 +45,50 @@ const JaladorDashboard = () => {
 
   const { jalador, sales, commissions } = data;
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const jaladorFirstName = jalador?.user?.name?.split(' ')[0] || '';
+
+  const buildWaMessage = (tour: Tour, tourUrl: string): string => {
+    const greeting = jaladorFirstName
+      ? `Hola! Soy ${jaladorFirstName}, tu jalador de confianza en Santa Marta`
+      : 'Hola! Te comparto este tour';
+    const desc = (tour as any).shortDescription || '';
+    return [
+      `${greeting} 🏖`,
+      '',
+      `🌴 *${tour.name}*`,
+      desc,
+      '',
+      `💰 $${tour.priceAdult.toLocaleString()} COP por persona`,
+      `⏰ ${tour.duration}`,
+      `📍 Sale desde: ${tour.departurePoint}`,
+      '',
+      '✅ Cupos garantizados',
+      '✅ Pago seguro online',
+      '',
+      '👉 Reserva conmigo aqui:',
+      tourUrl,
+      '',
+      '_Cualquier pregunta, escribeme!_',
+    ].filter(Boolean).join('\n');
+  };
+
+  const handleShareTour = async (tour: Tour, tourUrl: string) => {
+    const text = buildWaMessage(tour, tourUrl);
+    await shareLink({ title: tour.name, text, url: tourUrl });
+    // Nota: si el OS abre share nativo, no mostramos toast (el OS ya da feedback).
+    // Solo mostramos toast si fallamos al fallback de WhatsApp directo.
+  };
+
+  const handleCopyTourLink = async (tourUrl: string) => {
+    const ok = await copyText(tourUrl);
+    showToast(ok ? '✓ Link copiado' : 'No se pudo copiar');
+  };
+
+  const handleCopyMyLink = async () => {
+    const myUrl = `${baseUrl}/j/${jalador.refCode}/tours`;
+    const ok = await copyText(myUrl);
+    showToast(ok ? '✓ Tu link de ventas copiado' : 'No se pudo copiar');
+  };
 
   return (
     <Layout>
@@ -51,9 +101,12 @@ const JaladorDashboard = () => {
             <div className="text-xs font-semibold mb-1" style={{ color: '#717171' }}>Tu link de ventas — {jalador.refCode}</div>
             <code className="text-sm block truncate" style={{ color: '#222' }}>{baseUrl}/j/{jalador.refCode}/tours</code>
           </div>
-          <button onClick={() => { navigator.clipboard.writeText(`${baseUrl}/j/${jalador.refCode}/tours`); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); }}
-            className="shrink-0 px-4 py-2 rounded-lg text-sm font-semibold" style={{ background: linkCopied ? '#222' : '#F5882A', color: 'white' }}>
-            {linkCopied ? '✓' : 'Copiar'}
+          <button
+            onClick={handleCopyMyLink}
+            className="shrink-0 px-4 py-2 rounded-lg text-sm font-semibold"
+            style={{ background: '#F5882A', color: 'white' }}
+          >
+            Copiar
           </button>
         </div>
 
@@ -61,7 +114,7 @@ const JaladorDashboard = () => {
         <div className="relative rounded-2xl p-5 mb-4 overflow-hidden" style={{ background: 'linear-gradient(135deg, #F5882A 0%, #E07020 100%)' }}>
           <div className="absolute top-0 right-0 text-6xl opacity-10">🎉</div>
           <div className="relative">
-            <div className="text-xs font-semibold uppercase tracking-wider text-white/90 mb-1">¡Vas muy bien {data?.jalador?.user?.name?.split(' ')[0] || 'crack'}!</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-white/90 mb-1">¡Vas muy bien {jaladorFirstName || 'crack'}!</div>
             <div className="text-2xl font-bold text-white mb-1">Te has ganado ${Number(commissions.pending).toLocaleString()}</div>
             <div className="text-xs text-white/90">en comisiones este mes 💰 Sigue así</div>
           </div>
@@ -91,7 +144,6 @@ const JaladorDashboard = () => {
           {tours.map((tour) => {
             const commission = Math.round(tour.priceAdult * 0.20);
             const tourUrl = `${baseUrl}/j/${jalador.refCode}/${tour.slug}`;
-            const waMsg = `🏖 *${tour.name}*\n\n${(tour as any).shortDescription || ''}\n\n💰 $${tour.priceAdult.toLocaleString()} COP\n⏰ ${tour.duration}\n📍 ${tour.departurePoint}\n\n👉 Reserva conmigo aquí:\n${tourUrl}\n\n_La Perla — Tours verificados_`;
             return (
               <div key={tour.id} className="rounded-2xl border overflow-hidden hover:shadow-lg transition-shadow" style={{ borderColor: '#EBEBEB' }}>
                 <Link href={`/tour/${tour.slug}`} className="block">
@@ -124,26 +176,29 @@ const JaladorDashboard = () => {
                 {/* Botones de acción */}
                 <div className="flex gap-2 px-4 pb-4">
                   <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      window.open(`https://wa.me/?text=${encodeURIComponent(waMsg)}`, '_blank');
-                    }}
+                    onClick={(e) => { e.preventDefault(); handleShareTour(tour, tourUrl); }}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold text-white"
                     style={{ background: '#25D366' }}
+                    aria-label={`Compartir ${tour.name}`}
                   >
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12a9 9 0 1116.24 5.39L21 22l-4.65-1.71A9 9 0 013 12zm9-7a7 7 0 100 14 7 7 0 100-14zm5 11l-1 .3-3.5-1A4.99 4.99 0 0110 12V8h2v3.59l3 1.62L17 16z" opacity=".95"/></svg>
                     Compartir
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigator.clipboard.writeText(tourUrl);
-                      setLinkCopied(true);
-                      setTimeout(() => setLinkCopied(false), 2000);
-                    }}
+                    onClick={(e) => { e.preventDefault(); setPreviewTour(tour); }}
+                    className="px-3 py-2.5 rounded-lg text-xs font-semibold border"
+                    style={{ borderColor: '#EBEBEB', color: '#222' }}
+                    title="Ver vista previa del link"
+                    aria-label={`Vista previa del link de ${tour.name}`}
+                  >
+                    👁
+                  </button>
+                  <button
+                    onClick={(e) => { e.preventDefault(); handleCopyTourLink(tourUrl); }}
                     className="px-3 py-2.5 rounded-lg text-xs font-semibold border"
                     style={{ borderColor: '#EBEBEB', color: '#222' }}
                     title="Copiar link"
+                    aria-label={`Copiar link de ${tour.name}`}
                   >
                     📋
                   </button>
@@ -153,6 +208,21 @@ const JaladorDashboard = () => {
           })}
         </div>
       </div>
+
+      <Toast
+        message={toast.msg}
+        visible={toast.visible}
+        onHide={() => setToast({ msg: '', visible: false })}
+      />
+
+      {previewTour && (
+        <LinkPreviewModal
+          visible={!!previewTour}
+          onClose={() => setPreviewTour(null)}
+          tour={previewTour}
+          url={`${baseUrl}/j/${jalador.refCode}/${previewTour.slug}`}
+        />
+      )}
     </Layout>
   );
 };
