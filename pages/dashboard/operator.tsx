@@ -22,8 +22,8 @@ export default function OperatorDashboard() {
 
   useEffect(() => {
     if (!authorized) return;
-    api.get('/dashboard/operator').then(r => setData(r.data)).catch(() => {});
-    api.get('/bookings/operator').then(r => setBookings(r.data || [])).catch(() => {});
+    api.get('/dashboard/operator').then(r => setData(r.data)).catch((e) => console.error('Failed to load operator dashboard:', e));
+    api.get('/bookings/operator').then(r => setBookings(r.data || [])).catch((e) => console.error('Failed to load operator bookings:', e));
   }, [authorized]);
 
   const confirmBooking = async (id: number) => {

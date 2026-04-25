@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '../components/Layout';
-import api from '../lib/api';
+import { useAuth, AuthRole } from '../lib/auth';
 
-type Role = 'tourist' | 'jalador' | 'operator';
-
-const roles: { id: Role; title: string; desc: string; icon: string; gradient: string }[] = [
+const roles: { id: AuthRole; title: string; desc: string; icon: string; gradient: string }[] = [
   { id: 'tourist', title: 'Turista', desc: 'Quiero explorar y reservar tours', icon: '🏖️', gradient: 'linear-gradient(135deg, #0D5C8A, #00B4CC)' },
   { id: 'jalador', title: 'Jalador', desc: 'Quiero vender tours y ganar comisiones', icon: '💰', gradient: 'linear-gradient(135deg, #F5882A, #FF5F5F)' },
   { id: 'operator', title: 'Operador', desc: 'Tengo tours y quiero publicarlos', icon: '🏢', gradient: 'linear-gradient(135deg, #2D6A4F, #00B4CC)' },
@@ -14,8 +12,9 @@ const roles: { id: Role; title: string; desc: string; icon: string; gradient: st
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { register } = useAuth();
   const [step, setStep] = useState<'role' | 'form'>('role');
-  const [role, setRole] = useState<Role>('tourist');
+  const [role, setRole] = useState<AuthRole>('tourist');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -47,14 +46,21 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const endpoint = role === 'tourist' ? '/auth/register' : role === 'jalador' ? '/auth/register/jalador' : '/auth/register/operator';
-      const body: any = { name, email, phone, password, role };
-      if (role === 'jalador') { body.zone = zone; body.bio = bio; }
-      if (role === 'operator') { body.companyName = companyName; body.rntNumber = rntNumber || undefined; }
-      await api.post(endpoint, body);
+      // Metadata extra segun rol; Supabase la guarda en user_metadata
+      const metadata: Record<string, any> = {};
+      if (role === 'jalador') {
+        metadata.zone = zone || undefined;
+        metadata.bio = bio || undefined;
+      }
+      if (role === 'operator') {
+        metadata.companyName = companyName;
+        metadata.rntNumber = rntNumber || undefined;
+      }
+
+      await register({ email, password, name, role, phone: phone || undefined, metadata });
       router.push('/login?registered=1');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al registrar. Intenta de nuevo.');
+      setError(err?.message || 'Error al registrar. Intenta de nuevo.');
     }
     setLoading(false);
   };

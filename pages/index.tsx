@@ -4,7 +4,6 @@ import { useAuth } from '../lib/auth';
 import Layout from '../components/Layout';
 import Logo from '../components/Logo';
 import Link from 'next/link';
-import { isBetaActive, getBetaRole } from '../components/BetaGate';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -13,39 +12,22 @@ export default function Home() {
 
   useEffect(() => {
     if (loading) return;
+    if (!user) return;
 
-    // If user is logged in, redirect to their dashboard
-    if (user) {
-      setRedirecting(true);
-      const path = user.role === 'admin' ? '/dashboard/admin'
-        : user.role === 'operator' ? '/dashboard/operator'
-        : user.role === 'jalador' ? '/dashboard/jalador'
-        : '/explorar';
-      router.replace(path);
-      return;
-    }
-
-    // If beta mode is active, redirect based on beta role
-    if (isBetaActive()) {
-      setRedirecting(true);
-      const role = getBetaRole();
-      const path = role === 'admin' ? '/dashboard/admin'
-        : role === 'operator' ? '/dashboard/operator'
-        : role === 'jalador' ? '/dashboard/jalador'
-        : '/explorar';
-      router.replace(path);
-    }
+    setRedirecting(true);
+    const path = user.role === 'admin' ? '/dashboard/admin'
+      : user.role === 'operator' ? '/dashboard/operator'
+      : user.role === 'jalador' ? '/dashboard/jalador'
+      : '/explorar';
+    router.replace(path);
   }, [user, loading, router]);
 
-  // Show loading only briefly while redirecting
   if (loading || redirecting) return (
     <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="animate-pulse"><Logo size="lg" /></div>
     </div>
   );
 
-  // If no user and no beta — BetaGate in _app.tsx will show the gate screen
-  // This is the fallback content if BetaGate is bypassed (e.g., direct login)
   return (
     <Layout>
       <div className="max-w-6xl mx-auto px-4 py-12">

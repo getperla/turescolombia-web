@@ -29,89 +29,69 @@ export default function LoginPage() {
     else router.push('/explorar');
   };
 
-  const doLogin = async (loginEmail: string, loginPassword: string) => {
-    setError('');
-    try {
-      const user = await login(loginEmail, loginPassword);
-      navigateByRole(user.role);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Correo o contraseña incorrectos.');
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    if (isSupabaseConfigured()) {
-      try {
-        const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
-        if (err) throw err;
-        if (data.session) {
-          localStorage.setItem('turescol_token', data.session.access_token);
-          localStorage.setItem('turescol_user', JSON.stringify({
-            id: data.user?.id, name: data.user?.user_metadata?.name || email.split('@')[0],
-            email, role: data.user?.user_metadata?.role || 'tourist',
-          }));
-          navigateByRole(data.user?.user_metadata?.role || 'tourist');
-        }
-      } catch (err: any) { setError(err.message || 'Correo o contraseña incorrectos.'); }
-    } else {
-      await doLogin(email, password);
+    try {
+      const user = await login(email, password);
+      navigateByRole(user.role);
+    } catch (err: any) {
+      setError(err?.message || 'Correo o contraseña incorrectos.');
     }
     setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
-    if (isSupabaseConfigured()) {
-      const { error: err } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
-      });
-      if (err) setError(err.message);
-    } else {
-      setError('Para habilitar Google, configura Supabase (ver documentación)');
+    if (!isSupabaseConfigured()) {
+      setError('Supabase no esta configurado. Define las variables de entorno.');
+      return;
     }
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (err) setError(err.message);
+  };
+
+  const buildPhone = (raw: string) => {
+    const digits = raw.replace(/\D/g, '');
+    return digits.startsWith('57') ? `+${digits}` : `+57${digits}`;
   };
 
   const handlePhoneOtp = async () => {
     if (!phone.trim()) { setError('Ingresa tu número de WhatsApp'); return; }
+    if (!isSupabaseConfigured()) {
+      setError('Supabase no esta configurado.');
+      return;
+    }
     setLoading(true);
     setError('');
-    if (isSupabaseConfigured()) {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const fullPhone = cleanPhone.startsWith('57') ? `+${cleanPhone}` : `+57${cleanPhone}`;
-      const { error: err } = await supabase.auth.signInWithOtp({ phone: fullPhone });
-      if (err) setError(err.message);
-      else setOtpSent(true);
-    } else {
-      setOtpSent(true);
-    }
+    const { error: err } = await supabase.auth.signInWithOtp({ phone: buildPhone(phone) });
+    if (err) setError(err.message);
+    else setOtpSent(true);
     setLoading(false);
   };
 
   const verifyOtp = async () => {
     if (!otpCode.trim()) { setError('Ingresa el código'); return; }
+    if (!isSupabaseConfigured()) {
+      setError('Supabase no esta configurado.');
+      return;
+    }
     setLoading(true);
     setError('');
-    if (isSupabaseConfigured()) {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const fullPhone = cleanPhone.startsWith('57') ? `+${cleanPhone}` : `+57${cleanPhone}`;
-      const { data, error: err } = await supabase.auth.verifyOtp({ phone: fullPhone, token: otpCode, type: 'sms' });
-      if (err) { setError(err.message); }
-      else if (data.session) {
-        localStorage.setItem('turescol_token', data.session.access_token);
-        localStorage.setItem('turescol_user', JSON.stringify({
-          id: data.user?.id, name: data.user?.user_metadata?.name || 'Usuario',
-          email: data.user?.email || '', role: data.user?.user_metadata?.role || 'tourist',
-        }));
-        navigateByRole(data.user?.user_metadata?.role || 'tourist');
-      }
-    } else {
-      // Demo mode
-      localStorage.setItem('turescol_token', 'beta-demo-token');
-      localStorage.setItem('turescol_user', JSON.stringify({ id: 0, name: 'Usuario WhatsApp', email: '', role: 'tourist' }));
-      localStorage.setItem('laperla_beta', JSON.stringify({ role: 'tourist', betaMode: true }));
-      window.location.href = '/explorar';
+    const { data, error: err } = await supabase.auth.verifyOtp({
+      phone: buildPhone(phone),
+      token: otpCode,
+      type: 'sms',
+    });
+    if (err) {
+      setError(err.message);
+    } else if (data.session) {
+      // onAuthStateChange en lib/auth.tsx hidrata el AuthContext automaticamente
+      const role = (data.user?.user_metadata?.role as string) || 'tourist';
+      navigateByRole(role);
     }
     setLoading(false);
   };
@@ -246,69 +226,6 @@ export default function LoginPage() {
               <Link href={`/register${role ? `?role=${role}` : ''}`} className="font-bold hover:underline" style={{ color: '#0D5C8A' }}>Regístrate gratis</Link>
             </div>
           </div>
-
-          {/* Magic login para jaladores */}
-          {(role === 'jalador' || !role) && (
-            <div className="mt-6 rounded-card p-6" style={{ background: 'linear-gradient(135deg, #F5882A, #FF5F5F)' }}>
-              <div className="text-center mb-4">
-                <h3 className="font-display font-bold text-white text-lg">Acceso rápido Jalador</h3>
-                <p className="text-sm text-white/70 font-sans">Entra con tu codigo, sin contraseña</p>
-              </div>
-              <div className="space-y-3">
-                <input type="text" placeholder="Tu codigo (ej: PED-0001)" id="magic-ref"
-                  className="w-full px-4 py-3.5 rounded-pill text-center text-lg font-mono uppercase bg-white/20 text-white placeholder-white/50 border border-white/30 outline-none focus:bg-white/30" />
-                <input type="tel" placeholder="Tu WhatsApp" id="magic-phone"
-                  className="w-full px-4 py-3.5 rounded-pill text-center text-lg bg-white/20 text-white placeholder-white/50 border border-white/30 outline-none focus:bg-white/30" />
-                <button
-                  onClick={async () => {
-                    const refEl = document.getElementById('magic-ref') as HTMLInputElement;
-                    const phoneEl = document.getElementById('magic-phone') as HTMLInputElement;
-                    if (!refEl?.value) return;
-                    setError('');
-                    setLoading(true);
-                    try {
-                      const { magicLogin: doMagic } = await import('../lib/api');
-                      const result = await doMagic(refEl.value.trim().toUpperCase(), phoneEl?.value?.trim() || '');
-                      if (result.access_token) {
-                        localStorage.setItem('turescol_token', result.access_token);
-                        if (result.refresh_token) localStorage.setItem('turescol_refresh', result.refresh_token);
-                        localStorage.setItem('turescol_user', JSON.stringify(result.user));
-                        router.push('/dashboard/jalador');
-                      }
-                    } catch (err: any) {
-                      setError(err.response?.data?.message || 'Codigo o telefono incorrecto');
-                    }
-                    setLoading(false);
-                  }}
-                  disabled={loading}
-                  className="w-full btn-white text-base disabled:opacity-50"
-                >
-                  {loading ? 'Entrando...' : 'Entrar como Jalador'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Acceso rápido DEV */}
-          <div className="mt-4 rounded-xl p-4" style={{ background: '#F7F7F7', border: '1px solid #EBEBEB' }}>
-            <p className="text-xs text-center mb-3" style={{ color: '#B0B0B0' }}>Acceso rápido</p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: '🏖️ Turista', email: 'turista@test.com' },
-                { label: '💰 Jalador', email: 'pedro.jalador@turescolombia.co' },
-                { label: '🏢 Operador', email: 'operador@santamartatours.co' },
-                { label: '⚙️ Admin', email: 'admin@turescolombia.co' },
-              ].map((acc) => (
-                <button key={acc.email} onClick={() => { setLoading(true); doLogin(acc.email, 'password123').then(() => setLoading(false)); }}
-                  disabled={loading}
-                  className="py-2.5 px-3 rounded-lg text-sm font-semibold transition-all hover:shadow-sm disabled:opacity-50"
-                  style={{ background: 'white', color: '#222', border: '1px solid #EBEBEB' }}>
-                  {acc.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
         </div>
       </div>
     </Layout>

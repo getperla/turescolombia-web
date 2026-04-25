@@ -33,7 +33,7 @@ export default function AdminDashboard() {
 
   const refresh = useCallback(() => {
     api.get('/dashboard/admin').then(r => setData(r.data)).catch(() => setData(null));
-    api.get('/notifications').then(r => { setNotifications(r.data || []); setUnread((r.data || []).filter((n: any) => !n.isRead).length); }).catch(() => {});
+    api.get('/notifications').then(r => { setNotifications(r.data || []); setUnread((r.data || []).filter((n: any) => !n.isRead).length); }).catch((e) => console.error('Failed to load notifications:', e));
   }, []);
 
   // Auto-refresh cada 60s (antes 30s) — reduce carga y re-renders del chart
@@ -148,6 +148,13 @@ export default function AdminDashboard() {
     const a = document.createElement('a'); a.href = url; a.download = `${filename}.csv`; a.click();
   };
 
+  // Chart data from bookings breakdown — memoizado para evitar recrear array en cada render.
+  // Debe estar antes del early-return para respetar Rules of Hooks.
+  const chartData = useMemo(
+    () => data?.bookingsByStatus?.map((s: any) => ({ name: s.status, count: s.count })) || [],
+    [data?.bookingsByStatus]
+  );
+
   if (!authorized) return null;
 
   const cards = [
@@ -167,12 +174,6 @@ export default function AdminDashboard() {
     const s = m[status] || m.pending;
     return <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{ background: s.bg, color: s.c }}>{status}</span>;
   };
-
-  // Chart data from bookings breakdown — memoizado para evitar recrear array en cada render
-  const chartData = useMemo(
-    () => data?.bookingsByStatus?.map((s: any) => ({ name: s.status, count: s.count })) || [],
-    [data?.bookingsByStatus]
-  );
 
   return (
     <Layout>
