@@ -36,6 +36,12 @@ export default function Layout({ children, hideSearch }: { children: React.React
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#FFFFFF' }}>
+      {/* Banner Modo Demo — solo visible en demo mode, anuncia que son datos de muestra */}
+      {betaMode && (
+        <div className="text-white text-xs font-semibold py-1.5 px-4 text-center" style={{ background: 'linear-gradient(90deg, #F5882A 0%, #C9A05C 50%, #F5882A 100%)' }}>
+          🚧 Modo Demo — Estás viendo datos de muestra · Para reservas reales, contacta tu jalador
+        </div>
+      )}
       {/* Header — Airbnb style */}
       <header className="sticky top-0 z-50 bg-white border-b" style={{ borderColor: '#EBEBEB' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

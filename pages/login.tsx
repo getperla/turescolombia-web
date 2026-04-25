@@ -242,7 +242,7 @@ export default function LoginPage() {
             )}
 
             <div className="mt-6 text-center text-sm font-sans" style={{ color: '#C9A05C' }}>
-              No tienes cuenta?{' '}
+              ¿No tienes cuenta?{' '}
               <Link href={`/register${role ? `?role=${role}` : ''}`} className="font-bold hover:underline" style={{ color: '#0D5C8A' }}>Regístrate gratis</Link>
             </div>
           </div>
@@ -252,7 +252,7 @@ export default function LoginPage() {
             <div className="mt-6 rounded-card p-6" style={{ background: 'linear-gradient(135deg, #F5882A, #FF5F5F)' }}>
               <div className="text-center mb-4">
                 <h3 className="font-display font-bold text-white text-lg">Acceso rápido Jalador</h3>
-                <p className="text-sm text-white/70 font-sans">Entra con tu codigo, sin contraseña</p>
+                <p className="text-sm text-white/70 font-sans">Entra con tu código, sin contraseña</p>
               </div>
               <div className="space-y-3">
                 <input type="text" placeholder="Tu codigo (ej: PED-0001)" id="magic-ref"
@@ -294,10 +294,10 @@ export default function LoginPage() {
             <p className="text-xs text-center mb-3" style={{ color: '#B0B0B0' }}>Acceso rápido</p>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: '🏖️ Turista', email: 'turista@test.com' },
-                { label: '💰 Jalador', email: 'pedro.jalador@turescolombia.co' },
-                { label: '🏢 Operador', email: 'operador@santamartatours.co' },
-                { label: '⚙️ Admin', email: 'admin@turescolombia.co' },
+                { label: '🏖️ Turista', email: 'turista@laperla.co' },
+                { label: '💰 Jalador', email: 'pedro.jalador@laperla.co' },
+                { label: '🏢 Operador', email: 'operador@laperla.co' },
+                { label: '⚙️ Admin', email: 'admin@laperla.co' },
               ].map((acc) => (
                 <button key={acc.email} onClick={() => { setLoading(true); doLogin(acc.email, 'password123').then(() => setLoading(false)); }}
                   disabled={loading}

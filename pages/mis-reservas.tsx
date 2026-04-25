@@ -95,7 +95,7 @@ export default function MisReservas() {
                         <div>📅 {new Date(b.tourDate).toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
                         <div>⏰ {b.tour.departureTime} · 📍 {b.tour.departurePoint}</div>
                         <div>👥 {b.numAdults} adulto(s){b.numChildren > 0 ? `, ${b.numChildren} nino(s)` : ''}</div>
-                        <div className="text-xs" style={{ color: '#C9A05C' }}>Codigo: <span className="font-mono font-bold">{b.bookingCode}</span></div>
+                        <div className="text-xs" style={{ color: '#C9A05C' }}>Código: <span className="font-mono font-bold">{b.bookingCode}</span></div>
                       </div>
                     </div>
                     <div className="text-right shrink-0 space-y-2">
