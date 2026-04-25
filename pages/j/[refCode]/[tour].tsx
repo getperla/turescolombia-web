@@ -77,7 +77,8 @@ export default function JaladorTourLink() {
     );
   }
 
-  const totalPrice = (tour.priceAdult * numAdults) + ((tour.priceChild || tour.priceAdult * 0.7) * numChildren);
+  // Usar ?? en vez de || para que priceChild === 0 (tour gratis para ninos) no caiga al fallback de 70%.
+  const totalPrice = (tour.priceAdult * numAdults) + ((tour.priceChild ?? tour.priceAdult * 0.7) * numChildren);
 
   const handleBooking = async () => {
     if (!tourDate) { setMessage('Selecciona una fecha'); return; }
@@ -219,7 +220,7 @@ export default function JaladorTourLink() {
           /* Confirmacion */
           (() => {
             const whatsappMsg = [
-              `Hola ${clientName}! Tu reserva con TuresColombia esta confirmada`,
+              `Hola ${clientName}! Tu reserva con La Perla esta confirmada`,
               ``,
               `*${tour.name}*`,
               `Fecha: ${formatDate(tourDate)}`,
@@ -231,7 +232,7 @@ export default function JaladorTourLink() {
               `Codigo de reserva: *${bookingResult.bookingCode}*`,
               ``,
               `Presenta este mensaje el dia del tour.`,
-              `Gracias por confiar en TuresColombia!`,
+              `Gracias por confiar en La Perla!`,
             ].join('\n');
             const cleanPhone = clientPhone.replace(/\D/g, '');
             const phoneWithCountry = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
@@ -335,7 +336,7 @@ export default function JaladorTourLink() {
             )}
 
             <div className="text-center mt-4 space-y-1">
-              <p className="text-xs text-gray-400">Reserva verificada por TuresColombia</p>
+              <p className="text-xs text-gray-400">Reserva verificada por La Perla</p>
               <p className="text-xs text-gray-400">Recibiras confirmacion por WhatsApp</p>
             </div>
           </>

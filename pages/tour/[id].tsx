@@ -77,7 +77,8 @@ export default function TourDetail() {
     );
   }
 
-  const totalPrice = (tour.priceAdult * numAdults) + ((tour.priceChild || tour.priceAdult * 0.7) * numChildren);
+  // Usar ?? en vez de || para que priceChild === 0 (tour gratis para ninos) no caiga al fallback de 70%.
+  const totalPrice = (tour.priceAdult * numAdults) + ((tour.priceChild ?? tour.priceAdult * 0.7) * numChildren);
   const allImages = [tour.coverImageUrl, ...(tour.galleryUrls || [])].filter(Boolean) as string[];
 
   const goToPayment = () => {

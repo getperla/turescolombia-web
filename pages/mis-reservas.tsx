@@ -58,7 +58,7 @@ export default function MisReservas() {
 
   return (
     <Layout>
-      <Head><title>Mis Reservas — TuresColombia</title></Head>
+      <Head><title>Mis Reservas — La Perla</title></Head>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="font-display font-bold text-2xl mb-2" style={{ color: '#0A1628' }}>Mis <span className="italic" style={{ color: '#F5882A' }}>Reservas</span></h1>
         <p className="font-sans text-sm mb-6" style={{ color: '#C9A05C' }}>Tus tours reservados</p>
