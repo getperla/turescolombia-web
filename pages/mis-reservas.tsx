@@ -101,7 +101,7 @@ export default function MisReservas() {
                     <div className="text-right shrink-0 space-y-2">
                       <div className="text-xl font-bold font-sans" style={{ color: '#0D5C8A' }}>${Number(b.totalAmount).toLocaleString()}</div>
                       <div className="flex gap-2 justify-end">
-                        {canReview && <button onClick={() => setReviewBooking(b)} className="text-sm px-4 py-2 rounded-pill font-sans font-semibold transition-all hover:-translate-y-0.5" style={{ background: '#FEF3E8', color: '#F5882A' }}>⭐ Dejar resena</button>}
+                        {canReview && <button onClick={() => setReviewBooking(b)} className="text-sm px-4 py-2 rounded-pill font-sans font-semibold transition-all hover:-translate-y-0.5" style={{ background: '#FEF3E8', color: '#F5882A' }}>⭐ Dejar reseña</button>}
                         {canCancel && <button onClick={() => setCancelId(b.id)} className="text-sm px-4 py-2 rounded-pill font-sans font-semibold transition-all hover:-translate-y-0.5" style={{ background: '#FFF0F0', color: '#CC3333' }}>Cancelar</button>}
                       </div>
                     </div>
@@ -133,7 +133,7 @@ export default function MisReservas() {
       {reviewBooking && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-card p-6 w-full max-w-md shadow-glass">
-            <h2 className="font-display font-bold text-lg mb-1" style={{ color: '#0A1628' }}>Dejar resena</h2>
+            <h2 className="font-display font-bold text-lg mb-1" style={{ color: '#0A1628' }}>Dejar reseña</h2>
             <p className="text-sm font-sans mb-4" style={{ color: '#C9A05C' }}>{reviewBooking.tour.name}</p>
             <div className="mb-4">
               <label className="block text-sm font-sans font-medium mb-2" style={{ color: '#6B5329' }}>Calificacion del tour</label>
@@ -153,7 +153,7 @@ export default function MisReservas() {
             <div className="flex gap-3 justify-end">
               <button onClick={() => setReviewBooking(null)} className="px-4 py-2 rounded-pill font-sans font-medium" style={{ color: '#6B5329' }}>Cancelar</button>
               <button onClick={handleReview} disabled={reviewLoading} className="btn-primary disabled:opacity-50">
-                {reviewLoading ? 'Enviando...' : 'Enviar resena'}
+                {reviewLoading ? 'Enviando...' : 'Enviar reseña'}
               </button>
             </div>
           </div>

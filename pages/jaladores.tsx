@@ -1,10 +1,6 @@
-import { GetServerSideProps } from 'next';
+import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { getJaladorRanking, Jalador } from '../lib/api';
-
-type Props = {
-  jaladores: Jalador[];
-};
 
 const badgeColors: Record<string, string> = {
   new_seller: 'bg-gray-100 text-gray-600',
@@ -13,6 +9,9 @@ const badgeColors: Record<string, string> = {
   top_seller: 'bg-amber-100 text-amber-600',
   elite: 'bg-amber-200 text-amber-600',
   multilingual: 'bg-green-100 text-green-700',
+  gold: 'bg-amber-100 text-amber-700',
+  silver: 'bg-gray-100 text-gray-600',
+  bronze: 'bg-orange-100 text-orange-700',
 };
 
 const badgeLabels: Record<string, string> = {
@@ -21,12 +20,27 @@ const badgeLabels: Record<string, string> = {
   featured: '⭐ Destacado',
   top_seller: '🔥 Top Ventas',
   elite: '👑 Elite',
-  multilingual: '🌍 Multilingue',
+  multilingual: '🌍 Multilingüe',
+  gold: '🥇 Oro',
+  silver: '🥈 Plata',
+  bronze: '🥉 Bronce',
 };
 
 const rankEmojis = ['🥇', '🥈', '🥉'];
 
-export default function JaladoresPage({ jaladores }: Props) {
+// Fetch client-side so el interceptor de demo mode (mockData) pueda devolver datos.
+// Mismo patron que pages/tour/[id].tsx.
+export default function JaladoresPage() {
+  const [jaladores, setJaladores] = useState<Jalador[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getJaladorRanking()
+      .then(data => setJaladores(data || []))
+      .catch(() => setJaladores([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <Layout>
       {/* Hero */}
@@ -40,7 +54,7 @@ export default function JaladoresPage({ jaladores }: Props) {
             Jaladores Certificados
           </h1>
           <p className="text-lg text-primary-100">
-            Jaladores digitales verificados en toda Colombia. Tu guia hacia la mejor experiencia.
+            Jaladores digitales verificados en toda Colombia. Tu guía hacia la mejor experiencia.
           </p>
         </div>
         <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute bottom-0 left-0 w-full">
@@ -49,7 +63,11 @@ export default function JaladoresPage({ jaladores }: Props) {
       </section>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {jaladores.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-16">
+            <p className="text-gray-500">Cargando jaladores...</p>
+          </div>
+        ) : jaladores.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
             <div className="text-5xl mb-3">🏝️</div>
             <p className="text-gray-500 text-lg">No hay jaladores disponibles en este momento</p>
@@ -131,12 +149,3 @@ export default function JaladoresPage({ jaladores }: Props) {
     </Layout>
   );
 }
-
-export const getServerSideProps: GetServerSideProps = async () => {
-  try {
-    const jaladores = await getJaladorRanking();
-    return { props: { jaladores: jaladores || [] } };
-  } catch {
-    return { props: { jaladores: [] } };
-  }
-};

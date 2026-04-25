@@ -166,7 +166,7 @@ export default function Explorar() {
       {/* Results count */}
       <div className="max-w-7xl mx-auto px-4 pt-4 pb-2">
         <span className="text-sm" style={{ color: '#717171' }}>
-          {loading ? 'Cargando tours...' : `${filteredTours.length} tour${filteredTours.length !== 1 ? 'es' : ''} encontrado${filteredTours.length !== 1 ? 's' : ''}`}
+          {loading ? 'Cargando tours...' : `${filteredTours.length} tour${filteredTours.length !== 1 ? 's' : ''} encontrado${filteredTours.length !== 1 ? 's' : ''}`}
           {searchQuery && <span> para &quot;{searchQuery}&quot;</span>}
         </span>
       </div>

@@ -156,7 +156,7 @@ export default function JaladorTourLink() {
               {jalador.user.name.charAt(0)}
             </div>
             <div>
-              <div className="text-sm text-gray-500">Tu asesor turistico</div>
+              <div className="text-sm text-gray-500">Tu asesor turístico</div>
               <div className="font-bold text-gray-900">{jalador.user.name}</div>
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span>⭐ {jalador.score} pts</span>
@@ -194,7 +194,7 @@ export default function JaladorTourLink() {
           </div>
           <div className="flex items-center gap-2 text-sm">
             <span className="text-lg">⏱️</span>
-            <div><div className="text-gray-400 text-xs">Duracion</div><div className="font-semibold">{tour.duration}</div></div>
+            <div><div className="text-gray-400 text-xs">Duración</div><div className="font-semibold">{tour.duration}</div></div>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <span className="text-lg">👥</span>
@@ -302,7 +302,7 @@ export default function JaladorTourLink() {
                     className="input text-lg text-center" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ninos</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Niños</label>
                   <input type="number" min={0} value={numChildren}
                     onChange={(e) => setNumChildren(Math.max(0, Number(e.target.value)))}
                     className="input text-lg text-center" />
@@ -310,7 +310,7 @@ export default function JaladorTourLink() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Donde te hospedas? (opcional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">¿Dónde te hospedas? (opcional)</label>
                 <input type="text" value={clientHotel} onChange={(e) => setClientHotel(e.target.value)}
                   placeholder="Hotel, hostal, Airbnb..." className="input" />
               </div>
@@ -337,7 +337,7 @@ export default function JaladorTourLink() {
 
             <div className="text-center mt-4 space-y-1">
               <p className="text-xs text-gray-400">Reserva verificada por La Perla</p>
-              <p className="text-xs text-gray-400">Recibiras confirmacion por WhatsApp</p>
+              <p className="text-xs text-gray-400">Recibirás confirmación por WhatsApp</p>
             </div>
           </>
         )}

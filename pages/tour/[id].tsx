@@ -193,7 +193,7 @@ export default function TourDetail() {
               </div>
               <div className="flex flex-wrap items-center gap-2 text-sm" style={{ color: '#717171' }}>
                 {tour.avgRating > 0 && <span className="font-semibold" style={{ color: '#222' }}>★ {tour.avgRating.toFixed(1)}</span>}
-                {tour.totalReviews > 0 && <span>· {tour.totalReviews} resenas</span>}
+                {tour.totalReviews > 0 && <span>· {tour.totalReviews} reseñas</span>}
                 <span>· {tour.departurePoint}</span>
                 <span>· {tour.duration}</span>
               </div>
@@ -222,7 +222,7 @@ export default function TourDetail() {
                 {[
                   { icon: '⏰', label: 'Salida', value: tour.departureTime },
                   { icon: '🔄', label: 'Retorno', value: tour.returnTime },
-                  { icon: '⏱️', label: 'Duracion', value: tour.duration },
+                  { icon: '⏱️', label: 'Duración', value: tour.duration },
                   { icon: '👥', label: 'Capacidad', value: `${tour.maxPeople} personas` },
                   { icon: '📍', label: 'Salida desde', value: tour.departurePoint },
                 ].map((d, i) => (
@@ -239,7 +239,7 @@ export default function TourDetail() {
 
             {/* Includes / Excludes */}
             <div className="mb-6 pb-6 border-b" style={{ borderColor: '#EBEBEB' }}>
-              <h2 className="font-bold text-lg mb-4" style={{ color: '#222' }}>Que incluye</h2>
+              <h2 className="font-bold text-lg mb-4" style={{ color: '#222' }}>Qué incluye</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {tour.includes.map((item, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm"><span style={{ color: '#2D6A4F' }}>✓</span><span style={{ color: '#222' }}>{item}</span></div>
@@ -264,7 +264,7 @@ export default function TourDetail() {
             {/* Reviews */}
             {reviews.length > 0 && (
               <div>
-                <h2 className="font-bold text-lg mb-4" style={{ color: '#222' }}>★ {tour.avgRating.toFixed(1)} · {reviewsTotal} resenas</h2>
+                <h2 className="font-bold text-lg mb-4" style={{ color: '#222' }}>★ {tour.avgRating.toFixed(1)} · {reviewsTotal} reseñas</h2>
                 <div className="space-y-4">
                   {reviews.map((r) => (
                     <div key={r.id} className="pb-4 border-b" style={{ borderColor: '#EBEBEB' }}>
@@ -497,7 +497,7 @@ export default function TourDetail() {
                   </div>
 
                   <div><label className="block text-xs font-semibold mb-1" style={{ color: '#222' }}>Hospedaje</label><input type="text" value={clientHotel} onChange={e => setClientHotel(e.target.value)} placeholder="Hotel, hostal..." className="input" /></div>
-                  <div><label className="block text-xs font-semibold mb-1" style={{ color: '#222' }}>Codigo asesor</label><input type="text" value={refCode} onChange={e => setRefCode(e.target.value)} placeholder="ej: PED-0001" className="input" /></div>
+                  <div><label className="block text-xs font-semibold mb-1" style={{ color: '#222' }}>Código asesor</label><input type="text" value={refCode} onChange={e => setRefCode(e.target.value)} placeholder="ej: PED-0001" className="input" /></div>
 
                   <div className="p-3 rounded-lg" style={{ background: '#F7F7F7' }}>
                     <div className="flex justify-between"><span className="text-sm" style={{ color: '#717171' }}>Total</span><span className="font-bold" style={{ color: '#222' }}>${totalPrice.toLocaleString()} COP</span></div>

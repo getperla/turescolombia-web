@@ -137,7 +137,7 @@ export default function CrearTour() {
                 <input type="time" value={form.returnTime} onChange={set('returnTime')} required className="input" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Duracion *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Duración *</label>
                 <input type="text" value={form.duration} onChange={set('duration')} required className="input" placeholder="ej: 8 horas" />
               </div>
             </div>
@@ -157,7 +157,7 @@ export default function CrearTour() {
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
             <h2 className="font-semibold text-gray-900">Detalles</h2>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Que incluye (una linea por item)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Qué incluye (una línea por item)</label>
               <textarea value={form.includes} onChange={set('includes')} className="input" rows={4} placeholder="Transporte en lancha&#10;Almuerzo&#10;Snorkel&#10;Guia bilingue" />
             </div>
             <div>
