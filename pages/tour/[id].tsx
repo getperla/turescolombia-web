@@ -93,28 +93,19 @@ export default function TourDetail() {
     if (paymentMethod === 'pse' && !pseBank) { setPaymentStep('pse-bank'); return; }
     setMessage('');
 
-    // Si Wompi está configurado con llave real → redirigir al checkout de Wompi
-    if (!isDemoPayment()) {
-      const ref = generateReference();
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      const result = await openWompiCheckout({
-        amountInCents: totalPrice * 100,
-        reference: ref,
-        customerEmail: `${clientName.replace(/\s/g, '').toLowerCase()}@temp.co`,
-        customerName: `${clientName} ${clientLastName}`.trim(),
-        customerPhone: clientPhone.replace(/\D/g, ''),
-        redirectUrl: `${baseUrl}/pago-resultado`,
-        description: `${tour!.name} — ${numAdults} adulto(s)`,
-      });
-      // Si retornó 'wompi', la página ya fue redirigida a Wompi
-      if (result === 'wompi') return;
+    // Wompi debe estar configurado con NEXT_PUBLIC_WOMPI_PUBLIC_KEY.
+    if (isDemoPayment()) {
+      setMessage('Los pagos no estan disponibles aun. Contactanos por WhatsApp para reservar.');
+      return;
     }
 
-    // MODO DEMO — simular pago
+    const ref = generateReference();
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
     setPaymentStep('processing');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 2500));
 
+    // Crear booking primero (estado pending), luego mandar a Wompi
     try {
       const { data } = await api.post('/bookings', {
         tourId: tour!.id, tourDate, numAdults, numChildren,
@@ -122,6 +113,7 @@ export default function TourDetail() {
         clientLastName: clientLastName.trim() || undefined,
         clientPhone: clientPhone.trim(), clientHotel: clientHotel.trim() || undefined,
         paymentMethod,
+        paymentReference: ref,
       });
       setBookingResult(data);
     } catch (error: any) {
@@ -130,6 +122,17 @@ export default function TourDetail() {
       setLoading(false);
       return;
     }
+
+    // Wompi redirige el navegador → en exito vuelve a /pago-resultado
+    await openWompiCheckout({
+      amountInCents: totalPrice * 100,
+      reference: ref,
+      customerEmail: `${clientName.replace(/\s/g, '').toLowerCase()}@temp.co`,
+      customerName: `${clientName} ${clientLastName}`.trim(),
+      customerPhone: clientPhone.replace(/\D/g, ''),
+      redirectUrl: `${baseUrl}/pago-resultado`,
+      description: `${tour!.name} — ${numAdults} adulto(s)`,
+    });
     setLoading(false);
     setPaymentStep('form');
   };

@@ -1,19 +1,5 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
-// Cache global del estado demo — evita leer localStorage en cada request
-let cachedDemoMode: boolean | null = null;
-
-export function invalidateDemoModeCache() {
-  cachedDemoMode = null;
-}
-
-function isDemoModeFast(): boolean {
-  if (cachedDemoMode !== null) return cachedDemoMode;
-  if (typeof window === 'undefined') return false;
-  cachedDemoMode = localStorage.getItem('turescol_token') === 'beta-demo-token';
-  return cachedDemoMode;
-}
-
 type RequestConfig = { params?: Record<string, string | number | undefined> };
 type ApiResponse<T = any> = { data: T; status: number };
 
@@ -42,15 +28,6 @@ async function request<T = any>(
   body?: any,
   config?: RequestConfig,
 ): Promise<ApiResponse<T>> {
-  // Demo mode: carga dinamica de mockData SOLO si estamos en demo.
-  // Evita que mockData.ts (29KB) se bundle en todas las paginas.
-  if (isDemoModeFast()) {
-    const { getMockResponse } = await import('./mockData');
-    const url = buildUrl(path, config?.params);
-    await new Promise((r) => setTimeout(r, 120));
-    return { data: getMockResponse(method.toLowerCase(), url) as T, status: 200 };
-  }
-
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('turescol_token');
@@ -177,23 +154,9 @@ export const getJaladorRanking = async (): Promise<Jalador[]> => {
   return data;
 };
 
-export const login = async (email: string, password: string) => {
-  const { data } = await api.post('/auth/login', { email, password });
-  if (typeof window !== 'undefined' && data.access_token) {
-    localStorage.setItem('turescol_token', data.access_token);
-  }
-  return data;
-};
-
-export const magicLogin = async (refCode: string, phone: string) => {
-  const { data } = await api.post('/auth/magic-login', { refCode, phone });
-  return data;
-};
-
-export const register = async (body: { name: string; email: string; password: string; role: string }) => {
-  const { data } = await api.post('/auth/register', body);
-  return data;
-};
+// Auth (login/register/logout) ahora se maneja directamente con Supabase
+// via lib/auth.tsx (useAuth hook). Las llamadas REST a /auth/* fueron
+// removidas porque no se usan: el backend de auth es Supabase.
 
 // ---- Booking types & calls ----
 

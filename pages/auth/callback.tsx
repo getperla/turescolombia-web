@@ -1,25 +1,35 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { supabase } from '../../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import Layout from '../../components/Layout';
 
+/**
+ * OAuth callback de Supabase. Cuando el usuario vuelve de Google/etc.,
+ * Supabase parsea el hash de la URL y dispara SIGNED_IN. El AuthProvider
+ * (lib/auth.tsx) ya esta suscrito a onAuthStateChange globalmente, asi
+ * que persiste el user automaticamente. Aca solo redirigimos al destino.
+ */
 export default function AuthCallback() {
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
+    if (!isSupabaseConfigured()) {
+      router.replace('/login');
+      return;
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        localStorage.setItem('turescol_token', session.access_token);
-        localStorage.setItem('turescol_user', JSON.stringify({
-          id: session.user.id,
-          name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuario',
-          email: session.user.email || '',
-          role: session.user.user_metadata?.role || 'tourist',
-          avatarUrl: session.user.user_metadata?.avatar_url || '',
-        }));
-        window.location.href = '/explorar';
+        const role = (session.user.user_metadata?.role as string) || 'tourist';
+        const path = role === 'admin' ? '/dashboard/admin'
+          : role === 'operator' ? '/dashboard/operator'
+          : role === 'jalador' ? '/dashboard/jalador'
+          : '/explorar';
+        router.replace(path);
       }
     });
+
+    return () => subscription.unsubscribe();
   }, [router]);
 
   return (
