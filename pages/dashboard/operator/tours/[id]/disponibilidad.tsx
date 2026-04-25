@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '../../../../../components/Layout';
@@ -34,12 +34,7 @@ export default function Disponibilidad() {
   const [endDate, setEndDate] = useState('');
   const [bulkSpots, setBulkSpots] = useState('20');
 
-  useEffect(() => {
-    if (!authorized || !tourId) return;
-    loadData();
-  }, [authorized, tourId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [tourRes, availRes] = await Promise.all([
         api.get(`/tours/${tourId}`),
@@ -47,9 +42,14 @@ export default function Disponibilidad() {
       ]);
       setTourName(tourRes.data.name);
       setSlots(availRes.data || []);
-    } catch {}
+    } catch (e) { console.error('Failed to load tour availability:', e); }
     setLoading(false);
-  };
+  }, [tourId]);
+
+  useEffect(() => {
+    if (!authorized || !tourId) return;
+    loadData();
+  }, [authorized, tourId, loadData]);
 
   const handleSingle = async (e: React.FormEvent) => {
     e.preventDefault();

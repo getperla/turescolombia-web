@@ -25,7 +25,7 @@ export default function Layout({ children, hideSearch }: { children: React.React
   };
 
   useEffect(() => {
-    if (user) { api.get('/notifications/count').then(r => setUnreadCount(r.data?.count || 0)).catch(() => {}); }
+    if (user) { api.get('/notifications/count').then(r => setUnreadCount(r.data?.count || 0)).catch((e) => console.error('Failed to load notification count:', e)); }
   }, [user]);
 
   const dashboardPath = user

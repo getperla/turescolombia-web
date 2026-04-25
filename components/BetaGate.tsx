@@ -95,7 +95,7 @@ export default function BetaGate({ children }: { children: ReactNode }) {
 
     // Hard navigation forces AuthProvider to re-read localStorage on remount,
     // otherwise its internal state stays null and useRequireAuth kicks us back to /login
-    window.location.href = path;
+    window.location.assign(path);
   };
 
   if (loading) {

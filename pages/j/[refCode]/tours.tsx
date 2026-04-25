@@ -21,14 +21,14 @@ export default function JaladorTours() {
     ]).then(([toursRes, cats]) => {
       setTours(toursRes.data || []);
       setCategories(cats || []);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((e) => console.error('Failed to load tours:', e)).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
     if (!refCode) return;
     api.get(`/users/jaladores/ref/${refCode}`)
       .then((r) => setJalador(r.data))
-      .catch(() => {});
+      .catch((e) => console.error('Failed to load jalador:', e));
   }, [refCode]);
 
   return (
