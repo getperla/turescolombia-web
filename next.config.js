@@ -1,3 +1,10 @@
+// Bundle analyzer wrapper - solo activo cuando ANALYZE=true
+// Plan 3: commissions-ledger-cron-platform-fee (MOB-13)
+// Uso: `npm run analyze` -> abre report en navegador
+const withBundleAnalyzer = process.env.ANALYZE === 'true'
+  ? require('@next/bundle-analyzer')({ enabled: true })
+  : (config) => config;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -32,13 +39,4 @@ const nextConfig = {
         headers: [
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
-        ],
-      },
-    ];
-  },
-};
-
-module.exports = nextConfig;
+     
