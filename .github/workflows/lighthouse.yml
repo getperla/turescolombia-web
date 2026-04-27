@@ -1,0 +1,49 @@
+# Lighthouse CI - bloqueante en PRs
+# Plan 5: observability-demo-gate-secrets-backups (MOB-12)
+# Created: 2026-04-27
+#
+# Mantiene Lighthouse mobile slow 4G score >= 80 en /explorar.
+# Bloquea PRs si baja del threshold para proteger UX en celulares low-end.
+
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lighthouse:
+    name: Lighthouse mobile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build app
+        env:
+          NEXT_PUBLIC_API_URL: https://turescolombia-api.onrender.com/api
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.LH_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.LH_SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      - name: Start Next server
+        run: npm start &
+
+      - name: Wait for server
+        run: npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Run Lighthouse
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            http://localhost:3000/
+            http://localhost:3000/explorar
+          configPath: '.lighthouserc.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true

@@ -54,6 +54,14 @@ export default function BetaGate({ children }: { children: ReactNode }) {
   const [loggingIn, setLoggingIn] = useState<BetaRole | null>(null);
 
   useEffect(() => {
+    // Plan 5 fix (SEC-02): el demo gate solo se activa si NEXT_PUBLIC_BETA_MODE=1.
+    // En produccion sin esa env var, el componente es transparente (no demo).
+    const betaModeEnabled = process.env.NEXT_PUBLIC_BETA_MODE === '1';
+    if (!betaModeEnabled) {
+      setLoading(false);
+      return;
+    }
+
     // Check if user already has a real auth token
     const token = localStorage.getItem('turescol_token');
     const user = localStorage.getItem('turescol_user');
@@ -160,15 +168,4 @@ export default function BetaGate({ children }: { children: ReactNode }) {
 
       {/* Normal login link */}
       <button
-        onClick={() => { setShow(false); router.push('/login'); }}
-        className="text-xs underline mb-6" style={{ color: '#717171' }}
-      >
-        Ya tengo cuenta, iniciar sesión normal
-      </button>
-
-      <p className="text-xs" style={{ color: '#B0B0B0' }}>
-        Santa Marta · Tayrona · Sierra Nevada
-      </p>
-    </div>
-  );
-}
+        onClick={() => { setShow(false);

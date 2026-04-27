@@ -1,0 +1,77 @@
+# Backup workflow - dump semanal de Supabase a R2/S3
+# Plan 5: observability-demo-gate-secrets-backups (OBS-05)
+# Created: 2026-04-27
+#
+# Schedule: domingos 3am UTC. Retencion 90 dias.
+# Encriptacion: GPG con passphrase desde secret BACKUP_GPG_PASSPHRASE.
+#
+# Storage destino: R2 (Cloudflare) por egress gratis. Configurar bucket
+# laperla-db-backups en R2 dashboard antes del primer run.
+#
+# Restore mensual: ver docs/restore-test-procedure.md (TODO)
+
+name: Backup Supabase
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'  # Domingos 3am UTC
+  workflow_dispatch:      # Permitir trigger manual
+
+jobs:
+  backup:
+    name: Dump + encrypt + upload
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install postgresql-client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client gnupg
+
+      - name: Dump Supabase database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          pg_dump --format=custom --no-owner --no-acl \
+            "$SUPABASE_DB_URL" > "laperla-${DATE}.dump"
+          ls -lh "laperla-${DATE}.dump"
+
+      - name: Encrypt with GPG
+        env:
+          BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          gpg --symmetric --cipher-algo AES256 --batch --yes \
+            --passphrase "$BACKUP_GPG_PASSPHRASE" \
+            --output "laperla-${DATE}.dump.gpg" \
+            "laperla-${DATE}.dump"
+          rm "laperla-${DATE}.dump"
+
+      - name: Configure rclone for R2
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+          mkdir -p ~/.config/rclone
+          cat > ~/.config/rclone/rclone.conf << EOF
+          [r2]
+          type = s3
+          provider = Cloudflare
+          access_key_id = $R2_ACCESS_KEY_ID
+          secret_access_key = $R2_SECRET_ACCESS_KEY
+          endpoint = https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com
+          EOF
+
+      - name: Upload to R2
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          rclone copy "laperla-${DATE}.dump.gpg" r2:laperla-db-backups/
+          echo "Backup uploaded: laperla-${DATE}.dump.gpg"
+
+      - name: Prune backups older than 90 days
+        run: |
+          rclone delete --min-age 90d r2:laperla-db-backups/

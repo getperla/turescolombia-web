@@ -4,9 +4,15 @@ import { useAuth } from '../lib/auth';
 import api, { invalidateDemoModeCache } from '../lib/api';
 import Logo from './Logo';
 import { isBetaActive } from './BetaGate';
+import BetaBanner from './BetaBanner';
 import { useFavorites } from '../lib/useFavorites';
 
-export default function Layout({ children, hideSearch }: { children: React.ReactNode; hideSearch?: boolean }) {
+interface LayoutProps {
+  children: React.ReactNode;
+  hideSearch?: boolean;
+}
+
+export default function Layout({ children, hideSearch }: LayoutProps) {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -36,6 +42,7 @@ export default function Layout({ children, hideSearch }: { children: React.React
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#FFFFFF' }}>
+      <BetaBanner />
       {/* Banner Modo Demo — solo visible en demo mode, anuncia que son datos de muestra */}
       {betaMode && (
         <div className="text-white text-xs font-semibold py-1.5 px-4 text-center" style={{ background: 'linear-gradient(90deg, #F5882A 0%, #C9A05C 50%, #F5882A 100%)' }}>
@@ -153,10 +160,4 @@ export default function Layout({ children, hideSearch }: { children: React.React
             </div>
           </div>
           <div className="border-t mt-6 pt-6 text-center text-xs" style={{ borderColor: '#EBEBEB', color: '#717171' }}>
-            © 2026 La Perla · Tours verificados · Pagos seguros
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
+            © 2026 La Perla · T

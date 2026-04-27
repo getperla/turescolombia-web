@@ -289,28 +289,11 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Acceso rápido DEV */}
-          <div className="mt-4 rounded-xl p-4" style={{ background: '#F7F7F7', border: '1px solid #EBEBEB' }}>
-            <p className="text-xs text-center mb-3" style={{ color: '#B0B0B0' }}>Acceso rápido</p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: '🏖️ Turista', email: 'turista@laperla.co' },
-                { label: '💰 Jalador', email: 'pedro.jalador@laperla.co' },
-                { label: '🏢 Operador', email: 'operador@laperla.co' },
-                { label: '⚙️ Admin', email: 'admin@laperla.co' },
-              ].map((acc) => (
-                <button key={acc.email} onClick={() => { setLoading(true); doLogin(acc.email, 'password123').then(() => setLoading(false)); }}
-                  disabled={loading}
-                  className="py-2.5 px-3 rounded-lg text-sm font-semibold transition-all hover:shadow-sm disabled:opacity-50"
-                  style={{ background: 'white', color: '#222', border: '1px solid #EBEBEB' }}>
-                  {acc.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Plan 5 (SEC-01): Acceso rapido DEV REMOVIDO - era un riesgo de demo leak en prod */}
 
         </div>
       </div>
     </Layout>
   );
 }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  

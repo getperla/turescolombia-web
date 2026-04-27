@@ -45,6 +45,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string): Promise<AuthUser> => {
     const { data } = await api.post('/auth/login', { email, password });
     const authUser: AuthUser = data.user;
+
+    // Plan 5 fix (SEC-03): si habia un token beta-demo o laperla_beta heredado
+    // de una sesion de demo, limpiarlos para que no contaminen la sesion real.
+    const previousToken = localStorage.getItem('turescol_token');
+    if (previousToken === 'beta-demo-token') {
+      localStorage.removeItem('laperla_beta');
+    }
+
     localStorage.setItem('turescol_token', data.access_token);
     if (data.refresh_token) {
       localStorage.setItem('turescol_refresh', data.refresh_token);
@@ -93,13 +101,4 @@ export function useRequireAuth(allowedRoles?: AuthUser['role'][]) {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace('/login?redirect=' + encodeURIComponent(router.asPath));
-      return;
-    }
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
-      router.replace('/');
-    }
-  }, [user, loading, router, allowedRoles]);
-
-  return { user, loading, authorized: !loading && !!user && (!allowedRoles || allowedRoles.includes(user.role)) };
-}
+      router.replace('/logi
