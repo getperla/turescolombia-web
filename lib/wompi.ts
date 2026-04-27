@@ -1,24 +1,31 @@
 // Wompi payment gateway integration for Colombia
 // Docs: https://docs.wompi.co
 //
-// Para activar pagos reales:
-// 1. Crea cuenta en https://comercios.wompi.co
-// 2. Copia tu llave publica (pub_test_xxx o pub_prod_xxx)
-// 3. Ponla en NEXT_PUBLIC_WOMPI_PUBLIC_KEY (en .env.production o Vercel env vars)
-// 4. Cambia NEXT_PUBLIC_WOMPI_ENV a "production" cuando estes listo
+// Plan 2 refactor (2026-04-27): SANDBOX_KEY removido del codigo.
+// Ahora la public key SIEMPRE viene de NEXT_PUBLIC_WOMPI_PUBLIC_KEY.
+// En dev usar la key de sandbox (pub_stagtest_*) en .env.local.
+// En prod usar la key de produccion (pub_prod_*) en Vercel env vars.
+//
+// Activar pagos reales:
+// 1. Crear cuenta en https://comercios.wompi.co
+// 2. Pasar KYC empresarial (Wompi tarda 1-3 dias)
+// 3. Copiar la llave publica de prod en NEXT_PUBLIC_WOMPI_PUBLIC_KEY
+// 4. Cambiar NEXT_PUBLIC_WOMPI_ENV a "production"
+// 5. Configurar webhook URL en https://comercios.wompi.co > Eventos:
+//    https://<project>.supabase.co/functions/v1/wompi-webhook
+// 6. Copiar el "Eventos secret" en SUPABASE_SECRET WOMPI_EVENTS_SECRET via:
+//    supabase secrets set WOMPI_EVENTS_SECRET=xxx
 
-const WOMPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY || '';
-const WOMPI_ENV = process.env.NEXT_PUBLIC_WOMPI_ENV || 'sandbox';
+type WompiEnvironment = 'sandbox' | 'production';
 
-const WOMPI_CHECKOUT_URL = WOMPI_ENV === 'production'
-  ? 'https://checkout.wompi.co/p/'
-  : 'https://checkout.wompi.co/p/';
+const WOMPI_PUBLIC_KEY: string = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY || '';
+const WOMPI_ENV: WompiEnvironment =
+  process.env.NEXT_PUBLIC_WOMPI_ENV === 'production' ? 'production' : 'sandbox';
 
-// Sandbox test keys (Wompi provee estas para pruebas)
-const SANDBOX_KEY = 'pub_stagtest_g2u0HQd3ZMh05hsSgTS2lUV8t3s4mOt7';
+const WOMPI_CHECKOUT_URL = 'https://checkout.wompi.co/p/';
 
 export function getWompiPublicKey(): string {
-  return WOMPI_PUBLIC_KEY || SANDBOX_KEY;
+  return WOMPI_PUBLIC_KEY;
 }
 
 export function isWompiConfigured(): boolean {
@@ -27,6 +34,10 @@ export function isWompiConfigured(): boolean {
 
 export function isDemoPayment(): boolean {
   return !WOMPI_PUBLIC_KEY;
+}
+
+export function getWompiEnv(): WompiEnvironment {
+  return WOMPI_ENV;
 }
 
 export type WompiPaymentParams = {
@@ -89,25 +100,12 @@ export function generateReference(): string {
   return `LP-${ts}-${rand}`.toUpperCase();
 }
 
-/**
- * Check payment status via Wompi API (public endpoint, no auth needed)
- * In production, this should be done server-side for security
- */
-export async function checkPaymentStatus(transactionId: string): Promise<{
-  status: 'APPROVED' | 'DECLINED' | 'PENDING' | 'VOIDED' | 'ERROR';
-  paymentMethod: string;
-  reference: string;
-}> {
-  const baseUrl = WOMPI_ENV === 'production'
-    ? 'https://production.wompi.co/v1'
-    : 'https://sandbox.wompi.co/v1';
+export type WompiTransactionStatus = 'APPROVED' | 'DECLINED' | 'PENDING' | 'VOIDED' | 'ERROR';
 
-  const res = await fetch(`${baseUrl}/transactions/${transactionId}`);
-  const data = await res.json();
-
-  return {
-    status: data.data?.status || 'ERROR',
-    paymentMethod: data.data?.payment_method_type || 'unknown',
-    reference: data.data?.reference || '',
-  };
-}
+interface WompiTransactionResponse {
+  data?: {
+    id?: string;
+    status?: WompiTransactionStatus;
+    reference?: string;
+    payment_method_type?: string;
+    am
