@@ -2,36 +2,36 @@
 
 **Project:** La Perla / TourMarta
 **Initialized:** 2026-04-25
-**Last updated:** 2026-04-27
+**Last updated:** 2026-04-27 (Phase 1 scaffold complete)
 
 ## Project Reference
 
 **Core Value:** Cualquiera con un celular puede ganar plata vendiendo tours en Santa Marta.
 
-**Current focus:** Phase 1 (Estabilizacion launch) descompuesta en 5 planes ejecutables. Pendiente decisiones humanas (10 items) antes de arrancar Plan 1. Launch beta del 2026-04-26 NO ocurrio — estamos pre-launch, no post-launch.
+**Current focus:** Phase 1 (Estabilizacion launch) tiene scaffold completo de los 5 planes en codigo. Falta ejecucion en infra (deploy de migrations a Supabase, deploy de Edge Functions, configurar secrets, npm install de devDeps, smoke test con plata real). Launch del 2026-04-26 NO ocurrio - estamos pre-launch real.
 
 **Source documents:**
 - `.planning/PROJECT.md` — domain rules, monetization, scope, constraints
 - `.planning/ROADMAP.md` — 4 phases mapped from 88 v1 requirements
 - `.planning/REQUIREMENTS.md` — full v1 requirement list with traceability
-- `.planning/research/SUMMARY.md` — synthesized research (stack, features, architecture, pitfalls)
+- `.planning/research/SUMMARY.md` — synthesized research
 - `.planning/codebase/` — current state audit (brownfield)
-- `.planning/phases/phase-1-estabilizacion-launch/PHASE.md` — fase actual planeada
+- `.planning/phases/phase-1-estabilizacion-launch/PHASE.md` — fase actual scaffolded
 
 ## Current Position
 
-**Milestone:** Post-launch hardening + crecimiento + marketplace v2 + mobile (NOTA: pre-launch real, ver context note arriba)
-**Phase:** 1 (Estabilizacion launch) — planeada, no iniciada
-**Plan:** None active todavia (5 planes drafted, esperando decisiones humanas)
-**Status:** Phase 1 planeada (5 planes), ready to start Plan 1 once human decisions taken
+**Milestone:** Estabilizacion + crecimiento + marketplace v2 + mobile (pre-launch real)
+**Phase:** 1 (Estabilizacion launch) — scaffold completo, falta integracion
+**Plan:** Todos los 5 planes con scaffold de codigo escritos
+**Status:** Code scaffolded, ready para integracion infra + smoke tests
 
 **Progress:**
 ```
-Phase 1 ████░░░░░░ 5/5 plans planeados, 0/5 ejecutados
-Phase 2 ░░░░░░░░░░ 0/0 plans
-Phase 3 ░░░░░░░░░░ 0/0 plans
-Phase 4 ░░░░░░░░░░ 0/0 plans
-Overall: 0% (0/4 phases complete)
+Phase 1 ██████████ 5/5 plans scaffolded, 0/5 deployed
+Phase 2 ░░░░░░░░░░ 0/0 plans (not planned)
+Phase 3 ░░░░░░░░░░ 0/0 plans (not planned)
+Phase 4 ░░░░░░░░░░ 0/0 plans (not planned)
+Overall: 25% (Phase 1 scaffolded; falta integracion + Phases 2-4)
 ```
 
 ## Performance Metrics
@@ -40,14 +40,14 @@ Overall: 0% (0/4 phases complete)
 |--------|-------|
 | v1 requirements total | 88 |
 | Mapped to phases | 88 (100%) |
-| Phases planned | 1/4 (25%) |
-| Phases complete | 0 |
-| Plans drafted | 5 (Phase 1) |
-| Plans executed | 0 |
-| Tests written | 0 (TST-01..06 distribuidos en Plan 1, 2, 5) |
-| Coverage | 0% baseline (target 50% by end of Phase 2, 80% by end of Phase 3) |
-| Research dimensions | 4 (STACK, FEATURES, ARCHITECTURE, PITFALLS) |
-| Pitfalls identified | 20 (with severity + phase mapping) |
+| Phases planned | 1/4 |
+| Plans scaffolded | 5/5 (Phase 1) |
+| Plans deployed | 0/5 |
+| Lines of scaffolded code | ~3,400 (SQL + TS + tests + workflows) |
+| Tests written | 4 archivos (RLS, idempotency, state machine, pricing) |
+| Migrations | 10 (001-010) |
+| Edge Functions | 2 (wompi-webhook, issue-invoice) |
+| Coverage actual | 0% (tests escritos pero no ejecutados aun) |
 
 ## Accumulated Context
 
@@ -55,27 +55,33 @@ Overall: 0% (0/4 phases complete)
 
 | Decision | Rationale | Source |
 |----------|-----------|--------|
-| 4 macro-phases (no split into 2a/2b) | Match research SUMMARY.md ordering rationale + REQUIREMENTS traceability already mapped | ROADMAP creation 2026-04-25 |
-| Granularity standard | 4 macro-phases mapping a 88 requirements give natural decomposition; finer grain happens at plan-phase level | config.json |
-| DIAN Modelo B (operador factura turista, La Perla factura fee) | Mas simple para arrancar; operador ya tiene NIT/RUT | research/PITFALLS.md #12 |
-| Stack actual se mantiene (Next 16 + Supabase + Wompi + TS 5.5) | Recien upgradeado, cambiar stack ahora pierde trabajo | PROJECT.md Key Decisions |
-| Pago instant al jalador en mes 1-3 (no hold-period) | Friccion cultural de hold = abandono mes 2 | research/PITFALLS.md #6 |
-| Mobile defer a Phase 4 (mes 3-5) | Necesita data layer consolidado (Phase 2) + web bug-free P0 antes de native | research/SUMMARY.md ordering |
-| Multinivel referrals defer a v2 | Requiere ledger limpio + abogado SuperSociedades especialista | research/PITFALLS.md #15 |
-| **Phase 1 decompuesta en 5 planes (no 3, no 7)** | 5 planes balancean granularidad (3-7 dias por plan) con paralelizabilidad (Plan 5 corre paralelo a 2-4) | Phase 1 planning 2026-04-27 |
-| **Plan 1 (db-foundation) sin negociacion primero** | Schema + RLS + CI son fundacion; sin esto los otros planes construyen sobre arena | Phase 1 planning 2026-04-27 |
-| **Plan 5 (observability) puede correr paralelo a Plan 2** | Toca archivos disjuntos; cuando Plan 2 prueba con plata real, Sentry ya captura | Phase 1 planning 2026-04-27 |
+| 4 macro-phases | Match research SUMMARY.md ordering + traceability | ROADMAP 2026-04-25 |
+| DIAN Modelo B | Operador ya tiene RUT, mas simple | research/PITFALLS.md #12 |
+| Stack Next 16 + Supabase + Wompi | Recien upgradeado | PROJECT.md |
+| Pago instant al jalador en mes 1-3 | Friccion cultural de hold | research/PITFALLS.md #6 |
+| Mobile defer a Phase 4 | Necesita data layer consolidado | SUMMARY.md |
+| Multinivel referrals defer a v2 | Requiere abogado SuperSociedades | PITFALLS.md #15 |
+| Phase 1 decompuesta en 5 planes | Granularidad 3-7d/plan + paralelizable | Phase 1 planning |
+| Plan 1 sin negociacion primero | Schema + RLS + CI son fundacion | Phase 1 planning |
+| Plan 5 paralelo a Plan 2 | Archivos disjuntos | Phase 1 planning |
+| Platform fee default 8% | Medio del rango 5-10% | Phase 1 scaffolding |
+| Saldo negativo permitido -$50K COP | Research recomendado | PITFALLS.md #18 |
+| Hold-period 24h post-tour | Balance proteccion vs friccion | Plan 3 PLAN.md |
+| Migrations 001-010 numeradas | Mas legible que timestamp Supabase | Plan 1 |
+| FORCE ROW LEVEL SECURITY | Defensa adicional contra owners | Plan 1 |
+| `auth.jwt()->>role` para get_user_role() | Requiere JWT hook en Supabase | Plan 1 |
+| Append-only ledger por ausencia de UPDATE policy | RLS = denegado por defecto | Plan 1 |
+| SELECT FOR UPDATE en update_booking_status | Previene race conditions concurrentes | Plan 2 |
+| pending_invoices con FOR UPDATE SKIP LOCKED | Procesamiento concurrente sin duplicados | Plan 4 |
+| Trigger AFTER UPDATE para enqueue invoice | Webhook decoupled, side effects centralizados | Plan 4 |
+| Backoff exponencial 5x para Alegra retries | 1m, 5m, 25m, 2h, 10h max 12h | Plan 4 |
+| GPG AES256 para backups | Standard fuerte, passphrase via secret | Plan 5 |
+| R2 storage para backups | Egress gratis si necesitamos restaurar a multi-destino | Plan 5 |
 
 ### Active Todos
 
-**DECISIONES HUMANAS PENDIENTES (bloquean ejecucion de Phase 1):**
-- [ ] Confirmar % platform fee La Perla (recomendado 8%)
+**DECISIONES HUMANAS PENDIENTES (bloquean ejecucion / deploy):**
+- [ ] Confirmar % platform fee La Perla (recomendado 8% en Plan 3)
 - [ ] Confirmar Modelo B factura DIAN
-- [ ] Confirmar Alegra como proveedor de facturacion (vs Siigo)
-- [ ] Confirmar hold-period jalador 24h (vs instant 0h)
-- [ ] Confirmar saldo negativo permitido del jalador hasta -$50K COP
-- [ ] Verificar estado de cuenta Wompi prod (KYC aprobado? events_secret en mano?)
-- [ ] Contactar abogado especialista para T&C jalador
-- [ ] Decidir quien hace primera prueba con plata real ($5K COP)
-- [ ] Confirmar Supabase Edge Functions como host del webhook (vs Vercel API route)
-- [ ] Confirmar Supa
+- [ ] Confirmar Alegra como proveedor de facturacion
+- [ ] Confirmar hold-p
