@@ -266,3 +266,90 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 > Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
 > This section is managed by `generate-claude-profile` -- do not edit manually.
 <!-- GSD:profile-end -->
+
+
+<!-- USER:engineering-workflow-start -->
+## Workflow de Ingeniería (instrucciones del owner)
+
+Cómo Claude Code debe operar en este repo. Estas instrucciones tienen prioridad
+sobre cualquier configuración default y deben respetarse en cada sesión.
+
+### Mindset general — Senior Software Engineer
+
+- **Antes de escribir código**, analiza la arquitectura existente. No improvises
+  sobre patrones que ya están establecidos.
+- **Sigue los patrones del repo** (Next.js Pages Router, Tailwind utilities,
+  TypeScript estricto, Supabase Auth). Mira los archivos vecinos antes de
+  inventar.
+- **TypeScript estricto:** `any` está prohibido. Si un tipo es complejo,
+  define una `interface` o `type` y reusa.
+- **No borres comentarios existentes** sin razón. Conservan contexto que no
+  está en otro lado.
+- **Mantén las pruebas actualizadas** cuando se agreguen tests al repo.
+  Hoy no hay (`npm run test` no existe), pero al introducirlas, cualquier
+  cambio funcional debe actualizar o agregar tests.
+- **Antes de un cambio crítico, explica el "porqué".** Lista de cambios
+  críticos que requieren explicación previa al usuario:
+  - Cálculo de comisiones (`lib/pricing.ts`)
+  - Sistema de auth (`lib/auth.tsx`, `lib/supabase.ts`)
+  - Sistema de pagos (`lib/wompi.ts`, integración Wompi)
+  - Schema de Supabase (cualquier `supabase.from(...)`)
+  - Convenciones de diseño (tipografías, paleta, componentes core)
+
+### Tareas específicas
+
+**Refactor.** Optimiza componentes para reducir re-renders y mejorar
+legibilidad. Extrae a hooks personalizados cuando la lógica se repite o el
+componente pasa de ~200 líneas. No abstrayas prematuramente — 3 usos antes
+de extraer.
+
+**Debugging.** Analiza logs de error, busca causa raíz en archivos específicos
+(no parches en la superficie). Propón solución que prevenga el edge case en
+el futuro. Documenta el bug y el fix en el commit message.
+
+**Documentar.** JSDoc en todas las funciones exportadas de `lib/`.
+Comentarios inline solo donde el "por qué" no sea obvio.
+
+**Git commits.** Conventional Commits estricto:
+- `feat:`, `fix:`, `chore:`, `docs:`, `perf:`, `refactor:`, `test:`, `style:`
+- Scopes opcionales: `(jalador)`, `(auth)`, `(api)`, etc.
+- Mensaje en español siempre que sea posible.
+
+### Configuración de tooling
+
+- **`.gitignore` y `.claudeignore`** deben mantenerse pulidos. `node_modules/`,
+  `.next/`, `tsconfig.tsbuildinfo`, `next-env.d.ts`, `.claude/` están
+  gitignored. Cualquier nuevo artefacto generado debe agregarse.
+- **`-y` flag (full auto)** solo para instalaciones de paquetes y scripts
+  obvios. Para cualquier comando con efectos en producción (push, merge a main,
+  destructivos), pedir confirmación explícita.
+- **No usar `<img>` directo.** Siempre `next/image` excepto el lightbox del
+  tour-detail (aspect ratio dinámico, ya documentado con eslint-disable).
+- **No silenciar errores.** Mínimo `console.error('contexto:', err)`. Nunca
+  `catch {}` vacío.
+
+### Workflow paso a paso para tareas grandes
+
+En vez de "haz toda la feature", trabajar en pasos verificables:
+
+1. **Esquematizar** la estructura (componentes, archivos, tablas Supabase si
+   aplica). Pedir aprobación antes de codear.
+2. **Implementar capa por capa.** Ej: schema → tipos → API → UI.
+3. **Verificar después de cada capa.** `npm run build` y `npm run lint`
+   deben pasar antes de seguir.
+4. **Smoke test runtime.** Levantar dev server y probar las rutas afectadas
+   con curl/dev tools antes de declarar terminado.
+5. **Commit pequeño y atómico.** Un PR de 800 líneas se vuelve un PR de
+   3 PRs de 250 líneas cada uno.
+
+### Reglas inquebrantables ("no hacer")
+
+Estas siguen las del bloque general arriba pero las repito acá:
+
+- **No agregar dependencias nuevas** sin preguntar primero.
+- **No tocar el cálculo de comisiones** sin confirmación explícita.
+- **No cambiar el sistema de diseño** sin discutirlo.
+- **No mergear a `main`** sin luz verde explícita del owner.
+- **No introducir capa beta/demo/mock.** Fue eliminada deliberadamente.
+- **No silenciar errores** en `catch {}`.
+<!-- USER:engineering-workflow-end -->
