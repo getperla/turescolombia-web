@@ -77,7 +77,7 @@ export default function TourDetail() {
     );
   }
 
-  // Usar ?? en vez de || para que priceChild === 0 (tour gratis para ninos) no caiga al fallback de 70%.
+  // Usar ?? en vez de || para que priceChild === 0 (tour gratis para niños) no caiga al fallback de 70%.
   const totalPrice = (tour.priceAdult * numAdults) + ((tour.priceChild ?? tour.priceAdult * 0.7) * numChildren);
   const allImages = [tour.coverImageUrl, ...(tour.galleryUrls || [])].filter(Boolean) as string[];
 
@@ -308,7 +308,7 @@ export default function TourDetail() {
                   const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(tour.name)}&dates=${calDate}T${tour.departureTime.replace(':', '')}00/${calDate}T${tour.returnTime.replace(':', '')}00&location=${encodeURIComponent(tour.departurePoint + ', Santa Marta')}`;
                   const cleanPhone = clientPhone.replace(/\D/g, '');
                   const phoneC = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
-                  const waMsg = `✅ RESERVA CONFIRMADA\n━━━━━━━━━━━━━━━━━\n\nHola *${clientName}*!\n\n🏖 *${tour.name}*\n📅 ${formatDate(tourDate)}\n⏰ Salida: ${tour.departureTime}\n📍 ${tour.departurePoint}\n👥 ${numAdults} adulto(s)${numChildren > 0 ? ` + ${numChildren} nino(s)` : ''}\n\n💰 *Total: $${totalPrice.toLocaleString()} COP*\n\n━━━━━━━━━━━━━━━━━\n🎫 Reserva: *${bookingResult.bookingCode}*\n━━━━━━━━━━━━━━━━━\n\nPresenta este codigo el dia del tour.\n\n_La Perla — Tours verificados_`;
+                  const waMsg = `✅ RESERVA CONFIRMADA\n━━━━━━━━━━━━━━━━━\n\nHola *${clientName}*!\n\n🏖 *${tour.name}*\n📅 ${formatDate(tourDate)}\n⏰ Salida: ${tour.departureTime}\n📍 ${tour.departurePoint}\n👥 ${numAdults} adulto(s)${numChildren > 0 ? ` + ${numChildren} niño(s)` : ''}\n\n💰 *Total: $${totalPrice.toLocaleString()} COP*\n\n━━━━━━━━━━━━━━━━━\n🎫 Reserva: *${bookingResult.bookingCode}*\n━━━━━━━━━━━━━━━━━\n\nPresenta este código el día del tour.\n\n_La Perla — Tours verificados_`;
 
                   return (
                     <div className="text-center">

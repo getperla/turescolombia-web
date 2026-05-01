@@ -3,8 +3,12 @@ import Head from 'next/head';
 import Image from 'next/image';
 import api from '../../lib/api';
 import Layout from '../../components/Layout';
+import PearlSpinner from '../../components/PearlSpinner';
 import { useRequireAuth } from '../../lib/auth';
+import { withTimeout, isTimeoutError } from '../../lib/withTimeout';
 import dynamic from 'next/dynamic';
+
+const SAVE_TIMEOUT_MS = 5000;
 
 const BarChart = dynamic(() => import('recharts').then(m => m.BarChart), { ssr: false });
 const Bar = dynamic(() => import('recharts').then(m => m.Bar), { ssr: false });
@@ -106,9 +110,9 @@ export default function AdminDashboard() {
   const saveEdit = async () => {
     if (!editItem || !editType) return;
     setEditSaving(true);
-    try {
-      if (editType === 'jalador') {
-        await api.put(`/admin/jaladores/${editItem.id}`, {
+
+    const payload = editType === 'jalador'
+      ? {
           name: editForm.name,
           email: editForm.email,
           phone: editForm.phone || undefined,
@@ -119,22 +123,32 @@ export default function AdminDashboard() {
           bankAccount: editForm.bankAccount || undefined,
           nequiPhone: editForm.nequiPhone || undefined,
           payoutMethod: editForm.payoutMethod || undefined,
-        });
-      } else {
-        await api.put(`/admin/operators/${editItem.id}`, {
+        }
+      : {
           name: editForm.name,
           email: editForm.email,
           phone: editForm.phone || undefined,
           companyName: editForm.companyName,
           rntNumber: editForm.rntNumber || undefined,
-        });
-      }
+        };
+    const endpoint = editType === 'jalador'
+      ? `/admin/jaladores/${editItem.id}`
+      : `/admin/operators/${editItem.id}`;
+    console.log(`[admin] guardando ${editType} #${editItem.id}:`, payload);
+
+    try {
+      await withTimeout(api.put(endpoint, payload), SAVE_TIMEOUT_MS);
       setActionMsg('Actualizado');
       setEditItem(null);
       setEditType(null);
       loadList(tab);
     } catch (e: any) {
-      setActionMsg(e.response?.data?.message || 'Error al guardar');
+      console.error(`[admin] error al guardar ${editType}:`, e);
+      if (isTimeoutError(e)) {
+        setActionMsg('El servidor esta tardando. Intenta de nuevo en unos segundos.');
+      } else {
+        setActionMsg(e.response?.data?.message || e.message || 'Error al guardar');
+      }
     }
     setEditSaving(false);
   };
@@ -460,7 +474,7 @@ export default function AdminDashboard() {
                       <EditField label="Banco" value={editForm.bankName} onChange={v => setEditForm({ ...editForm, bankName: v })} />
                       <EditField label="Numero de cuenta" value={editForm.bankAccount} onChange={v => setEditForm({ ...editForm, bankAccount: v })} />
                     </div>
-                    <EditField label="Nequi (telefono)" value={editForm.nequiPhone} onChange={v => setEditForm({ ...editForm, nequiPhone: v })} type="tel" />
+                    <EditField label="Nequi (teléfono)" value={editForm.nequiPhone} onChange={v => setEditForm({ ...editForm, nequiPhone: v })} type="tel" />
                   </>
                 )}
 
@@ -476,7 +490,8 @@ export default function AdminDashboard() {
 
               <div className="flex gap-3 p-5 border-t" style={{ borderColor: '#EBEBEB' }}>
                 <button onClick={() => { setEditItem(null); setEditType(null); }} className="flex-1 py-3 rounded-lg text-sm font-semibold" style={{ background: '#F7F7F7', color: '#222' }}>Cancelar</button>
-                <button onClick={saveEdit} disabled={editSaving} className="flex-1 py-3 rounded-lg text-sm font-semibold text-white disabled:opacity-50" style={{ background: '#222' }}>
+                <button onClick={saveEdit} disabled={editSaving} className="flex-1 py-3 rounded-lg text-sm font-semibold text-white disabled:opacity-50 inline-flex items-center justify-center gap-2" style={{ background: '#222' }}>
+                  {editSaving && <PearlSpinner size="sm" label="Guardando" />}
                   {editSaving ? 'Guardando...' : 'Guardar cambios'}
                 </button>
               </div>

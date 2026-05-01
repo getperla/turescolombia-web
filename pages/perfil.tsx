@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
+import PearlSpinner from '../components/PearlSpinner';
 import { useRequireAuth, useAuth } from '../lib/auth';
 import { getProfile, updateProfile, updateJaladorProfile } from '../lib/api';
+import { withTimeout, isTimeoutError } from '../lib/withTimeout';
+
+const SAVE_TIMEOUT_MS = 5000;
 
 export default function PerfilPage() {
   const { authorized } = useRequireAuth();
@@ -55,12 +59,16 @@ export default function PerfilPage() {
     setMsg('');
     setError('');
     setSaving(true);
+
+    const profileData = { name, phone: phone || undefined, whatsappPhone: whatsappPhone || undefined };
+    console.log('[perfil] guardando datos del usuario:', profileData);
+
     try {
-      await updateProfile({ name, phone: phone || undefined, whatsappPhone: whatsappPhone || undefined });
+      await withTimeout(updateProfile(profileData), SAVE_TIMEOUT_MS);
       updateUser({ name });
 
       if (profile?.role === 'jalador') {
-        await updateJaladorProfile({
+        const jaladorData = {
           bio,
           zone,
           languages: languages.split(',').map(l => l.trim()).filter(Boolean),
@@ -68,12 +76,19 @@ export default function PerfilPage() {
           bankAccount: bankAccount || undefined,
           nequiPhone: nequiPhone || undefined,
           payoutMethod: payoutMethod || undefined,
-        });
+        };
+        console.log('[perfil] guardando datos del jalador:', jaladorData);
+        await withTimeout(updateJaladorProfile(jaladorData), SAVE_TIMEOUT_MS);
       }
 
       setMsg('Perfil actualizado correctamente');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al actualizar');
+      console.error('[perfil] error al guardar:', err);
+      if (isTimeoutError(err)) {
+        setError('El servidor esta tardando. Intenta de nuevo en unos segundos.');
+      } else {
+        setError(err.response?.data?.message || err.message || 'Error al actualizar');
+      }
     }
     setSaving(false);
   };
@@ -261,7 +276,8 @@ export default function PerfilPage() {
             </>
           )}
 
-          <button type="submit" disabled={saving} className="btn-primary disabled:opacity-50 w-full md:w-auto">
+          <button type="submit" disabled={saving} className="btn-primary disabled:opacity-50 w-full md:w-auto inline-flex items-center justify-center gap-2">
+            {saving && <PearlSpinner size="sm" label="Guardando" />}
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
         </form>

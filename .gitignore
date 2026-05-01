@@ -10,3 +10,8 @@ node_modules/
 
 tsconfig.tsbuildinfo
 next-env.d.ts
+
+# Tooling local de Claude Code (GSD instalado via npx get-shit-done-cc)
+# Cada dev instala segun prefiera; no se versiona porque cambia rapido.
+.claude/
+

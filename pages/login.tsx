@@ -169,7 +169,7 @@ export default function LoginPage() {
               <div className="flex-1 h-px" style={{ background: '#FAEBD1' }}></div>
             </div>
 
-            {/* Toggle email / telefono */}
+            {/* Toggle email / teléfono */}
             <div className="flex rounded-full p-1 mb-4" style={{ background: '#F7F7F7' }}>
               <button onClick={() => { setLoginMode('email'); setError(''); }}
                 className="flex-1 py-2 rounded-full text-xs font-semibold transition-all"
@@ -255,7 +255,7 @@ export default function LoginPage() {
                 <p className="text-sm text-white/70 font-sans">Entra con tu código, sin contraseña</p>
               </div>
               <div className="space-y-3">
-                <input type="text" placeholder="Tu codigo (ej: PED-0001)" id="magic-ref"
+                <input type="text" placeholder="Tu código (ej: PED-0001)" id="magic-ref"
                   className="w-full px-4 py-3.5 rounded-pill text-center text-lg font-mono uppercase bg-white/20 text-white placeholder-white/50 border border-white/30 outline-none focus:bg-white/30" />
                 <input type="tel" placeholder="Tu WhatsApp" id="magic-phone"
                   className="w-full px-4 py-3.5 rounded-pill text-center text-lg bg-white/20 text-white placeholder-white/50 border border-white/30 outline-none focus:bg-white/30" />
@@ -276,7 +276,7 @@ export default function LoginPage() {
                         router.push('/dashboard/jalador');
                       }
                     } catch (err: any) {
-                      setError(err.response?.data?.message || 'Codigo o telefono incorrecto');
+                      setError(err.response?.data?.message || 'Código o teléfono incorrecto');
                     }
                     setLoading(false);
                   }}

@@ -114,7 +114,7 @@ export default function EditarTour() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-            <h2 className="font-semibold text-gray-900">Informacion basica</h2>
+            <h2 className="font-semibold text-gray-900">Información básica</h2>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
               <input type="text" value={form.name} onChange={set('name')} required className="input" />
@@ -144,7 +144,7 @@ export default function EditarTour() {
                 <input type="number" value={form.priceAdult} onChange={set('priceAdult')} required className="input" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Precio nino (COP)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Precio niño (COP)</label>
                 <input type="number" value={form.priceChild} onChange={set('priceChild')} className="input" />
               </div>
               <div>
