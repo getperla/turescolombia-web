@@ -2,19 +2,31 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../lib/auth';
 import Layout from '../components/Layout';
-import Logo from '../components/Logo';
 import Link from 'next/link';
+import PearlSpinner from '../components/PearlSpinner';
 import { isBetaActive, getBetaRole } from '../components/BetaGate';
+
+const LOADING_TIMEOUT_MS = 3000;
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [redirecting, setRedirecting] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+
+  // Safety net: si AuthProvider queda colgado en 'loading' (ej: red lenta,
+  // localStorage corrupto), tras LOADING_TIMEOUT_MS dejamos que el render
+  // continue. Si no hay sesion, BetaGate maneja la pantalla.
+  useEffect(() => {
+    if (!loading) return;
+    const t = setTimeout(() => setTimedOut(true), LOADING_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, [loading]);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading && !timedOut) return;
 
-    // If user is logged in, redirect to their dashboard
+    // Si hay usuario real, redirigir a su dashboard.
     if (user) {
       setRedirecting(true);
       const path = user.role === 'admin' ? '/dashboard/admin'
@@ -25,7 +37,7 @@ export default function Home() {
       return;
     }
 
-    // If beta mode is active, redirect based on beta role
+    // Si esta en modo beta, redirigir por rol elegido.
     if (isBetaActive()) {
       setRedirecting(true);
       const role = getBetaRole();
@@ -35,12 +47,13 @@ export default function Home() {
         : '/explorar';
       router.replace(path);
     }
-  }, [user, loading, router]);
+  }, [user, loading, timedOut, router]);
 
-  // Show loading only briefly while redirecting
-  if (loading || redirecting) return (
+  // Solo mostramos el spinner mientras AuthProvider esta cargando Y no
+  // se cumplio el timeout, o cuando ya estamos redirigiendo.
+  if ((loading && !timedOut) || redirecting) return (
     <div className="min-h-screen flex items-center justify-center bg-white">
-      <div className="animate-pulse"><Logo size="lg" /></div>
+      <PearlSpinner size="lg" />
     </div>
   );
 
