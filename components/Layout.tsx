@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from '../constants/storageKeys';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
@@ -16,10 +17,10 @@ export default function Layout({ children, hideSearch }: { children: React.React
   useEffect(() => { setBetaMode(isBetaActive()); }, [user]);
 
   const switchRole = () => {
-    localStorage.removeItem('turescol_token');
-    localStorage.removeItem('turescol_refresh');
-    localStorage.removeItem('turescol_user');
-    localStorage.removeItem('laperla_beta');
+    localStorage.removeItem(STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH);
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    localStorage.removeItem(STORAGE_KEYS.BETA);
     invalidateDemoModeCache();
     window.location.href = '/';
   };

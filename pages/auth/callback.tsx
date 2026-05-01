@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from '../../constants/storageKeys';
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '../../lib/supabase';
@@ -9,8 +10,8 @@ export default function AuthCallback() {
   useEffect(() => {
     supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        localStorage.setItem('turescol_token', session.access_token);
-        localStorage.setItem('turescol_user', JSON.stringify({
+        localStorage.setItem(STORAGE_KEYS.TOKEN, session.access_token);
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify({
           id: session.user.id,
           name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuario',
           email: session.user.email || '',

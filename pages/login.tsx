@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from '../constants/storageKeys';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -47,8 +48,8 @@ export default function LoginPage() {
         const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
         if (err) throw err;
         if (data.session) {
-          localStorage.setItem('turescol_token', data.session.access_token);
-          localStorage.setItem('turescol_user', JSON.stringify({
+          localStorage.setItem(STORAGE_KEYS.TOKEN, data.session.access_token);
+          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify({
             id: data.user?.id, name: data.user?.user_metadata?.name || email.split('@')[0],
             email, role: data.user?.user_metadata?.role || 'tourist',
           }));
@@ -99,8 +100,8 @@ export default function LoginPage() {
       const { data, error: err } = await supabase.auth.verifyOtp({ phone: fullPhone, token: otpCode, type: 'sms' });
       if (err) { setError(err.message); }
       else if (data.session) {
-        localStorage.setItem('turescol_token', data.session.access_token);
-        localStorage.setItem('turescol_user', JSON.stringify({
+        localStorage.setItem(STORAGE_KEYS.TOKEN, data.session.access_token);
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify({
           id: data.user?.id, name: data.user?.user_metadata?.name || 'Usuario',
           email: data.user?.email || '', role: data.user?.user_metadata?.role || 'tourist',
         }));
@@ -108,9 +109,9 @@ export default function LoginPage() {
       }
     } else {
       // Demo mode
-      localStorage.setItem('turescol_token', 'beta-demo-token');
-      localStorage.setItem('turescol_user', JSON.stringify({ id: 0, name: 'Usuario WhatsApp', email: '', role: 'tourist' }));
-      localStorage.setItem('laperla_beta', JSON.stringify({ role: 'tourist', betaMode: true }));
+      localStorage.setItem(STORAGE_KEYS.TOKEN, 'beta-demo-token');
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify({ id: 0, name: 'Usuario WhatsApp', email: '', role: 'tourist' }));
+      localStorage.setItem(STORAGE_KEYS.BETA, JSON.stringify({ role: 'tourist', betaMode: true }));
       window.location.href = '/explorar';
     }
     setLoading(false);
@@ -270,9 +271,9 @@ export default function LoginPage() {
                       const { magicLogin: doMagic } = await import('../lib/api');
                       const result = await doMagic(refEl.value.trim().toUpperCase(), phoneEl?.value?.trim() || '');
                       if (result.access_token) {
-                        localStorage.setItem('turescol_token', result.access_token);
-                        if (result.refresh_token) localStorage.setItem('turescol_refresh', result.refresh_token);
-                        localStorage.setItem('turescol_user', JSON.stringify(result.user));
+                        localStorage.setItem(STORAGE_KEYS.TOKEN, result.access_token);
+                        if (result.refresh_token) localStorage.setItem(STORAGE_KEYS.REFRESH, result.refresh_token);
+                        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(result.user));
                         router.push('/dashboard/jalador');
                       }
                     } catch (err: any) {

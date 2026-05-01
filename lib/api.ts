@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from '../constants/storageKeys';
 import type { Tour, Category } from '../types/tour';
 import type { Jalador } from '../types/user';
 import type { Booking, ReviewData, ReviewItem } from '../types/booking';
@@ -18,7 +19,7 @@ export function invalidateDemoModeCache() {
 function isDemoModeFast(): boolean {
   if (cachedDemoMode !== null) return cachedDemoMode;
   if (typeof window === 'undefined') return false;
-  cachedDemoMode = localStorage.getItem('turescol_token') === 'beta-demo-token';
+  cachedDemoMode = localStorage.getItem(STORAGE_KEYS.TOKEN) === 'beta-demo-token';
   return cachedDemoMode;
 }
 
@@ -61,7 +62,7 @@ async function request<T = any>(
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('turescol_token');
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
     if (token) headers.Authorization = `Bearer ${token}`;
   }
 
@@ -127,7 +128,7 @@ export const getJaladorRanking = async (): Promise<Jalador[]> => {
 export const login = async (email: string, password: string) => {
   const { data } = await api.post('/auth/login', { email, password });
   if (typeof window !== 'undefined' && data.access_token) {
-    localStorage.setItem('turescol_token', data.access_token);
+    localStorage.setItem(STORAGE_KEYS.TOKEN, data.access_token);
   }
   return data;
 };

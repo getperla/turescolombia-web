@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from '../constants/storageKeys';
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/router';
 import api, { invalidateDemoModeCache } from './api';
@@ -27,8 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load user from localStorage on mount
   useEffect(() => {
-    const token = localStorage.getItem('turescol_token');
-    const stored = localStorage.getItem('turescol_user');
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    const stored = localStorage.getItem(STORAGE_KEYS.USER);
     if (token && stored) {
       try {
         setUser(JSON.parse(stored));
@@ -40,20 +41,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string): Promise<AuthUser> => {
     const { data } = await api.post('/auth/login', { email, password });
     const authUser: AuthUser = data.user;
-    localStorage.setItem('turescol_token', data.access_token);
+    localStorage.setItem(STORAGE_KEYS.TOKEN, data.access_token);
     if (data.refresh_token) {
-      localStorage.setItem('turescol_refresh', data.refresh_token);
+      localStorage.setItem(STORAGE_KEYS.REFRESH, data.refresh_token);
     }
-    localStorage.setItem('turescol_user', JSON.stringify(authUser));
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
     setUser(authUser);
     return authUser;
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('turescol_token');
-    localStorage.removeItem('turescol_refresh');
-    localStorage.removeItem('turescol_user');
-    localStorage.removeItem('laperla_beta');
+    localStorage.removeItem(STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH);
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    localStorage.removeItem(STORAGE_KEYS.BETA);
     invalidateDemoModeCache();
     setUser(null);
     // Hard reload to reset the whole app state and re-show BetaGate
@@ -64,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(prev => {
       if (!prev) return null;
       const updated = { ...prev, ...updates };
-      localStorage.setItem('turescol_user', JSON.stringify(updated));
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updated));
       return updated;
     });
   }, []);

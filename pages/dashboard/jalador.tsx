@@ -1,3 +1,4 @@
+import { calcularComision } from '../../constants/commission';
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -94,7 +95,7 @@ const JaladorDashboard = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {tours.map((tour) => {
-            const commission = Math.round(tour.priceAdult * 0.20);
+            const commission = calcularComision(tour.priceAdult);
             const tourUrl = `${baseUrl}/j/${jalador.refCode}/${tour.slug}`;
             const waMsg = `🏖 *${tour.name}*\n\n${(tour as any).shortDescription || ''}\n\n💰 $${tour.priceAdult.toLocaleString()} COP\n⏰ ${tour.duration}\n📍 ${tour.departurePoint}\n\n👉 Reserva conmigo aquí:\n${tourUrl}\n\n_La Perla — Tours verificados_`;
             return (
