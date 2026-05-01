@@ -1,14 +1,9 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/router';
 import api, { invalidateDemoModeCache } from './api';
+import type { AuthUser } from '../types/user';
 
-export type AuthUser = {
-  id: number;
-  name: string;
-  email: string;
-  role: 'tourist' | 'jalador' | 'operator' | 'admin';
-  avatarUrl?: string;
-};
+export type { AuthUser } from '../types/user';
 
 type AuthContextType = {
   user: AuthUser | null;
