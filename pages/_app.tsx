@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { Cormorant_Garamond, DM_Sans } from 'next/font/google';
 import { AuthProvider } from '../lib/auth';
 import { ToastProvider } from '../components/Toast';
+import ErrorBoundary from '../components/ErrorBoundary';
 import '../styles/globals.css';
 
 const cormorant = Cormorant_Garamond({
@@ -23,6 +24,7 @@ const dmSans = DM_Sans({
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <div className={`${cormorant.variable} ${dmSans.variable}`}>
+    <ErrorBoundary>
     <ToastProvider>
       <AuthProvider>
         <Head>
@@ -57,6 +59,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <Component {...pageProps} />
       </AuthProvider>
     </ToastProvider>
+    </ErrorBoundary>
     </div>
   );
 }

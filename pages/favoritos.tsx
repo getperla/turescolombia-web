@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getTours, Tour } from '../lib/api';
 import Layout from '../components/Layout';
+import { SkeletonTourGrid } from '../components/Skeleton';
 import { useFavorites } from '../lib/useFavorites';
 
 export default function Favoritos() {
@@ -30,14 +31,7 @@ export default function Favoritos() {
         </p>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="animate-pulse">
-                <div className="rounded-xl h-48 mb-2" style={{ background: '#F0F0F0' }}></div>
-                <div className="h-4 rounded w-3/4 mb-1" style={{ background: '#F0F0F0' }}></div>
-              </div>
-            ))}
-          </div>
+          <SkeletonTourGrid count={4} />
         ) : favorites.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-5xl mb-4">❤️</div>

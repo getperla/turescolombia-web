@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getTours, getCategories, Tour, Category } from '../lib/api';
 import Layout from '../components/Layout';
+import { SkeletonTourGrid } from '../components/Skeleton';
 import { useFavorites } from '../lib/useFavorites';
 
 const categoryIcons: Record<string, string> = {
@@ -174,15 +175,7 @@ export default function Explorar() {
       {/* Tours grid */}
       <div className="max-w-7xl mx-auto px-4 pb-8">
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[1,2,3,4,5,6,7,8].map(i => (
-              <div key={i} className="animate-pulse">
-                <div className="rounded-xl h-48 mb-2" style={{ background: '#F0F0F0' }}></div>
-                <div className="h-4 rounded w-3/4 mb-1" style={{ background: '#F0F0F0' }}></div>
-                <div className="h-3 rounded w-1/2" style={{ background: '#F0F0F0' }}></div>
-              </div>
-            ))}
-          </div>
+          <SkeletonTourGrid count={8} />
         ) : filteredTours.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-4xl mb-3">🏝️</div>

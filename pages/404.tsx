@@ -1,9 +1,14 @@
+import Head from 'next/head';
 import Link from 'next/link';
 import Layout from '../components/Layout';
 
 export default function Custom404() {
   return (
     <Layout>
+      <Head>
+        <title>Playa no encontrada — La Perla</title>
+        <meta name="robots" content="noindex" />
+      </Head>
       <div className="min-h-[75vh] flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="text-8xl mb-4">🏝️</div>

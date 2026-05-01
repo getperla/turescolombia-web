@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import { getTours, getCategories, Tour, Category, Jalador } from '../../../lib/api';
 import api from '../../../lib/api';
 import Layout from '../../../components/Layout';
+import { SkeletonTourGrid } from '../../../components/Skeleton';
 
 export default function JaladorTours() {
   const router = useRouter();
@@ -70,14 +71,7 @@ export default function JaladorTours() {
         )}
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1,2,3,4,5,6].map(i => (
-              <div key={i} className="animate-pulse">
-                <div className="rounded-xl h-48 mb-2" style={{ background: '#F0F0F0' }}></div>
-                <div className="h-4 rounded w-3/4 mb-1" style={{ background: '#F0F0F0' }}></div>
-              </div>
-            ))}
-          </div>
+          <SkeletonTourGrid count={6} />
         ) : tours.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-5xl mb-3">🏝️</div>
