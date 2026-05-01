@@ -166,12 +166,12 @@ export default function LoginPage() {
             {loginMode === 'email' ? (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Correo</label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="tu@correo.com" className="input" />
+                  <label htmlFor="login-email" className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Correo</label>
+                  <input id="login-email" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="tu@correo.com" className="input" />
                 </div>
                 <div>
-                  <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Contraseña</label>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Tu contraseña" className="input" />
+                  <label htmlFor="login-password" className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Contraseña</label>
+                  <input id="login-password" name="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Tu contraseña" className="input" />
                 </div>
                 {error && <div className="px-4 py-3 rounded-2xl text-sm font-sans" style={{ background: '#FFF0F0', color: '#CC3333' }}>{error}</div>}
                 <button type="submit" disabled={loading} className="w-full btn-primary text-base disabled:opacity-50">
@@ -183,10 +183,10 @@ export default function LoginPage() {
                 {!otpSent ? (
                   <>
                     <div>
-                      <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Tu número de WhatsApp</label>
+                      <label htmlFor="login-phone" className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Tu número de WhatsApp</label>
                       <div className="flex gap-2">
                         <span className="flex items-center px-3 rounded-lg border text-sm font-semibold" style={{ borderColor: '#DDDDDD', color: '#222', background: '#F7F7F7' }}>🇨🇴 +57</span>
-                        <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="300 000 0000" className="input flex-1" />
+                        <input id="login-phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="300 000 0000" className="input flex-1" />
                       </div>
                       <p className="text-xs mt-1" style={{ color: '#B0B0B0' }}>Te enviaremos un código por SMS para verificar</p>
                     </div>
@@ -204,8 +204,8 @@ export default function LoginPage() {
                       <p className="text-sm font-semibold mt-1" style={{ color: '#2D6A4F' }}>Código enviado a +57 {phone}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Código de verificación</label>
-                      <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} placeholder="123456"
+                      <label htmlFor="login-otp" className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Código de verificación</label>
+                      <input id="login-otp" name="otp" type="text" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]*" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} placeholder="123456"
                         className="input text-center text-2xl font-mono tracking-widest" maxLength={6} />
                     </div>
                     {error && <div className="px-4 py-3 rounded-2xl text-sm font-sans" style={{ background: '#FFF0F0', color: '#CC3333' }}>{error}</div>}

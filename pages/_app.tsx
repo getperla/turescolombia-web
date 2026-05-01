@@ -1,11 +1,28 @@
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
+import { Cormorant_Garamond, DM_Sans } from 'next/font/google';
 import { AuthProvider } from '../lib/auth';
 import { ToastProvider } from '../components/Toast';
 import '../styles/globals.css';
 
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-cormorant',
+  display: 'swap',
+});
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+});
+
 export default function App({ Component, pageProps }: AppProps) {
   return (
+    <div className={`${cormorant.variable} ${dmSans.variable}`}>
     <ToastProvider>
       <AuthProvider>
         <Head>
@@ -40,5 +57,6 @@ export default function App({ Component, pageProps }: AppProps) {
         <Component {...pageProps} />
       </AuthProvider>
     </ToastProvider>
+    </div>
   );
 }

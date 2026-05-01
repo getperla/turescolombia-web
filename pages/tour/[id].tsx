@@ -7,6 +7,7 @@ import { getTourBySlug, getTour, getTourReviews, Tour, ReviewItem } from '../../
 import api from '../../lib/api';
 import Layout from '../../components/Layout';
 import { isDemoPayment, openWompiCheckout, generateReference } from '../../lib/wompi';
+import { calculateTotalPrice } from '../../lib/pricing';
 
 export default function TourDetail() {
   const router = useRouter();
@@ -77,7 +78,7 @@ export default function TourDetail() {
     );
   }
 
-  const totalPrice = (tour.priceAdult * numAdults) + ((tour.priceChild || tour.priceAdult * 0.7) * numChildren);
+  const totalPrice = calculateTotalPrice(tour.priceAdult, numAdults, numChildren, tour.priceChild);
   const allImages = [tour.coverImageUrl, ...(tour.galleryUrls || [])].filter(Boolean) as string[];
 
   const goToPayment = () => {
@@ -524,13 +525,13 @@ export default function TourDetail() {
         <div className="fixed inset-0 bg-black z-50 flex flex-col">
           <div className="flex items-center justify-between p-4">
             <span className="text-white text-sm">{galleryIndex + 1} / {allImages.length}</span>
-            <button onClick={() => setShowGallery(false)} className="text-white text-2xl">✕</button>
+            <button onClick={() => setShowGallery(false)} aria-label="Cerrar galeria" className="text-white text-2xl">✕</button>
           </div>
           <div className="flex-1 flex items-center justify-center px-4">
-            <button onClick={() => setGalleryIndex(Math.max(0, galleryIndex - 1))} className="text-white text-3xl px-4 shrink-0">‹</button>
+            <button onClick={() => setGalleryIndex(Math.max(0, galleryIndex - 1))} aria-label="Foto anterior" className="text-white text-3xl px-4 shrink-0">‹</button>
             {/* eslint-disable-next-line @next/next/no-img-element -- lightbox tiene aspect ratio dinamico + object-contain, next/image requiere width/height conocidos */}
             <img src={allImages[galleryIndex]} alt={`${tour.name} — foto ${galleryIndex + 1}`} className="max-h-[80vh] max-w-full object-contain" />
-            <button onClick={() => setGalleryIndex(Math.min(allImages.length - 1, galleryIndex + 1))} className="text-white text-3xl px-4 shrink-0">›</button>
+            <button onClick={() => setGalleryIndex(Math.min(allImages.length - 1, galleryIndex + 1))} aria-label="Foto siguiente" className="text-white text-3xl px-4 shrink-0">›</button>
           </div>
         </div>
       )}

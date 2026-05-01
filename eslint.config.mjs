@@ -1,4 +1,5 @@
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 const config = [
   {
@@ -6,6 +7,7 @@ const config = [
   },
   ...nextCoreWebVitals,
   {
+    plugins: { 'react-hooks': reactHooks },
     rules: {
       // setState sincrono dentro de useEffect es un patron valido para leer
       // localStorage/sessionStorage tras mount sin causar hydration mismatch

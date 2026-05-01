@@ -115,27 +115,27 @@ export default function RegisterPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Nombre completo</label>
-                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="input" placeholder="Tu nombre" />
+                    <label htmlFor="reg-name" className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Nombre completo</label>
+                    <input id="reg-name" name="name" type="text" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required className="input" placeholder="Tu nombre" />
                   </div>
                   <div>
-                    <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Correo</label>
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="input" placeholder="tu@correo.com" />
+                    <label htmlFor="reg-email" className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Correo</label>
+                    <input id="reg-email" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="input" placeholder="tu@correo.com" />
                   </div>
                   <div>
-                    <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>WhatsApp</label>
-                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="input" placeholder="300 000 0000" />
+                    <label htmlFor="reg-phone" className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>WhatsApp</label>
+                    <input id="reg-phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="input" placeholder="300 000 0000" />
                   </div>
 
                   {role === 'jalador' && (
                     <>
                       <div>
-                        <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Donde trabajas?</label>
-                        <input type="text" value={zone} onChange={(e) => setZone(e.target.value)} className="input" placeholder="ej: Rodadero, Taganga, Centro" />
+                        <label htmlFor="reg-zone" className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Donde trabajas?</label>
+                        <input id="reg-zone" name="zone" type="text" value={zone} onChange={(e) => setZone(e.target.value)} className="input" placeholder="ej: Rodadero, Taganga, Centro" />
                       </div>
                       <div>
-                        <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Cuéntanos de ti</label>
-                        <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="input" rows={2} placeholder="Que experiencia tienes vendiendo tours?" />
+                        <label htmlFor="reg-bio" className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Cuéntanos de ti</label>
+                        <textarea id="reg-bio" name="bio" value={bio} onChange={(e) => setBio(e.target.value)} className="input" rows={2} placeholder="Que experiencia tienes vendiendo tours?" />
                       </div>
                     </>
                   )}
@@ -143,23 +143,23 @@ export default function RegisterPage() {
                   {role === 'operator' && (
                     <>
                       <div>
-                        <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Nombre de tu empresa</label>
-                        <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required className="input" placeholder="Tu empresa de turismo" />
+                        <label htmlFor="reg-company" className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Nombre de tu empresa</label>
+                        <input id="reg-company" name="companyName" type="text" autoComplete="organization" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required className="input" placeholder="Tu empresa de turismo" />
                       </div>
                       <div>
-                        <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>RNT (si lo tienes)</label>
-                        <input type="text" value={rntNumber} onChange={(e) => setRntNumber(e.target.value)} className="input" placeholder="Numero RNT" />
+                        <label htmlFor="reg-rnt" className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>RNT (si lo tienes)</label>
+                        <input id="reg-rnt" name="rntNumber" type="text" value={rntNumber} onChange={(e) => setRntNumber(e.target.value)} className="input" placeholder="Numero RNT" />
                       </div>
                     </>
                   )}
 
                   <div>
-                    <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Contraseña</label>
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="input" placeholder="Minimo 6 caracteres" />
+                    <label htmlFor="reg-password" className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Contraseña</label>
+                    <input id="reg-password" name="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required className="input" placeholder="Minimo 6 caracteres" />
                   </div>
                   <div>
-                    <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Repetir contraseña</label>
-                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="input" placeholder="Confirma tu contraseña" />
+                    <label htmlFor="reg-confirm-password" className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Repetir contraseña</label>
+                    <input id="reg-confirm-password" name="confirmPassword" type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="input" placeholder="Confirma tu contraseña" />
                   </div>
 
                   {error && (

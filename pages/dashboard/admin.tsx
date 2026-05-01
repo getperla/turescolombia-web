@@ -429,7 +429,7 @@ export default function AdminDashboard() {
                 <h2 className="font-bold text-lg" style={{ color: '#222' }}>
                   Editar {editType === 'jalador' ? 'Jalador' : 'Operador'}
                 </h2>
-                <button onClick={() => { setEditItem(null); setEditType(null); }} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100" style={{ color: '#717171' }}>✕</button>
+                <button onClick={() => { setEditItem(null); setEditType(null); }} aria-label="Cerrar dialogo" className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100" style={{ color: '#717171' }}>✕</button>
               </div>
 
               <div className="p-5 space-y-4">

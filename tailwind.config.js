@@ -123,8 +123,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-        sans: ['"DM Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        display: ['var(--font-cormorant)', '"Cormorant Garamond"', 'Georgia', 'serif'],
+        sans: ['var(--font-dm-sans)', '"DM Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
       },
       boxShadow: {
         'soft': '0 2px 20px -3px rgba(13, 92, 138, 0.1)',

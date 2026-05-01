@@ -6,6 +6,7 @@ import { useRouter } from 'next/router';
 import { getTourBySlug, getTour, Tour, Jalador } from '../../../lib/api';
 import api from '../../../lib/api';
 import Layout from '../../../components/Layout';
+import { calculateTotalPrice } from '../../../lib/pricing';
 
 export default function JaladorTourLink() {
   const router = useRouter();
@@ -77,7 +78,7 @@ export default function JaladorTourLink() {
     );
   }
 
-  const totalPrice = (tour.priceAdult * numAdults) + ((tour.priceChild || tour.priceAdult * 0.7) * numChildren);
+  const totalPrice = calculateTotalPrice(tour.priceAdult, numAdults, numChildren, tour.priceChild);
 
   const handleBooking = async () => {
     if (!tourDate) { setMessage('Selecciona una fecha'); return; }

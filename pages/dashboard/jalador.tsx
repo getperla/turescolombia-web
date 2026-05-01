@@ -7,6 +7,7 @@ import Layout from '../../components/Layout';
 import { useToast } from '../../components/Toast';
 import LinkPreview from '../../components/LinkPreview';
 import { shareLink, copyText } from '../../lib/share';
+import { calculateCommission } from '../../lib/pricing';
 import { Tour } from '../../lib/api';
 
 const JaladorDashboard = () => {
@@ -148,7 +149,9 @@ const JaladorDashboard = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {tours.map((tour) => {
-            const commission = Math.round(tour.priceAdult * 0.20);
+            // TODO: cuando el backend exponga commissionPct por tour/jalador,
+            //       usarlo en lugar del default de calculateCommission().
+            const commission = calculateCommission(tour.priceAdult);
             const tourUrl = `${baseUrl}/j/${jalador.refCode}/${tour.slug}`;
             return (
               <div key={tour.id} className="rounded-2xl border overflow-hidden hover:shadow-lg transition-shadow" style={{ borderColor: '#EBEBEB' }}>

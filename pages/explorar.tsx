@@ -92,7 +92,7 @@ export default function Explorar() {
                 style={{ borderColor: '#DDDDDD', color: '#222' }}
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#717171' }}>✕</button>
+                <button onClick={() => setSearchQuery('')} aria-label="Limpiar busqueda" className="absolute right-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#717171' }}>✕</button>
               )}
             </div>
             <button
