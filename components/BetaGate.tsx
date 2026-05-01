@@ -79,7 +79,17 @@ export default function BetaGate({ children }: { children: ReactNode }) {
 
     const creds = demoCredentials[role];
     const target = roles.find(r => r.id === role);
-    const path = target?.path || '/explorar';
+    const dashboardPath = target?.path || '/explorar';
+
+    // Preservar URL original (deep links compartidos por jalador,
+    // /tour/xyz, /j/PED-0001/tours, etc). Si llego a "/", "/login" o
+    // "/register", redirigir al dashboard del rol — no tiene sentido
+    // volver a esas rutas tras elegir rol. Anti-open-redirect: solo
+    // permitimos paths relativos del mismo origen.
+    const currentPath = router.asPath || '/';
+    const isAuthRoute = currentPath === '/' || currentPath.startsWith('/login') || currentPath.startsWith('/register');
+    const isSafeRelative = currentPath.startsWith('/') && !currentPath.startsWith('//');
+    const targetPath = isAuthRoute || !isSafeRelative ? dashboardPath : currentPath;
 
     // Modo demo instantaneo: no llamamos al backend para permitir cambio
     // rapido de rol sin latencia ni errores 401 si las credenciales cambian.
@@ -95,7 +105,7 @@ export default function BetaGate({ children }: { children: ReactNode }) {
 
     // Hard navigation forces AuthProvider to re-read localStorage on remount,
     // otherwise its internal state stays null and useRequireAuth kicks us back to /login
-    window.location.href = path;
+    window.location.href = targetPath;
   };
 
   if (loading) {
