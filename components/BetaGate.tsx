@@ -92,7 +92,7 @@ export default function BetaGate({ children }: { children: ReactNode }) {
     const targetPath = isAuthRoute || !isSafeRelative ? dashboardPath : currentPath;
 
     // Modo demo instantaneo: no llamamos al backend para permitir cambio
-    // rapido de rol sin latencia ni errores 401 si las credenciales cambian.
+    // rápido de rol sin latencia ni errores 401 si las credenciales cambian.
     const fakeUser = {
       id: role === 'admin' ? 1 : role === 'operator' ? 2 : role === 'jalador' ? 3 : 4,
       name: role === 'admin' ? 'Admin Demo' : role === 'operator' ? 'Operador Demo' : role === 'jalador' ? 'Jalador Demo' : 'Turista Demo',

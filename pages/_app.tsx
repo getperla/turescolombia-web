@@ -17,7 +17,7 @@ export default function App({ Component, pageProps }: AppProps) {
     <AuthProvider>
       <Head>
         <title>La Perla — Tours verificados en Santa Marta</title>
-        <meta name="description" content="Reserva tours verificados en Santa Marta, Tayrona, Sierra Nevada y el Caribe colombiano. Pagos seguros, confirmacion por WhatsApp, codigo QR." />
+        <meta name="description" content="Reserva tours verificados en Santa Marta, Tayrona, Sierra Nevada y el Caribe colombiano. Pagos seguros, confirmación por WhatsApp, código QR." />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
         <meta name="theme-color" content="#0A1628" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -32,7 +32,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="La Perla" />
         <meta property="og:title" content="La Perla — Tours verificados en Santa Marta" />
-        <meta property="og:description" content="Reserva tours en Tayrona, Sierra Nevada y el Caribe colombiano. Pago seguro, confirmacion por WhatsApp, codigo QR." />
+        <meta property="og:description" content="Reserva tours en Tayrona, Sierra Nevada y el Caribe colombiano. Pago seguro, confirmación por WhatsApp, código QR." />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:image" content={`${SITE_URL}/api/og`} />
         <meta property="og:image:width" content="1200" />
@@ -42,7 +42,7 @@ export default function App({ Component, pageProps }: AppProps) {
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="La Perla — Tours verificados en Santa Marta" />
-        <meta name="twitter:description" content="Reserva tours en Tayrona, Sierra Nevada y el Caribe colombiano. Pago seguro, confirmacion por WhatsApp." />
+        <meta name="twitter:description" content="Reserva tours en Tayrona, Sierra Nevada y el Caribe colombiano. Pago seguro, confirmación por WhatsApp." />
         <meta name="twitter:image" content={`${SITE_URL}/api/og`} />
       </Head>
       <BetaGate>

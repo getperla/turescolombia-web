@@ -3,7 +3,7 @@
 //
 // Para activar pagos reales:
 // 1. Crea cuenta en https://comercios.wompi.co
-// 2. Copia tu llave publica (pub_test_xxx o pub_prod_xxx)
+// 2. Copia tu llave pública (pub_test_xxx o pub_prod_xxx)
 // 3. Ponla en NEXT_PUBLIC_WOMPI_PUBLIC_KEY (en .env.production o Vercel env vars)
 // 4. Cambia NEXT_PUBLIC_WOMPI_ENV a "production" cuando estes listo
 

@@ -474,7 +474,7 @@ export default function AdminDashboard() {
                       <EditField label="Banco" value={editForm.bankName} onChange={v => setEditForm({ ...editForm, bankName: v })} />
                       <EditField label="Numero de cuenta" value={editForm.bankAccount} onChange={v => setEditForm({ ...editForm, bankAccount: v })} />
                     </div>
-                    <EditField label="Nequi (telefono)" value={editForm.nequiPhone} onChange={v => setEditForm({ ...editForm, nequiPhone: v })} type="tel" />
+                    <EditField label="Nequi (teléfono)" value={editForm.nequiPhone} onChange={v => setEditForm({ ...editForm, nequiPhone: v })} type="tel" />
                   </>
                 )}
 

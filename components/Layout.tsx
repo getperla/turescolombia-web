@@ -104,7 +104,7 @@ export default function Layout({ children, hideSearch }: { children: React.React
                       {dashboardPath && <Link href={dashboardPath} className="block px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }} onClick={() => setMenuOpen(false)}>Mi Panel</Link>}
                       <Link href="/perfil" className="block px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }} onClick={() => setMenuOpen(false)}>Mi Perfil</Link>
                       <div className="border-t my-1" style={{ borderColor: '#EBEBEB' }}></div>
-                      <button onClick={() => { logout(); setMenuOpen(false); }} className="block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }}>Cerrar sesion</button>
+                      <button onClick={() => { logout(); setMenuOpen(false); }} className="block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }}>Cerrar sesión</button>
                     </div>
                     </>
                   )}

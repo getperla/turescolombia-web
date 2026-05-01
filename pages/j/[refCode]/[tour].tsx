@@ -77,7 +77,7 @@ export default function JaladorTourLink() {
     );
   }
 
-  // Usar ?? en vez de || para que priceChild === 0 (tour gratis para ninos) no caiga al fallback de 70%.
+  // Usar ?? en vez de || para que priceChild === 0 (tour gratis para niños) no caiga al fallback de 70%.
   const totalPrice = (tour.priceAdult * numAdults) + ((tour.priceChild ?? tour.priceAdult * 0.7) * numChildren);
 
   const handleBooking = async () => {
@@ -226,12 +226,12 @@ export default function JaladorTourLink() {
               `Fecha: ${formatDate(tourDate)}`,
               `Hora de salida: ${tour.departureTime}`,
               `Punto de encuentro: ${tour.departurePoint}`,
-              `Personas: ${numAdults} adulto(s)${numChildren > 0 ? `, ${numChildren} nino(s)` : ''}`,
+              `Personas: ${numAdults} adulto(s)${numChildren > 0 ? `, ${numChildren} niño(s)` : ''}`,
               `Total: $${totalPrice.toLocaleString()} COP`,
               ``,
               `Codigo de reserva: *${bookingResult.bookingCode}*`,
               ``,
-              `Presenta este mensaje el dia del tour.`,
+              `Presenta este mensaje el día del tour.`,
               `Gracias por confiar en La Perla!`,
             ].join('\n');
             const cleanPhone = clientPhone.replace(/\D/g, '');
@@ -248,7 +248,7 @@ export default function JaladorTourLink() {
                 <div className="bg-gray-50 rounded-2xl p-4 mb-4 text-left text-sm space-y-1">
                   <div><span className="text-gray-500">Tour:</span> <span className="font-medium">{tour.name}</span></div>
                   <div><span className="text-gray-500">Fecha:</span> <span className="font-medium">{formatDate(tourDate)}</span></div>
-                  <div><span className="text-gray-500">Personas:</span> <span className="font-medium">{numAdults} adulto(s){numChildren > 0 ? `, ${numChildren} nino(s)` : ''}</span></div>
+                  <div><span className="text-gray-500">Personas:</span> <span className="font-medium">{numAdults} adulto(s){numChildren > 0 ? `, ${numChildren} niño(s)` : ''}</span></div>
                   <div className="pt-2 border-t border-gray-200 mt-2">
                     <span className="text-gray-500">Total:</span> <span className="font-bold text-primary-600 text-lg">${totalPrice.toLocaleString()} COP</span>
                   </div>

@@ -16,7 +16,7 @@ const JaladorDashboard = () => {
 
   useEffect(() => {
     if (!authorized) return;
-    api.get('/dashboard/jalador').then(r => setData(r.data)).catch(() => setError('Inicia sesion como jalador.'));
+    api.get('/dashboard/jalador').then(r => setData(r.data)).catch(() => setError('Inicia sesión como jalador.'));
     api.get('/tours', { params: { sortBy: 'price', order: 'desc', limit: '50' } }).then(r => {
       const sorted = (r.data?.data || []).sort((a: Tour, b: Tour) => b.priceAdult - a.priceAdult);
       setTours(sorted);
@@ -28,7 +28,7 @@ const JaladorDashboard = () => {
   if (error) return (
     <Layout><div className="max-w-3xl mx-auto py-16 px-4 text-center">
       <p className="font-semibold text-lg mb-4" style={{ color: '#222' }}>{error}</p>
-      <Link href="/login?role=jalador" className="btn-primary inline-block">Iniciar sesion</Link>
+      <Link href="/login?role=jalador" className="btn-primary inline-block">Iniciar sesión</Link>
     </div></Layout>
   );
 

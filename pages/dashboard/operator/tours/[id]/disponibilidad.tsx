@@ -146,7 +146,7 @@ export default function Disponibilidad() {
                 <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required className="input" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cupos por dia</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cupos por día</label>
                 <input type="number" value={bulkSpots} onChange={(e) => setBulkSpots(e.target.value)} required className="input" />
               </div>
             </div>

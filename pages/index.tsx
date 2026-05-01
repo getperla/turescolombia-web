@@ -16,7 +16,7 @@ export default function Home() {
 
   // Safety net: si AuthProvider queda colgado en 'loading' (ej: red lenta,
   // localStorage corrupto), tras LOADING_TIMEOUT_MS dejamos que el render
-  // continue. Si no hay sesion, BetaGate maneja la pantalla.
+  // continue. Si no hay sesión, BetaGate maneja la pantalla.
   useEffect(() => {
     if (!loading) return;
     const t = setTimeout(() => setTimedOut(true), LOADING_TIMEOUT_MS);

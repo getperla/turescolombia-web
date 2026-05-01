@@ -83,7 +83,7 @@ export default function CrearTour() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic info */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-            <h2 className="font-semibold text-gray-900">Informacion basica</h2>
+            <h2 className="font-semibold text-gray-900">Información básica</h2>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del tour *</label>
               <input type="text" value={form.name} onChange={set('name')} required className="input" placeholder="ej: Tour a Playa Blanca" />
@@ -114,7 +114,7 @@ export default function CrearTour() {
                 <input type="number" value={form.priceAdult} onChange={set('priceAdult')} required className="input" placeholder="150000" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Precio nino (COP)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Precio niño (COP)</label>
                 <input type="number" value={form.priceChild} onChange={set('priceChild')} className="input" placeholder="100000" />
               </div>
               <div>
@@ -170,7 +170,7 @@ export default function CrearTour() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-              <textarea value={form.observations} onChange={set('observations')} className="input" rows={2} placeholder="Informacion adicional..." />
+              <textarea value={form.observations} onChange={set('observations')} className="input" rows={2} placeholder="Información adicional..." />
             </div>
           </div>
 
