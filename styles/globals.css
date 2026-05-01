@@ -14,6 +14,16 @@
   }
 }
 
+/* PearlSpinner — animaciones de rotacion + pulso de la perla */
+@keyframes pearlSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes pearlPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 @layer components {
   /* === BOTONES — Airbnb inspired === */
   .btn-primary {
