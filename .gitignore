@@ -10,3 +10,10 @@ node_modules/
 
 tsconfig.tsbuildinfo
 next-env.d.ts
+
+# Tooling local de Claude Code (GSD via npx get-shit-done-cc)
+.claude/
+
+# Coverage output de jest
+coverage/
+
