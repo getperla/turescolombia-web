@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from '../constants/storageKeys';
 // Mock data for beta/demo mode — used when token === 'beta-demo-token'
 // Lets family/friends explore the app without a real backend.
 
@@ -256,7 +257,7 @@ export function getMockResponse(method: string, url: string): any {
 
 export function isDemoMode(): boolean {
   if (typeof window === 'undefined') return false;
-  return localStorage.getItem('turescol_token') === 'beta-demo-token';
+  return localStorage.getItem(STORAGE_KEYS.TOKEN) === 'beta-demo-token';
 }
 
 // Galerias por tour — primera es la cover, despues adicionales

@@ -1,6 +1,7 @@
+import { STORAGE_KEYS } from '../../constants/storageKeys';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
-const STORAGE_KEY = 'laperla_favorites';
+const STORAGE_KEY = STORAGE_KEYS.FAVORITES;
 
 // Cache global para evitar JSON.parse repetido en cada mount
 let cachedFavorites: number[] | null = null;

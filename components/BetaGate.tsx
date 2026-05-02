@@ -1,8 +1,9 @@
+import { STORAGE_KEYS } from '../constants/storageKeys';
 import { useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/router';
 import Logo from './Logo';
 
-const BETA_KEY = 'laperla_beta';
+const BETA_KEY = STORAGE_KEYS.BETA;
 
 type BetaRole = 'tourist' | 'jalador' | 'operator' | 'admin';
 
@@ -55,8 +56,8 @@ export default function BetaGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check if user already has a real auth token
-    const token = localStorage.getItem('turescol_token');
-    const user = localStorage.getItem('turescol_user');
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    const user = localStorage.getItem(STORAGE_KEYS.USER);
     if (token && user) {
       setLoading(false);
       return;
@@ -89,8 +90,8 @@ export default function BetaGate({ children }: { children: ReactNode }) {
       email: creds.email,
       role,
     };
-    localStorage.setItem('turescol_token', 'beta-demo-token');
-    localStorage.setItem('turescol_user', JSON.stringify(fakeUser));
+    localStorage.setItem(STORAGE_KEYS.TOKEN, 'beta-demo-token');
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(fakeUser));
     localStorage.setItem(BETA_KEY, JSON.stringify({ role, betaMode: true }));
 
     // Hard navigation forces AuthProvider to re-read localStorage on remount,

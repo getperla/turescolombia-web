@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getTours, getCategories, Tour, Category } from '../lib/api';
 import Layout from '../components/Layout';
-import { useFavorites } from '../lib/useFavorites';
+import { useFavorites } from '../lib/hooks/useFavorites';
 
 const categoryIcons: Record<string, string> = {
   playas: '🏖️', playa: '🏖️', ciudad: '🏛️', cultural: '🏛️', aventura: '⛰️',

@@ -1,11 +1,46 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/router';
 import { getTourBySlug, getTour, Tour, Jalador } from '../../../lib/api';
 import api from '../../../lib/api';
 import Layout from '../../../components/Layout';
+
+/**
+ * Seccion colapsable usada SOLO en mobile (en desktop siempre abierta).
+ * En vez de detectar viewport con JS (riesgo de hydration mismatch), usamos
+ * CSS para forzar abierto en md+ con `details[open]` y aria.
+ */
+function ColapsableSection({
+  titulo,
+  defaultOpen = false,
+  children,
+}: {
+  titulo: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="colapsable-section border rounded-2xl overflow-hidden mb-3" style={{ borderColor: '#EBEBEB' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="colapsable-header w-full flex items-center justify-between px-4 py-3 text-left bg-white"
+        aria-expanded={open}
+      >
+        <span className="font-bold" style={{ color: '#222' }}>{titulo}</span>
+        <span className="colapsable-icon text-2xl leading-none" style={{ color: '#717171' }} aria-hidden="true">
+          {open ? '−' : '+'}
+        </span>
+      </button>
+      <div className="colapsable-body px-4 pb-4" style={{ display: open ? 'block' : 'none' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function JaladorTourLink() {
   const router = useRouter();
@@ -19,6 +54,7 @@ export default function JaladorTourLink() {
   const [clientLastName, setClientLastName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [clientHotel, setClientHotel] = useState('');
+  const [showExtraFields, setShowExtraFields] = useState(false);
   const [message, setMessage] = useState('');
   const [bookingResult, setBookingResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -68,7 +104,7 @@ export default function JaladorTourLink() {
       <Layout>
         <div className="max-w-5xl mx-auto px-4 pt-6">
           <div className="animate-pulse space-y-3">
-            <div className="h-56 rounded-xl" style={{ background: '#F0F0F0' }} />
+            <div className="h-44 md:h-56 rounded-xl" style={{ background: '#F0F0F0' }} />
             <div className="h-6 w-1/2 rounded" style={{ background: '#F0F0F0' }} />
             <div className="h-4 w-1/3 rounded" style={{ background: '#F0F0F0' }} />
           </div>
@@ -111,6 +147,19 @@ export default function JaladorTourLink() {
     catch { return d; }
   };
 
+  const startNewBooking = () => {
+    setBookingResult(null);
+    setMessage('');
+    setClientName('');
+    setClientLastName('');
+    setClientPhone('');
+    setClientHotel('');
+    setTourDate('');
+    setNumAdults(1);
+    setNumChildren(0);
+    setShowExtraFields(false);
+  };
+
   return (
     <Layout>
       <Head>
@@ -125,223 +174,420 @@ export default function JaladorTourLink() {
         <meta property="og:locale" content="es_CO" />
       </Head>
 
-      {/* Hero compacto */}
-      <div className="relative h-56 md:h-72 overflow-hidden">
-        {tour.coverImageUrl ? (
-          <Image src={tour.coverImageUrl} alt={tour.name} fill priority sizes="100vw" className="object-cover" />
-        ) : (
-          <div className="absolute inset-0 bg-tropical-gradient"></div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
-        <div className="absolute bottom-4 left-4 right-4 text-white">
-          {tour.category && (
-            <span className="inline-block mb-2 px-3 py-1 bg-white/15 backdrop-blur-sm rounded-full text-xs font-medium">
-              {tour.category.name}
-            </span>
+      {/* Wrapper que en mobile reordena via flex order; en desktop queda neutral. */}
+      <div className="tour-detail-wrapper">
+        {/* Hero compacto en mobile (h-44 = 176px), normal en desktop (h-72) */}
+        <div className="section-hero relative h-44 md:h-72 overflow-hidden">
+          {tour.coverImageUrl ? (
+            <Image src={tour.coverImageUrl} alt={tour.name} fill priority sizes="100vw" className="object-cover" />
+          ) : (
+            <div className="absolute inset-0 bg-tropical-gradient"></div>
           )}
-          <h1 className="text-2xl md:text-3xl font-extrabold drop-shadow-lg">{tour.name}</h1>
-          <div className="flex items-center gap-3 mt-1 text-sm text-white/80">
-            <span>📍 {tour.departurePoint}</span>
-            <span>🕐 {tour.duration}</span>
-            {tour.avgRating > 0 && <span>⭐ {tour.avgRating.toFixed(1)}</span>}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+          <div className="absolute bottom-3 left-4 right-4 text-white">
+            {tour.category && (
+              <span className="inline-block mb-1.5 px-2.5 py-0.5 bg-white/15 backdrop-blur-sm rounded-full text-xs font-medium">
+                {tour.category.name}
+              </span>
+            )}
+            <h1 className="text-xl md:text-3xl font-extrabold drop-shadow-lg leading-tight">{tour.name}</h1>
           </div>
         </div>
-      </div>
 
-      <main className="max-w-lg mx-auto px-4 py-6">
-        {/* Badge del jalador — genera confianza */}
-        {jalador && (
-          <div className="flex items-center gap-3 bg-primary-50 border border-primary-200 rounded-2xl p-4 mb-6">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-400 to-secondary-400 text-white flex items-center justify-center text-lg font-bold shrink-0">
-              {jalador.user.name.charAt(0)}
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Tu asesor turístico</div>
-              <div className="font-bold text-gray-900">{jalador.user.name}</div>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span>⭐ {jalador.score} pts</span>
+        <main className="max-w-lg mx-auto px-4 py-4 md:py-6">
+          {/* Titulo + precio (visible siempre, mobile solo en bloque conciso) */}
+          <div className="section-titulo md:mb-6">
+            <div className="flex items-baseline justify-between gap-2 md:hidden mb-3">
+              <div className="flex items-center gap-2 text-xs" style={{ color: '#717171' }}>
+                <span>📍 {tour.departurePoint}</span>
                 <span>·</span>
-                <span>{jalador.totalSales} ventas</span>
-                <span className="bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full font-semibold">
-                  {jalador.badge?.replace('_', ' ').toUpperCase()}
-                </span>
+                <span>🕐 {tour.duration}</span>
+                {tour.avgRating > 0 && <><span>·</span><span>⭐ {tour.avgRating.toFixed(1)}</span></>}
+              </div>
+              <div className="text-right shrink-0">
+                <div className="font-extrabold text-xl text-primary-600">${tour.priceAdult.toLocaleString()}</div>
+                <div className="text-[10px] -mt-1" style={{ color: '#717171' }}>COP / persona</div>
+              </div>
+            </div>
+            {/* Precio destacado solo en desktop */}
+            <div className="hidden md:block text-center mb-6">
+              <div className="text-sm text-gray-400">Desde</div>
+              <div className="text-4xl font-extrabold text-primary-600">
+                ${tour.priceAdult.toLocaleString()}
+                <span className="text-base font-normal text-gray-400"> COP / persona</span>
               </div>
             </div>
           </div>
-        )}
 
-        {/* Precio destacado */}
-        <div className="text-center mb-6">
-          <div className="text-sm text-gray-400">Desde</div>
-          <div className="text-4xl font-extrabold text-primary-600">
-            ${tour.priceAdult.toLocaleString()}
-            <span className="text-base font-normal text-gray-400"> COP / persona</span>
-          </div>
-        </div>
-
-        {/* Descripcion corta */}
-        <p className="text-gray-600 leading-relaxed mb-6">{tour.shortDescription || tour.description.substring(0, 200)}</p>
-
-        {/* Detalles del tour */}
-        <div className="grid grid-cols-2 gap-3 bg-gray-50 rounded-2xl p-4 mb-6">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-lg">🕐</span>
-            <div><div className="text-gray-400 text-xs">Salida</div><div className="font-semibold">{tour.departureTime}</div></div>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-lg">🔄</span>
-            <div><div className="text-gray-400 text-xs">Retorno</div><div className="font-semibold">{tour.returnTime}</div></div>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-lg">⏱️</span>
-            <div><div className="text-gray-400 text-xs">Duración</div><div className="font-semibold">{tour.duration}</div></div>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-lg">👥</span>
-            <div><div className="text-gray-400 text-xs">Capacidad</div><div className="font-semibold">{tour.maxPeople} personas</div></div>
-          </div>
-        </div>
-
-        {/* Incluye / No incluye */}
-        {tour.includes.length > 0 && (
-          <div className="mb-6">
-            <h3 className="font-bold text-gray-900 mb-2">✅ Incluye</h3>
-            <ul className="space-y-1">
-              {tour.includes.map((item, i) => (
-                <li key={i} className="flex items-center gap-2 text-sm text-gray-600">
-                  <span className="text-primary-500">✓</span> {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {bookingResult ? (
-          /* Confirmacion */
-          (() => {
-            const whatsappMsg = [
-              `Hola ${clientName}! Tu reserva con La Perla esta confirmada`,
-              ``,
-              `*${tour.name}*`,
-              `Fecha: ${formatDate(tourDate)}`,
-              `Hora de salida: ${tour.departureTime}`,
-              `Punto de encuentro: ${tour.departurePoint}`,
-              `Personas: ${numAdults} adulto(s)${numChildren > 0 ? `, ${numChildren} nino(s)` : ''}`,
-              `Total: $${totalPrice.toLocaleString()} COP`,
-              ``,
-              `Codigo de reserva: *${bookingResult.bookingCode}*`,
-              ``,
-              `Presenta este mensaje el dia del tour.`,
-              `Gracias por confiar en La Perla!`,
-            ].join('\n');
-            const cleanPhone = clientPhone.replace(/\D/g, '');
-            const phoneWithCountry = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
-            const whatsappUrl = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(whatsappMsg)}`;
-
-            return (
-              <div className="text-center">
-                <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mb-4">
-                  <div className="text-4xl mb-2">✅</div>
-                  <h3 className="font-bold text-green-800 text-xl mb-1">Reserva confirmada!</h3>
-                  <p className="text-green-700">Código: <span className="font-mono font-bold text-lg">{bookingResult.bookingCode}</span></p>
+          {/* Badge del jalador — compacto en mobile */}
+          {jalador && (
+            <div className="section-jalador flex items-center gap-3 bg-primary-50 border border-primary-200 rounded-2xl p-3 md:p-4 mb-4 md:mb-6">
+              <div className="w-9 h-9 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-primary-400 to-secondary-400 text-white flex items-center justify-center text-base md:text-lg font-bold shrink-0">
+                {jalador.user.name.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-gray-500 hidden md:block">Tu asesor turístico</div>
+                <div className="font-bold text-gray-900 text-sm md:text-base truncate">{jalador.user.name}</div>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span>⭐ {jalador.score} pts</span>
+                  <span>·</span>
+                  <span>{jalador.totalSales} ventas</span>
                 </div>
-                <div className="bg-gray-50 rounded-2xl p-4 mb-4 text-left text-sm space-y-1">
-                  <div><span className="text-gray-500">Tour:</span> <span className="font-medium">{tour.name}</span></div>
-                  <div><span className="text-gray-500">Fecha:</span> <span className="font-medium">{formatDate(tourDate)}</span></div>
-                  <div><span className="text-gray-500">Personas:</span> <span className="font-medium">{numAdults} adulto(s){numChildren > 0 ? `, ${numChildren} nino(s)` : ''}</span></div>
-                  <div className="pt-2 border-t border-gray-200 mt-2">
-                    <span className="text-gray-500">Total:</span> <span className="font-bold text-primary-600 text-lg">${totalPrice.toLocaleString()} COP</span>
+              </div>
+            </div>
+          )}
+
+          {bookingResult ? (
+            /* Confirmacion — optimizada para mobile + WhatsApp 1-tap */
+            (() => {
+              const whatsappMsg = [
+                `✅ *Reserva La Perla*`,
+                `Tour: ${tour.name}`,
+                `Fecha: ${formatDate(tourDate)}`,
+                `Código: *${bookingResult.bookingCode}*`,
+                `Total: $${totalPrice.toLocaleString()} COP`,
+                ``,
+                `Salida: ${tour.departureTime} — ${tour.departurePoint}`,
+              ].join('\n');
+              const cleanPhone = clientPhone.replace(/\D/g, '');
+              const phoneWithCountry = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
+              const whatsappUrl = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(whatsappMsg)}`;
+
+              return (
+                <div className="section-formulario text-center">
+                  <div className="bg-green-50 border border-green-200 rounded-2xl p-5 md:p-6 mb-4">
+                    <div className="text-4xl mb-2">✅</div>
+                    <h3 className="font-bold text-green-800 text-xl mb-1">Reserva confirmada</h3>
+                    <p className="text-green-700 text-sm">Código: <span className="font-mono font-bold text-base">{bookingResult.bookingCode}</span></p>
                   </div>
+                  <div className="bg-gray-50 rounded-2xl p-4 mb-4 text-left text-sm space-y-1">
+                    <div><span className="text-gray-500">Tour:</span> <span className="font-medium">{tour.name}</span></div>
+                    <div><span className="text-gray-500">Fecha:</span> <span className="font-medium">{formatDate(tourDate)}</span></div>
+                    <div><span className="text-gray-500">Personas:</span> <span className="font-medium">{numAdults} adulto(s){numChildren > 0 ? `, ${numChildren} niño(s)` : ''}</span></div>
+                    <div className="pt-2 border-t border-gray-200 mt-2">
+                      <span className="text-gray-500">Total:</span> <span className="font-bold text-primary-600 text-lg">${totalPrice.toLocaleString()} COP</span>
+                    </div>
+                  </div>
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold rounded-2xl text-base transition-all shadow-lg mb-3"
+                    style={{ minHeight: 56 }}
+                  >
+                    <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    Enviar por WhatsApp
+                  </a>
+                  <button
+                    onClick={startNewBooking}
+                    className="w-full text-sm font-semibold py-3 rounded-2xl border"
+                    style={{ borderColor: '#EBEBEB', color: '#222' }}
+                  >
+                    Nueva reserva
+                  </button>
+                  <Link href={`/tour/${tour.slug}`} className="block mt-3 text-xs text-gray-400 hover:text-gray-600">
+                    Ver detalles completos del tour
+                  </Link>
                 </div>
-                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold py-4 px-6 rounded-2xl text-lg transition-all shadow-lg mb-3">
-                  <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                  Enviar confirmación por WhatsApp
-                </a>
-                <Link href={`/tour/${tour.slug}`} className="text-sm text-gray-400 hover:text-gray-600">
-                  Ver detalles completos del tour
-                </Link>
-              </div>
-            );
-          })()
-        ) : (
-          /* Formulario de reserva — optimizado mobile */
-          <>
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-4 space-y-4">
-              <h3 className="font-bold text-gray-900 text-lg">Reservar este tour</h3>
+              );
+            })()
+          ) : (
+            <>
+              {/* Formulario ultra-rapido — campos primarios siempre visibles */}
+              <div className="section-formulario bg-white border border-gray-200 rounded-2xl p-4 md:p-5 mb-4 space-y-4">
+                <h3 className="font-bold text-gray-900 text-lg hidden md:block">Reservar este tour</h3>
 
-              <div className="grid grid-cols-2 gap-3">
+                {/* Nombre */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                  <input type="text" value={clientName} onChange={(e) => setClientName(e.target.value)}
-                    placeholder="Nombre" className="input text-lg" />
+                  <label htmlFor="tour-name" className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                  <input
+                    id="tour-name"
+                    type="text"
+                    autoComplete="given-name"
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                    placeholder="Nombre"
+                    className="input text-lg"
+                  />
                 </div>
+
+                {/* WhatsApp con teclado numerico */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
-                  <input type="text" value={clientLastName} onChange={(e) => setClientLastName(e.target.value)}
-                    placeholder="Apellido" className="input text-lg" />
+                  <label htmlFor="tour-phone" className="block text-sm font-medium text-gray-700 mb-1">WhatsApp *</label>
+                  <input
+                    id="tour-phone"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="tel"
+                    value={clientPhone}
+                    onChange={(e) => setClientPhone(e.target.value)}
+                    placeholder="300 000 0000"
+                    className="input text-lg"
+                  />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tu WhatsApp *</label>
-                <input type="tel" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)}
-                  placeholder="300 000 0000" className="input text-lg" />
-              </div>
+                {/* Fecha */}
+                <div>
+                  <label htmlFor="tour-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha del tour *</label>
+                  <input
+                    id="tour-date"
+                    type="date"
+                    value={tourDate}
+                    onChange={(e) => setTourDate(e.target.value)}
+                    className="input text-lg"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha del tour *</label>
-                <input type="date" value={tourDate} onChange={(e) => setTourDate(e.target.value)} className="input text-lg" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+                {/* Adultos con +/- grandes (44px touch target) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Adultos</label>
-                  <input type="number" min={1} max={tour.maxPeople} value={numAdults}
-                    onChange={(e) => setNumAdults(Math.max(1, Number(e.target.value)))}
-                    className="input text-lg text-center" />
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setNumAdults(Math.max(1, numAdults - 1))}
+                      aria-label="Quitar un adulto"
+                      className="w-11 h-11 rounded-xl border text-2xl font-bold flex items-center justify-center disabled:opacity-40"
+                      style={{ borderColor: '#EBEBEB', color: '#222' }}
+                      disabled={numAdults <= 1}
+                    >
+                      −
+                    </button>
+                    <div className="flex-1 text-center text-2xl font-bold" style={{ color: '#222' }}>{numAdults}</div>
+                    <button
+                      type="button"
+                      onClick={() => setNumAdults(Math.min(tour.maxPeople, numAdults + 1))}
+                      aria-label="Agregar un adulto"
+                      className="w-11 h-11 rounded-xl border text-2xl font-bold flex items-center justify-center disabled:opacity-40"
+                      style={{ borderColor: '#EBEBEB', color: '#222' }}
+                      disabled={numAdults >= tour.maxPeople}
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Niños</label>
-                  <input type="number" min={0} value={numChildren}
-                    onChange={(e) => setNumChildren(Math.max(0, Number(e.target.value)))}
-                    className="input text-lg text-center" />
+
+                {/* Toggle de campos opcionales */}
+                <button
+                  type="button"
+                  onClick={() => setShowExtraFields(!showExtraFields)}
+                  className="text-sm font-semibold underline"
+                  style={{ color: '#0D5C8A' }}
+                >
+                  {showExtraFields ? '— Ocultar más datos' : '+ ¿Más datos? (apellido, hotel, niños)'}
+                </button>
+
+                {showExtraFields && (
+                  <div className="space-y-4 pt-1">
+                    <div>
+                      <label htmlFor="tour-lastname" className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+                      <input
+                        id="tour-lastname"
+                        type="text"
+                        autoComplete="family-name"
+                        value={clientLastName}
+                        onChange={(e) => setClientLastName(e.target.value)}
+                        placeholder="Apellido"
+                        className="input text-lg"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="tour-hotel" className="block text-sm font-medium text-gray-700 mb-1">Hotel / hospedaje</label>
+                      <input
+                        id="tour-hotel"
+                        type="text"
+                        value={clientHotel}
+                        onChange={(e) => setClientHotel(e.target.value)}
+                        placeholder="Hotel, hostal, Airbnb..."
+                        className="input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Niños</label>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setNumChildren(Math.max(0, numChildren - 1))}
+                          aria-label="Quitar un nino"
+                          className="w-11 h-11 rounded-xl border text-2xl font-bold flex items-center justify-center disabled:opacity-40"
+                          style={{ borderColor: '#EBEBEB', color: '#222' }}
+                          disabled={numChildren <= 0}
+                        >
+                          −
+                        </button>
+                        <div className="flex-1 text-center text-2xl font-bold" style={{ color: '#222' }}>{numChildren}</div>
+                        <button
+                          type="button"
+                          onClick={() => setNumChildren(numChildren + 1)}
+                          aria-label="Agregar un nino"
+                          className="w-11 h-11 rounded-xl border text-2xl font-bold flex items-center justify-center"
+                          style={{ borderColor: '#EBEBEB', color: '#222' }}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-xs" style={{ color: '#717171' }}>
+                      Código de asesor: <span className="font-mono font-semibold">{refCode || '—'}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Total + boton — visible solo desktop. En mobile el sticky bar al pie maneja esto. */}
+                <div className="hidden md:block">
+                  <div className="bg-primary-50 border border-primary-200 p-4 rounded-2xl mb-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-primary-700 font-medium">Total</span>
+                      <span className="text-2xl font-extrabold text-primary-600">${totalPrice.toLocaleString()} COP</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleBooking}
+                    disabled={loading}
+                    className="w-full btn-primary text-lg py-4 disabled:opacity-50"
+                  >
+                    {loading ? 'Reservando...' : 'Reservar ahora'}
+                  </button>
+                </div>
+
+                {message && (
+                  <div className="p-3 rounded-xl text-sm bg-red-50 text-red-600 border border-red-100">
+                    {message}
+                  </div>
+                )}
+
+                <div className="text-center space-y-1">
+                  <p className="text-xs text-gray-400">Reserva verificada por La Perla</p>
+                  <p className="text-xs text-gray-400">Recibirás confirmación por WhatsApp</p>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">¿Dónde te hospedas? (opcional)</label>
-                <input type="text" value={clientHotel} onChange={(e) => setClientHotel(e.target.value)}
-                  placeholder="Hotel, hostal, Airbnb..." className="input" />
+              {/* Que incluye — colapsable en mobile, expandida en desktop */}
+              {tour.includes && tour.includes.length > 0 && (
+                <div className="section-incluye mb-3 md:mb-6">
+                  <ColapsableSection titulo="✅ Qué incluye" defaultOpen>
+                    <ul className="space-y-1">
+                      {tour.includes.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                          <span className="text-primary-500 mt-0.5">✓</span> {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </ColapsableSection>
+                  {tour.excludes && tour.excludes.length > 0 && (
+                    <ColapsableSection titulo="❌ No incluye" defaultOpen={false}>
+                      <ul className="space-y-1">
+                        {tour.excludes.map((item, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                            <span style={{ color: '#CC3333' }} className="mt-0.5">×</span> {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </ColapsableSection>
+                  )}
+                </div>
+              )}
+
+              {/* Descripcion — colapsable en mobile */}
+              <div className="section-descripcion mb-3 md:mb-6">
+                <ColapsableSection titulo="📝 Descripción del tour" defaultOpen={false}>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                    {tour.shortDescription || tour.description.substring(0, 200)}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div><span className="text-gray-400 text-xs">Salida</span><div className="font-semibold">🕐 {tour.departureTime}</div></div>
+                    <div><span className="text-gray-400 text-xs">Retorno</span><div className="font-semibold">🔄 {tour.returnTime}</div></div>
+                    <div><span className="text-gray-400 text-xs">Duración</span><div className="font-semibold">⏱️ {tour.duration}</div></div>
+                    <div><span className="text-gray-400 text-xs">Capacidad</span><div className="font-semibold">👥 {tour.maxPeople} personas</div></div>
+                  </div>
+                </ColapsableSection>
               </div>
+            </>
+          )}
+        </main>
+
+        {/* Sticky bottom CTA — solo mobile, solo cuando NO hay confirmacion */}
+        {!bookingResult && (
+          <div className="booking-sticky-bar md:hidden">
+            <div className="booking-price-summary">
+              <span>Total</span>
+              <span className="price">${totalPrice.toLocaleString()}</span>
             </div>
-
-
-            <div className="bg-primary-50 border border-primary-200 p-4 rounded-2xl mb-4">
-              <div className="flex justify-between items-center">
-                <span className="text-primary-700 font-medium">Total</span>
-                <span className="text-2xl font-extrabold text-primary-600">${totalPrice.toLocaleString()} COP</span>
-              </div>
-            </div>
-
-            <button onClick={handleBooking} disabled={loading}
-              className="w-full btn-primary text-lg py-4 disabled:opacity-50">
+            <button
+              onClick={handleBooking}
+              disabled={loading}
+              className="booking-cta-btn"
+            >
               {loading ? 'Reservando...' : 'Reservar ahora'}
             </button>
-
-            {message && (
-              <div className="mt-4 p-4 rounded-2xl text-sm bg-red-50 text-red-600 border border-red-100">
-                {message}
-              </div>
-            )}
-
-            <div className="text-center mt-4 space-y-1">
-              <p className="text-xs text-gray-400">Reserva verificada por La Perla</p>
-              <p className="text-xs text-gray-400">Recibirás confirmación por WhatsApp</p>
-            </div>
-          </>
+          </div>
         )}
-      </main>
+      </div>
+
+      {/* Estilos: orden mobile + sticky CTA. Desktop intacto. */}
+      <style jsx>{`
+        @media (max-width: 767px) {
+          .tour-detail-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+          }
+          .section-hero        { order: 1; }
+          .section-titulo      { order: 2; }
+          .section-jalador     { order: 3; }
+          .section-formulario  { order: 4; }
+          .section-incluye     { order: 5; }
+          .section-descripcion { order: 6; }
+          .section-resenas     { order: 7; }
+          /* main contiene varias secciones; le aplicamos display contents
+             para que sus hijos participen del flex order del wrapper. */
+          .tour-detail-wrapper > main {
+            display: contents;
+          }
+        }
+        .booking-sticky-bar {
+          position: sticky;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: white;
+          border-top: 1px solid #EBEBEB;
+          padding: 12px 16px;
+          padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          z-index: 50;
+          box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+        }
+        .booking-cta-btn {
+          flex: 1;
+          height: 52px;
+          background: #F5882A;
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-size: 16px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background-color 0.15s ease;
+        }
+        .booking-cta-btn:hover { background: #E07020; }
+        .booking-cta-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .booking-price-summary {
+          display: flex;
+          flex-direction: column;
+          font-size: 12px;
+          color: #717171;
+          line-height: 1.2;
+        }
+        .booking-price-summary .price {
+          font-size: 18px;
+          font-weight: 700;
+          color: #222;
+        }
+      `}</style>
     </Layout>
   );
 }
