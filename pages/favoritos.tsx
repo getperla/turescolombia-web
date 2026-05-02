@@ -14,7 +14,7 @@ export default function Favoritos() {
   useEffect(() => {
     getTours({ limit: '100' })
       .then(res => setAllTours(res.data || []))
-      .catch(() => {})
+      .catch((e) => console.error('Failed to load tours:', e))
       .finally(() => setLoading(false));
   }, []);
 

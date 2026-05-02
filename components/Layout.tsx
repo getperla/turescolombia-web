@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
 import api, { invalidateDemoModeCache } from '../lib/api';
@@ -6,12 +7,19 @@ import Logo from './Logo';
 import { isBetaActive } from './BetaGate';
 import { useFavorites } from '../lib/useFavorites';
 
+const FAB_HIDDEN_ROUTES = ['/agente', '/asesor', '/login', '/register', '/auth/callback'];
+
 export default function Layout({ children, hideSearch }: { children: React.ReactNode; hideSearch?: boolean }) {
   const { user, logout } = useAuth();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [betaMode, setBetaMode] = useState(false);
   const { count: favCount } = useFavorites();
+
+  const fabTarget = user?.role === 'jalador' ? '/agente' : '/asesor';
+  const fabLabel = user?.role === 'jalador' ? 'Asistente de ventas' : 'Asesor de viaje';
+  const showFab = !FAB_HIDDEN_ROUTES.some((r) => router.pathname.startsWith(r));
 
   useEffect(() => { setBetaMode(isBetaActive()); }, [user]);
 
@@ -25,7 +33,7 @@ export default function Layout({ children, hideSearch }: { children: React.React
   };
 
   useEffect(() => {
-    if (user) { api.get('/notifications/count').then(r => setUnreadCount(r.data?.count || 0)).catch(() => {}); }
+    if (user) { api.get('/notifications/count').then(r => setUnreadCount(r.data?.count || 0)).catch((e) => console.error('Failed to load notification count:', e)); }
   }, [user]);
 
   const dashboardPath = user
@@ -102,6 +110,9 @@ export default function Layout({ children, hideSearch }: { children: React.React
                       </div>
                       {user.role === 'tourist' && <Link href="/mis-reservas" className="block px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }} onClick={() => setMenuOpen(false)}>Mis Reservas</Link>}
                       {dashboardPath && <Link href={dashboardPath} className="block px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }} onClick={() => setMenuOpen(false)}>Mi Panel</Link>}
+                      <Link href={fabTarget} className="block px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }} onClick={() => setMenuOpen(false)}>
+                        🤖 {fabLabel}
+                      </Link>
                       <Link href="/perfil" className="block px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }} onClick={() => setMenuOpen(false)}>Mi Perfil</Link>
                       <div className="border-t my-1" style={{ borderColor: '#EBEBEB' }}></div>
                       <button onClick={() => { logout(); setMenuOpen(false); }} className="block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50" style={{ color: '#222222' }}>Cerrar sesion</button>
@@ -144,6 +155,7 @@ export default function Layout({ children, hideSearch }: { children: React.React
             <div>
               <h4 className="font-semibold mb-2" style={{ color: '#222222' }}>Explorar</h4>
               <Link href="/tours" className="block hover:underline mb-1">Tours</Link>
+              <Link href="/asesor" className="block hover:underline mb-1">🤖 Asesor de viaje</Link>
               <Link href="/jaladores" className="block hover:underline mb-1">Jaladores</Link>
             </div>
             <div>
@@ -157,6 +169,33 @@ export default function Layout({ children, hideSearch }: { children: React.React
           </div>
         </div>
       </footer>
+
+      {showFab && (
+        <Link
+          href={fabTarget}
+          aria-label={fabLabel}
+          style={{
+            position: 'fixed',
+            right: '16px',
+            bottom: '20px',
+            zIndex: 40,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '14px 18px',
+            borderRadius: '999px',
+            background: 'linear-gradient(135deg, #0A1628, #0D5C8A)',
+            color: 'white',
+            fontWeight: 700,
+            fontSize: '14px',
+            textDecoration: 'none',
+            boxShadow: '0 8px 24px rgba(10,22,40,0.35)',
+          }}
+        >
+          <span style={{ fontSize: '20px', lineHeight: 1 }} aria-hidden>🤖</span>
+          <span>{fabLabel}</span>
+        </Link>
+      )}
     </div>
   );
 }

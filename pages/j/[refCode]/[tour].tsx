@@ -40,7 +40,7 @@ export default function JaladorTourLink() {
     if (!refCode) return;
     api.get(`/users/jaladores/ref/${refCode}`)
       .then((r) => setJalador(r.data))
-      .catch(() => {});
+      .catch((e) => console.error('Failed to load jalador:', e));
   }, [refCode]);
 
   if (notFound) {

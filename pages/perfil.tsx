@@ -23,11 +23,6 @@ export default function PerfilPage() {
   const [nequiPhone, setNequiPhone] = useState('');
   const [payoutMethod, setPayoutMethod] = useState('');
 
-  useEffect(() => {
-    if (!authorized) return;
-    loadProfile();
-  }, [authorized]);
-
   const loadProfile = async () => {
     try {
       const data = await getProfile();
@@ -49,6 +44,11 @@ export default function PerfilPage() {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (!authorized) return;
+    loadProfile();
+  }, [authorized]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

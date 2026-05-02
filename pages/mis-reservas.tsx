@@ -29,12 +29,12 @@ export default function MisReservas() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewMsg, setReviewMsg] = useState('');
 
-  useEffect(() => { if (authorized) loadBookings(); }, [authorized]);
-
   const loadBookings = async () => {
     try { setBookings(await getMyBookings()); } catch { setError('No se pudieron cargar las reservas'); }
     setLoading(false);
   };
+
+  useEffect(() => { if (authorized) loadBookings(); }, [authorized]);
 
   const handleCancel = async () => {
     if (!cancelId || !cancelReason.trim()) return;

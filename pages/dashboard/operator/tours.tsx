@@ -17,18 +17,18 @@ export default function OperatorTours() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!authorized) return;
-    loadTours();
-  }, [authorized]);
-
   const loadTours = async () => {
     try {
       const { data } = await api.get('/tours', { params: { myTours: 'true' } });
       setTours(data.data || data || []);
-    } catch {}
+    } catch (e) { console.error('Failed to load operator tours:', e); }
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (!authorized) return;
+    loadTours();
+  }, [authorized]);
 
   if (!authorized) return null;
 
