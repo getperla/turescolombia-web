@@ -5,7 +5,7 @@ import { useAuth } from '../lib/auth';
 import api, { invalidateDemoModeCache } from '../lib/api';
 import Logo from './Logo';
 import { isBetaActive } from './BetaGate';
-import { useFavorites } from '../lib/useFavorites';
+import { useFavorites } from '../lib/hooks/useFavorites';
 
 export default function Layout({ children, hideSearch }: { children: React.ReactNode; hideSearch?: boolean }) {
   const { user, logout } = useAuth();

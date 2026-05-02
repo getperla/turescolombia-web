@@ -1,4 +1,4 @@
-import { STORAGE_KEYS } from '../constants/storageKeys';
+import { STORAGE_KEYS } from '../../constants/storageKeys';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
 const STORAGE_KEY = STORAGE_KEYS.FAVORITES;
