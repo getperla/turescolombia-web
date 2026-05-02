@@ -61,9 +61,13 @@ describe('Pagina de tour por link de jalador', () => {
   test('valida que la fecha es requerida antes de reservar', async () => {
     const user = userEvent.setup();
     render(<JaladorTourLink />);
-    await waitFor(() => screen.getByText(/Reservar ahora/i));
+    // Hay 2 botones 'Reservar ahora' en el DOM (sticky mobile + desktop) —
+    // JSDOM ignora media queries asi que ambos estan presentes. Usar el
+    // primero, ambos disparan el mismo handler.
+    await waitFor(() => screen.getAllByRole('button', { name: /Reservar ahora/i })[0]);
 
-    await user.click(screen.getByText(/Reservar ahora/i));
+    const reservar = screen.getAllByRole('button', { name: /Reservar ahora/i })[0];
+    await user.click(reservar);
 
     await waitFor(() => {
       expect(screen.getByText(/Selecciona una fecha/i)).toBeInTheDocument();
@@ -86,7 +90,8 @@ describe('Pagina de tour por link de jalador', () => {
     expect(dateInput).not.toBeNull();
     fireEvent.change(dateInput, { target: { value: '2026-06-15' } });
 
-    await user.click(screen.getByText(/Reservar ahora/i));
+    const reservar = screen.getAllByRole('button', { name: /Reservar ahora/i })[0];
+    await user.click(reservar);
 
     await waitFor(() => {
       expect(mockedApi.post).toHaveBeenCalledWith(
@@ -115,7 +120,8 @@ describe('Pagina de tour por link de jalador', () => {
     const dateInput = container.querySelector('input[type="date"]') as HTMLInputElement;
     fireEvent.change(dateInput, { target: { value: '2026-06-15' } });
 
-    await user.click(screen.getByText(/Reservar ahora/i));
+    const reservar = screen.getAllByRole('button', { name: /Reservar ahora/i })[0];
+    await user.click(reservar);
 
     await waitFor(() => {
       expect(screen.getByText(/LP-TEST-001/i)).toBeInTheDocument();
