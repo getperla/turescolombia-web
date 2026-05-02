@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../lib/auth';
+import type { MockTour } from '../../lib/agente/mock';
+import ReservaModal from './ReservaModal';
 
 type Mensaje = {
   role: 'user' | 'assistant';
@@ -18,6 +20,7 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
   const [cargando, setCargando] = useState(false);
   const [iniciado, setIniciado] = useState(false);
   const [esModoMock, setEsModoMock] = useState(false);
+  const [reserva, setReserva] = useState<{ tours: MockTour[]; people: number } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,8 +67,11 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
 
       setMensajes((prev) => [...prev, { role: 'assistant', content: data.message }]);
 
-      if (data.quiereReservar && onReservaLista) {
-        onReservaLista(data);
+      if (data.quiereReservar) {
+        if (Array.isArray(data.picks) && data.picks.length > 0) {
+          setReserva({ tours: data.picks as MockTour[], people: data.people || 1 });
+        }
+        onReservaLista?.(data);
       }
     } catch {
       setMensajes((prev) => [
@@ -316,6 +322,15 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
           50% { opacity: 1; transform: scale(1); }
         }
       `}</style>
+
+      {reserva && (
+        <ReservaModal
+          tours={reserva.tours}
+          people={reserva.people}
+          refCode={refCode}
+          onClose={() => setReserva(null)}
+        />
+      )}
     </div>
   );
 }

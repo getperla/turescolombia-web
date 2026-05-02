@@ -32,6 +32,8 @@ type ResponseBody =
       message: string;
       quiereReservar: boolean;
       mock: boolean;
+      picks?: MockTour[];
+      people?: number;
       usage?: Anthropic.Messages.Usage;
     }
   | { error: string; details?: string };
@@ -75,12 +77,12 @@ export default async function handler(
 
   // Modo mock — default. No consume API tokens.
   if (!isLiveMode()) {
-    const { message, quiereReservar } = buildMockResponse({
+    const { message, quiereReservar, picks, people } = buildMockResponse({
       messages,
       catalog,
       jaladorName: context?.jaladorName,
     });
-    return res.status(200).json({ message, quiereReservar, mock: true });
+    return res.status(200).json({ message, quiereReservar, mock: true, picks, people });
   }
 
   // Modo live — solo si AGENT_LIVE=true y ANTHROPIC_API_KEY configurada.

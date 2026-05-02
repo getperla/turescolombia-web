@@ -202,19 +202,54 @@ export type MockResponseInput = {
   jaladorName?: string;
 };
 
-export function buildMockResponse(input: MockResponseInput): {
+export type MockResponseOutput = {
   message: string;
   quiereReservar: boolean;
-} {
+  picks?: MockTour[];
+  people?: number;
+};
+
+// Busca hacia atras el mensaje del usuario mas reciente con dias+presupuesto.
+// Usado al confirmar reserva para re-derivar las recomendaciones sin estado.
+function findLastConstraints(
+  messages: MockChatMessage[],
+): { days: number; budget: number; people: number } | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role !== 'user') continue;
+    const days = parseDays(m.content);
+    const budget = parseBudget(m.content);
+    if (days && budget) {
+      return { days, budget, people: parsePeople(m.content) };
+    }
+  }
+  return null;
+}
+
+export function buildMockResponse(input: MockResponseInput): MockResponseOutput {
   const { messages, catalog, jaladorName = '' } = input;
   const last = messages[messages.length - 1];
+  const source = catalog.length > 0 ? catalog : FALLBACK_CATALOG;
 
   if (!last || last.role !== 'user') {
     return { message: formatGreeting(jaladorName), quiereReservar: false };
   }
 
   if (isConfirmation(last.content)) {
-    return { message: formatConfirmation(), quiereReservar: true };
+    const ctx = findLastConstraints(messages);
+    if (!ctx) {
+      return {
+        message: 'Antes de confirmar necesito el plan. Cuantos dias y que presupuesto?',
+        quiereReservar: false,
+      };
+    }
+    const picks = pickToursForBudget(source, ctx.budget, ctx.days, ctx.people);
+    return {
+      message: formatConfirmation(),
+      quiereReservar: true,
+      picks,
+      people: ctx.people,
+    };
   }
 
   const days = parseDays(last.content);
@@ -231,9 +266,13 @@ export function buildMockResponse(input: MockResponseInput): {
     };
   }
 
-  const source = catalog.length > 0 ? catalog : FALLBACK_CATALOG;
   const picks = pickToursForBudget(source, budget, days, people);
-  return { message: formatRecommendation(picks, people, jaladorName), quiereReservar: false };
+  return {
+    message: formatRecommendation(picks, people, jaladorName),
+    quiereReservar: false,
+    picks,
+    people,
+  };
 }
 
 export function isLiveMode(): boolean {
