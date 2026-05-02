@@ -5,14 +5,27 @@
 // 1. Crea cuenta en https://comercios.wompi.co
 // 2. Copia tu llave publica (pub_test_xxx o pub_prod_xxx)
 // 3. Ponla en NEXT_PUBLIC_WOMPI_PUBLIC_KEY (en .env.production o Vercel env vars)
-// 4. Cambia NEXT_PUBLIC_WOMPI_ENV a "production" cuando estes listo
+// 4. Setea LAPERLA_MODE=production (NEXT_PUBLIC_WOMPI_ENV puede sobreescribir)
+
+import { isProd } from './mode';
 
 const WOMPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY || '';
-const WOMPI_ENV = process.env.NEXT_PUBLIC_WOMPI_ENV || 'sandbox';
 
-const WOMPI_CHECKOUT_URL = WOMPI_ENV === 'production'
-  ? 'https://checkout.wompi.co/p/'
-  : 'https://checkout.wompi.co/p/';
+// Resolucion del entorno Wompi en runtime, no en module-load:
+// 1. Si NEXT_PUBLIC_WOMPI_ENV esta seteada explicitamente, manda esa.
+// 2. Si no, deriva de LAPERLA_MODE (server-only, no NEXT_PUBLIC_).
+// 3. En el cliente LAPERLA_MODE es undefined → siempre 'sandbox'. Eso es
+//    seguro porque las decisiones criticas (sandbox vs produccion para la
+//    API de transactions) las hace el server.
+function getWompiEnv(): 'sandbox' | 'production' {
+  const explicit = process.env.NEXT_PUBLIC_WOMPI_ENV;
+  if (explicit === 'production' || explicit === 'sandbox') return explicit;
+  return isProd() ? 'production' : 'sandbox';
+}
+
+// El URL del checkout es identico para ambos entornos — lo que cambia es la
+// public-key (pub_test_xxx vs pub_prod_xxx). Se mantiene aqui para semantica.
+const WOMPI_CHECKOUT_URL = 'https://checkout.wompi.co/p/';
 
 // Sandbox test keys (Wompi provee estas para pruebas)
 const SANDBOX_KEY = 'pub_stagtest_g2u0HQd3ZMh05hsSgTS2lUV8t3s4mOt7';
@@ -98,7 +111,7 @@ export async function checkPaymentStatus(transactionId: string): Promise<{
   paymentMethod: string;
   reference: string;
 }> {
-  const baseUrl = WOMPI_ENV === 'production'
+  const baseUrl = getWompiEnv() === 'production'
     ? 'https://production.wompi.co/v1'
     : 'https://sandbox.wompi.co/v1';
 

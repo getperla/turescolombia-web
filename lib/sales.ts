@@ -157,14 +157,29 @@ export async function confirmSale(saleId: string): Promise<Sale> {
     .eq('id', saleId)
     .eq('status', 'pending')
     .select()
-    .single();
+    .maybeSingle();
 
   if (updateError) {
     throw new Error(`No se pudo confirmar la venta: ${updateError.message}`);
   }
 
-  // Si updated es null, alguien mas la actualizo en paralelo — re-leemos
-  const sale = (updated ?? existing) as Sale;
+  // Si updated es null, otro worker confirmo primero. Re-leemos para
+  // verificar que efectivamente quedo en 'paid' y continuamos al INSERT
+  // de comision (idempotente por sale_id UNIQUE).
+  let sale: Sale;
+  if (updated) {
+    sale = updated as Sale;
+  } else {
+    const { data: refetch } = await supabase
+      .from('sales')
+      .select('*')
+      .eq('id', saleId)
+      .single();
+    if (!refetch || refetch.status !== 'paid') {
+      throw new Error(`Venta ${saleId} cambio a estado inesperado durante confirmacion`);
+    }
+    sale = refetch as Sale;
+  }
 
   // Generar comision (idempotente por sale_id UNIQUE en commissions)
   const { error: commissionError } = await supabase.from('commissions').insert({
