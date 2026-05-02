@@ -17,6 +17,7 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
   const [input, setInput] = useState('');
   const [cargando, setCargando] = useState(false);
   const [iniciado, setIniciado] = useState(false);
+  const [esModoMock, setEsModoMock] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,6 +59,8 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
 
       const data = await response.json();
       if (!response.ok || data.error) throw new Error(data.error || `HTTP ${response.status}`);
+
+      if (data.mock) setEsModoMock(true);
 
       setMensajes((prev) => [...prev, { role: 'assistant', content: data.message }]);
 
@@ -136,6 +139,25 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
           }}
         />
       </div>
+
+      {esModoMock && (
+        <div
+          style={{
+            padding: '8px 16px',
+            background: '#FFF8E5',
+            borderBottom: '1px solid #F5E0A8',
+            color: '#7A5C00',
+            fontSize: '12px',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
+          <span aria-hidden>⚙️</span>
+          Modo demo · respuestas predefinidas, sin consumo de API
+        </div>
+      )}
 
       <div
         style={{

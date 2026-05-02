@@ -1,15 +1,23 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
+import {
+  buildMockResponse,
+  FALLBACK_CATALOG,
+  isLiveMode,
+  type MockTour,
+} from '../../lib/agente/mock';
 
-// Endpoint del asistente de ventas para el jalador. Recibe el historial
-// del chat + el contexto del jalador (nombre, refCode) y delega a Claude
-// con el catalogo de tours embebido en el system prompt.
+// Endpoint del asistente de ventas para el jalador.
 //
-// Variables requeridas:
-//   ANTHROPIC_API_KEY            (server-only, NO exponer al cliente)
-//   NEXT_PUBLIC_SUPABASE_URL
-//   SUPABASE_SERVICE_ROLE_KEY    (server-only)
+// Por defecto corre en MODO MOCK (cero llamadas a Claude → cero costo).
+// Activar real Claude API: setear AGENT_LIVE=true Y ANTHROPIC_API_KEY.
+//
+// Variables:
+//   AGENT_LIVE                   ('true' activa Claude real; default: mock)
+//   ANTHROPIC_API_KEY            (server-only, requerida si AGENT_LIVE=true)
+//   NEXT_PUBLIC_SUPABASE_URL     (opcional; si esta usa catalogo real)
+//   SUPABASE_SERVICE_ROLE_KEY    (server-only; opcional)
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -20,8 +28,34 @@ type RequestBody = {
 };
 
 type ResponseBody =
-  | { message: string; quiereReservar: boolean; usage?: Anthropic.Messages.Usage }
+  | {
+      message: string;
+      quiereReservar: boolean;
+      mock: boolean;
+      usage?: Anthropic.Messages.Usage;
+    }
   | { error: string; details?: string };
+
+async function loadCatalog(): Promise<MockTour[]> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseServiceKey) return FALLBACK_CATALOG;
+
+  try {
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const { data, error } = await supabase
+      .from('tours')
+      .select(
+        'id, name, slug, price_adult, duration, includes, avg_rating',
+      )
+      .eq('status', 'active')
+      .order('avg_rating', { ascending: false });
+    if (error || !data || data.length === 0) return FALLBACK_CATALOG;
+    return data as unknown as MockTour[];
+  } catch {
+    return FALLBACK_CATALOG;
+  }
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -32,52 +66,28 @@ export default async function handler(
     return res.status(405).json({ error: 'Metodo no permitido' });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!apiKey) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY no configurada en el servidor.' });
-  }
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return res
-      .status(500)
-      .json({ error: 'Variables de Supabase faltantes (NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY).' });
-  }
-
   const { messages, refCode, context } = (req.body || {}) as RequestBody;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Falta el campo messages.' });
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const catalog = await loadCatalog();
+
+  // Modo mock — default. No consume API tokens.
+  if (!isLiveMode()) {
+    const { message, quiereReservar } = buildMockResponse({
+      messages,
+      catalog,
+      jaladorName: context?.jaladorName,
+    });
+    return res.status(200).json({ message, quiereReservar, mock: true });
+  }
+
+  // Modo live — solo si AGENT_LIVE=true y ANTHROPIC_API_KEY configurada.
+  const apiKey = process.env.ANTHROPIC_API_KEY!;
   const anthropic = new Anthropic({ apiKey });
 
-  try {
-    const { data: tours, error: dbError } = await supabase
-      .from('tours')
-      .select(
-        `
-        id, name, slug, description, short_description,
-        price_adult, price_child, duration, departure_time,
-        return_time, departure_point, max_people,
-        includes, excludes, avg_rating, total_bookings,
-        category:categories(name)
-      `,
-      )
-      .eq('status', 'active')
-      .order('avg_rating', { ascending: false });
-
-    if (dbError) {
-      return res.status(500).json({
-        error: 'No pude leer el catalogo de tours.',
-        details: dbError.message,
-      });
-    }
-
-    const catalog = tours ?? [];
-
-    const systemPrompt = `Eres el asistente de ventas de La Perla, plataforma de tours verificados en Santa Marta, Colombia.
+  const systemPrompt = `Eres el asistente de ventas de La Perla, plataforma de tours verificados en Santa Marta, Colombia.
 
 Tu trabajo es ayudar al jalador (vendedor) a crear el itinerario perfecto para su cliente y generar la reserva.
 
@@ -118,6 +128,7 @@ CONTEXTO ACTUAL:
 Jalador: ${context?.jaladorName || 'Asesor La Perla'}
 Codigo: ${refCode || 'SIN-REF'}`;
 
+  try {
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1024,
@@ -138,6 +149,7 @@ Codigo: ${refCode || 'SIN-REF'}`;
     return res.status(200).json({
       message: responseText,
       quiereReservar,
+      mock: false,
       usage: response.usage,
     });
   } catch (err) {

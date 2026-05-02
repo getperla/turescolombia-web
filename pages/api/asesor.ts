@@ -1,12 +1,19 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Anthropic from '@anthropic-ai/sdk';
 import { getTours, type Tour } from '../../lib/api';
+import {
+  buildMockResponse,
+  FALLBACK_CATALOG,
+  isLiveMode,
+  type MockTour,
+} from '../../lib/agente/mock';
 
 // Endpoint del asesor inteligente. Recibe el historial de chat con las
 // restricciones del cliente final (dias, presupuesto, intereses) y devuelve
 // una recomendacion natural + un itinerario estructurado opcional.
 //
-// La API key vive solo en el server (ANTHROPIC_API_KEY). El cliente nunca la ve.
+// Por defecto corre en MODO MOCK (cero llamadas a Claude → cero costo).
+// Activar real Claude API: setear AGENT_LIVE=true Y ANTHROPIC_API_KEY.
 
 type ChatMessage = {
   role: 'user' | 'assistant';
@@ -34,8 +41,65 @@ type Itinerary = {
 };
 
 type ResponseBody =
-  | { message: string; itinerary?: Itinerary; recommendedTours?: Tour[] }
+  | { message: string; itinerary?: Itinerary; recommendedTours?: Tour[]; mock?: boolean }
   | { error: string };
+
+function buildMockItinerary(messages: { role: string; content: string }[]): Itinerary | undefined {
+  // Reusa el parser del mock para extraer dias/presupuesto/personas
+  // y armar un Itinerary con tours del FALLBACK_CATALOG.
+  const last = messages[messages.length - 1];
+  if (!last || last.role !== 'user') return undefined;
+  const text = last.content.toLowerCase();
+
+  const days = (text.match(/(\d+)\s*d[ií]as?/) || [])[1];
+  const peopleMatch = text.match(/(\d+)\s*personas?/);
+  const people = peopleMatch
+    ? parseInt(peopleMatch[1], 10)
+    : /\bpareja\b/.test(text)
+      ? 2
+      : /\bfamilia\b/.test(text)
+        ? 4
+        : 1;
+
+  const budgetParse = (() => {
+    const m1 = text.match(/(\d+(?:[.,]\d+)?)\s*millones?/);
+    if (m1) return Math.round(parseFloat(m1[1].replace(',', '.')) * 1_000_000);
+    const m2 = text.match(/(\d+(?:[.,]\d+)?)\s*(?:mil|k)\b/);
+    if (m2) return Math.round(parseFloat(m2[1].replace(',', '.')) * 1000);
+    const m3 = text.match(/(\d{1,3}(?:[.,]\d{3})+)/);
+    if (m3) return parseInt(m3[1].replace(/[.,]/g, ''), 10);
+    return null;
+  })();
+
+  if (!days || !budgetParse) return undefined;
+  const numDays = parseInt(days, 10);
+  let remaining = budgetParse;
+  const sorted = [...FALLBACK_CATALOG].sort((a, b) => b.avg_rating - a.avg_rating);
+  const picks: MockTour[] = [];
+  for (const t of sorted) {
+    if (picks.length >= numDays) break;
+    const cost = t.price_adult * people;
+    if (cost > remaining) continue;
+    picks.push(t);
+    remaining -= cost;
+  }
+  if (picks.length === 0) return undefined;
+
+  const totalCostPerPerson = picks.reduce((acc, t) => acc + t.price_adult, 0);
+  return {
+    totalDays: picks.length,
+    totalCostPerPerson,
+    groupSize: people,
+    totalCostGroup: totalCostPerPerson * people,
+    days: picks.map((t, i) => ({
+      day: i + 1,
+      tourId: t.id,
+      tourName: t.name,
+      tourSlug: t.slug,
+      pricePerPerson: t.price_adult,
+    })),
+  };
+}
 
 const SYSTEM_PROMPT = `Eres el asesor turistico de La Perla, la plataforma que conecta turistas con tours verificados en Santa Marta y la region Caribe colombiana.
 
@@ -140,18 +204,22 @@ export default async function handler(
     return res.status(405).json({ error: 'Metodo no permitido.' });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res
-      .status(500)
-      .json({ error: 'ANTHROPIC_API_KEY no esta configurada en el servidor.' });
-  }
-
   const body = req.body as RequestBody;
   if (!body?.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
     return res.status(400).json({ error: 'Falta el campo messages.' });
   }
 
+  // Modo mock — default. Cero llamadas a Claude.
+  if (!isLiveMode()) {
+    const { message } = buildMockResponse({
+      messages: body.messages,
+      catalog: [],
+    });
+    const itinerary = buildMockItinerary(body.messages);
+    return res.status(200).json({ message, itinerary, mock: true });
+  }
+
+  const apiKey = process.env.ANTHROPIC_API_KEY!;
   const client = new Anthropic({ apiKey });
 
   let catalog: Tour[] | null = null;
