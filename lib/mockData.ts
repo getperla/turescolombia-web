@@ -167,6 +167,11 @@ export function getMockResponse(method: string, url: string): any {
   if (m === 'GET' && path.endsWith('/users/jaladores')) return { data: mockJaladores, total: mockJaladores.length };
   if (m === 'GET' && path.endsWith('/users/operators')) return { data: mockOperators, total: mockOperators.length };
   if (m === 'GET' && path.endsWith('/reputation/ranking')) return mockJaladores.slice(0, 5);
+  // Jalador por refCode (referral landing) — busca en mocks o devuelve el primero como fallback
+  if (m === 'GET' && /\/users\/jaladores\/ref\/[\w-]+$/.test(path)) {
+    const code = path.split('/').pop();
+    return mockJaladores.find(j => j.refCode === code) || mockJaladores[0];
+  }
 
   // Tours
   if (m === 'GET' && path.endsWith('/tours/featured')) return mockTours.filter(t => t.status === 'active').slice(0, 4);

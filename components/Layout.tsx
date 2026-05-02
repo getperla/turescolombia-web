@@ -44,6 +44,12 @@ export default function Layout({ children, hideSearch }: { children: React.React
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#FFFFFF' }}>
+      {/* Banner Modo Demo — solo visible en demo mode, anuncia que son datos de muestra */}
+      {betaMode && (
+        <div className="text-white text-xs font-semibold py-1.5 px-4 text-center" style={{ background: 'linear-gradient(90deg, #F5882A 0%, #C9A05C 50%, #F5882A 100%)' }}>
+          🚧 Modo Demo — Estás viendo datos de muestra · Para reservas reales, contacta tu jalador
+        </div>
+      )}
       {/* Header — Airbnb style */}
       <header className="sticky top-0 z-50 bg-white border-b" style={{ borderColor: '#EBEBEB' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -144,7 +150,7 @@ export default function Layout({ children, hideSearch }: { children: React.React
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm" style={{ color: '#717171' }}>
             <div>
               <h4 className="font-semibold mb-2" style={{ color: '#222222' }}>La Perla</h4>
-              <p>Tours verificados en el Caribe colombiano. Reserva facil, paga seguro.</p>
+              <p>Tours verificados en el Caribe colombiano. Reserva fácil, paga seguro.</p>
             </div>
             <div>
               <h4 className="font-semibold mb-2" style={{ color: '#222222' }}>Explorar</h4>

@@ -5,20 +5,25 @@ import Image from 'next/image';
 import api from '../../lib/api';
 import Layout from '../../components/Layout';
 import { Tour } from '../../lib/api';
+import { useRequireAuth } from '../../lib/auth';
 
 const JaladorDashboard = () => {
+  const { authorized, loading: authLoading } = useRequireAuth(['jalador']);
   const [data, setData] = useState<any>(null);
   const [tours, setTours] = useState<Tour[]>([]);
   const [error, setError] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
+    if (!authorized) return;
     api.get('/dashboard/jalador').then(r => setData(r.data)).catch(() => setError('Inicia sesion como jalador.'));
     api.get('/tours', { params: { sortBy: 'price', order: 'desc', limit: '50' } }).then(r => {
       const sorted = (r.data?.data || []).sort((a: Tour, b: Tour) => b.priceAdult - a.priceAdult);
       setTours(sorted);
     }).catch((e) => console.error('Failed to load tours:', e));
-  }, []);
+  }, [authorized]);
+
+  if (authLoading || !authorized) return null;
 
   if (error) return (
     <Layout><div className="max-w-3xl mx-auto py-16 px-4 text-center">

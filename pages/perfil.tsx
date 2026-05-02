@@ -198,7 +198,7 @@ export default function PerfilPage() {
                 className="input"
                 placeholder="+57 300 000 0000"
               />
-              <p className="text-xs mt-1.5" style={{ color: '#717171' }}>Incluye el codigo de pais (ej: +57 para Colombia)</p>
+              <p className="text-xs mt-1.5" style={{ color: '#717171' }}>Incluye el código de país (ej: +57 para Colombia)</p>
             </div>
             {whatsappPhone && (
               <a
@@ -254,7 +254,7 @@ export default function PerfilPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Nequi (telefono)</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Nequi (teléfono)</label>
                   <input type="tel" value={nequiPhone} onChange={(e) => setNequiPhone(e.target.value)} className="input" />
                 </div>
               </div>

@@ -166,7 +166,7 @@ export default function EditarTour() {
                 <input type="time" value={form.returnTime} onChange={set('returnTime')} required className="input" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Duracion *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Duración *</label>
                 <input type="text" value={form.duration} onChange={set('duration')} required className="input" />
               </div>
             </div>

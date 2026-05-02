@@ -71,7 +71,7 @@ export default function RegisterPage() {
 
             {step === 'role' ? (
               <div className="space-y-3">
-                <p className="text-sm font-sans text-center mb-4" style={{ color: '#6B5329' }}>Que quieres hacer?</p>
+                <p className="text-sm font-sans text-center mb-4" style={{ color: '#6B5329' }}>¿Qué quieres hacer?</p>
                 {roles.map((r) => (
                   <button key={r.id} onClick={() => { setRole(r.id); setStep('form'); }}
                     className="w-full text-left p-5 rounded-card text-white transition-all hover:-translate-y-1 group"
@@ -168,7 +168,7 @@ export default function RegisterPage() {
             )}
 
             <div className="mt-6 text-center text-sm font-sans" style={{ color: '#C9A05C' }}>
-              Ya tienes cuenta?{' '}
+              ¿Ya tienes cuenta?{' '}
               <Link href="/login" className="font-bold hover:underline" style={{ color: '#0D5C8A' }}>Entrar</Link>
             </div>
           </div>

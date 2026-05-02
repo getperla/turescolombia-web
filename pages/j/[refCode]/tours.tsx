@@ -36,14 +36,14 @@ export default function JaladorTours() {
       {/* Header con info del jalador */}
       <div className="bg-tropical-gradient text-white py-10 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          {jalador && (
+          {jalador?.user?.name && (
             <div className="inline-flex items-center gap-3 bg-white/15 backdrop-blur-sm rounded-2xl px-5 py-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-lg">
                 {jalador.user.name.charAt(0)}
               </div>
               <div className="text-left">
                 <div className="font-bold">{jalador.user.name}</div>
-                <div className="text-xs text-white/70">⭐ {jalador.score} pts · {jalador.totalSales} ventas</div>
+                <div className="text-xs text-white/70">⭐ {jalador.score ?? 0} pts · {jalador.totalSales ?? 0} ventas</div>
               </div>
             </div>
           )}
