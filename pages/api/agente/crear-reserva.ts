@@ -44,7 +44,7 @@ async function loadCatalog(): Promise<MockTour[]> {
     const supabase = createClient(url, key);
     const { data, error } = await supabase
       .from('tours')
-      .select('id, name, slug, price_adult, duration, includes, avg_rating')
+      .select('id, name, slug, price_adult, duration, includes, avg_rating, cover_image_url')
       .eq('status', 'active');
     if (error || !data || data.length === 0) return FALLBACK_CATALOG;
     return data as unknown as MockTour[];

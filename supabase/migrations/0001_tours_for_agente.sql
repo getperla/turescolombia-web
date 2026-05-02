@@ -78,26 +78,32 @@ insert into public.categories (name, slug, color_hex) values
 on conflict (slug) do nothing;
 
 insert into public.tours
-  (name, slug, price_adult, duration, includes, avg_rating, status, category_id)
+  (name, slug, price_adult, duration, includes, avg_rating, status, category_id, cover_image_url)
 values
   ('Cabo San Juan — Parque Tayrona', 'cabo-san-juan', 160000, '8 horas',
     array['Transporte ida y vuelta','Entrada al parque','Almuerzo tipico'], 4.8, 'active',
-    (select id from public.categories where slug = 'playa')),
+    (select id from public.categories where slug = 'playa'),
+    'https://images.unsplash.com/photo-1583309217394-d3f9b9c1c4f2?w=600&q=70'),
   ('Playa Blanca — Rodadero', 'playa-blanca-rodadero', 95000, '6 horas',
     array['Lancha ida y vuelta','Snorkel guiado','Frutas y agua'], 4.6, 'active',
-    (select id from public.categories where slug = 'playa')),
+    (select id from public.categories where slug = 'playa'),
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=70'),
   ('Pueblito Tayrona — Sierra Nevada', 'pueblito-tayrona', 220000, '10 horas',
     array['Guia indigena Kogui','Transporte','Almuerzo tipico'], 4.9, 'active',
-    (select id from public.categories where slug = 'aventura')),
+    (select id from public.categories where slug = 'aventura'),
+    'https://images.unsplash.com/photo-1518684079-3c830dcef090?w=600&q=70'),
   ('Minca — cascadas y cafe', 'minca-cascadas', 130000, '7 horas',
     array['Transporte 4x4','Tour cafetal','Bano en cascada Marinka'], 4.7, 'active',
-    (select id from public.categories where slug = 'aventura')),
+    (select id from public.categories where slug = 'aventura'),
+    'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=600&q=70'),
   ('City tour Santa Marta', 'city-tour-santa-marta', 60000, '4 horas',
     array['Guia bilingue','Centro historico','Quinta de San Pedro'], 4.4, 'active',
-    (select id from public.categories where slug = 'cultura')),
+    (select id from public.categories where slug = 'cultura'),
+    'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?w=600&q=70'),
   ('Bahia Concha — playa virgen', 'bahia-concha', 110000, '7 horas',
     array['Transporte','Entrada parque','Hidratacion'], 4.5, 'active',
-    (select id from public.categories where slug = 'playa'))
+    (select id from public.categories where slug = 'playa'),
+    'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=600&q=70')
 on conflict (slug) do nothing;
 
 -- Verificacion rapida: deberia retornar 6 filas.

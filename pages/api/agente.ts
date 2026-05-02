@@ -48,7 +48,7 @@ async function loadCatalog(): Promise<MockTour[]> {
     const { data, error } = await supabase
       .from('tours')
       .select(
-        'id, name, slug, price_adult, duration, includes, avg_rating',
+        'id, name, slug, price_adult, duration, includes, avg_rating, cover_image_url',
       )
       .eq('status', 'active')
       .order('avg_rating', { ascending: false });

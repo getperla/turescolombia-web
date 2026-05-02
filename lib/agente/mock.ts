@@ -14,6 +14,7 @@ export type MockTour = {
   duration: string;
   includes: string[] | null;
   avg_rating: number;
+  cover_image_url?: string | null;
 };
 
 export type MockChatMessage = { role: 'user' | 'assistant'; content: string };
@@ -22,6 +23,7 @@ const COMMISSION_RATE = 0.2;
 
 // Catalogo de respaldo si Supabase esta vacio o no configurado.
 // Precios redondeados, datos representativos del catalogo real.
+// Imagenes de Unsplash (host whitelisted en next.config.js remotePatterns).
 export const FALLBACK_CATALOG: MockTour[] = [
   {
     id: 1,
@@ -31,6 +33,8 @@ export const FALLBACK_CATALOG: MockTour[] = [
     duration: '8 horas',
     includes: ['Transporte ida y vuelta', 'Entrada al parque', 'Almuerzo tipico'],
     avg_rating: 4.8,
+    cover_image_url:
+      'https://images.unsplash.com/photo-1583309217394-d3f9b9c1c4f2?w=600&q=70',
   },
   {
     id: 2,
@@ -40,6 +44,8 @@ export const FALLBACK_CATALOG: MockTour[] = [
     duration: '6 horas',
     includes: ['Lancha ida y vuelta', 'Snorkel guiado', 'Frutas y agua'],
     avg_rating: 4.6,
+    cover_image_url:
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=70',
   },
   {
     id: 3,
@@ -49,6 +55,8 @@ export const FALLBACK_CATALOG: MockTour[] = [
     duration: '10 horas',
     includes: ['Guia indigena Kogui', 'Transporte', 'Almuerzo tipico'],
     avg_rating: 4.9,
+    cover_image_url:
+      'https://images.unsplash.com/photo-1518684079-3c830dcef090?w=600&q=70',
   },
   {
     id: 4,
@@ -58,6 +66,8 @@ export const FALLBACK_CATALOG: MockTour[] = [
     duration: '7 horas',
     includes: ['Transporte 4x4', 'Tour cafetal', 'Bano en cascada Marinka'],
     avg_rating: 4.7,
+    cover_image_url:
+      'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=600&q=70',
   },
   {
     id: 5,
@@ -67,6 +77,8 @@ export const FALLBACK_CATALOG: MockTour[] = [
     duration: '4 horas',
     includes: ['Guia bilingue', 'Centro historico', 'Quinta de San Pedro'],
     avg_rating: 4.4,
+    cover_image_url:
+      'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?w=600&q=70',
   },
   {
     id: 6,
@@ -75,6 +87,8 @@ export const FALLBACK_CATALOG: MockTour[] = [
     price_adult: 110000,
     duration: '7 horas',
     includes: ['Transporte', 'Entrada parque', 'Hidratacion'],
+    cover_image_url:
+      'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=600&q=70',
     avg_rating: 4.5,
   },
 ];
@@ -159,19 +173,10 @@ function formatRecommendation(picks: MockTour[], people: number, jaladorName: st
 
   const total = picks.reduce((acc, t) => acc + t.price_adult * people, 0);
   const comision = Math.round(total * COMMISSION_RATE);
+  const personas = people === 1 ? 'persona' : 'personas';
+  const planes = picks.length === 1 ? 'este plan' : `un plan de ${picks.length} dias`;
 
-  const lineas = picks.map((t, i) => {
-    const sub = t.price_adult * people;
-    const incluye = (t.includes ?? []).slice(0, 3).join(', ');
-    return `${i + 1}. *${t.name}*
-   • $${COP(t.price_adult)} COP/persona · ${t.duration}
-   • Incluye: ${incluye || 'Detalles en la app'}
-   • Subtotal grupo: $${COP(sub)} COP`;
-  });
-
-  return `Listo, te armo este plan para ${people} ${people === 1 ? 'persona' : 'personas'}:
-
-${lineas.join('\n\n')}
+  return `Listo, te armo ${planes} para ${people} ${personas}:
 
 💰 *Total grupo:* $${COP(total)} COP
 🪙 *Tu comision (20%):* $${COP(comision)} COP

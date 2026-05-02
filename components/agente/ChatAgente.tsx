@@ -2,10 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../lib/auth';
 import type { MockTour } from '../../lib/agente/mock';
 import ReservaModal from './ReservaModal';
+import TourCard from './TourCard';
 
 type Mensaje = {
   role: 'user' | 'assistant';
   content: string;
+  picks?: MockTour[];
+  people?: number;
 };
 
 type Props = {
@@ -65,11 +68,18 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
 
       if (data.mock) setEsModoMock(true);
 
-      setMensajes((prev) => [...prev, { role: 'assistant', content: data.message }]);
+      const picks: MockTour[] | undefined =
+        Array.isArray(data.picks) && data.picks.length > 0 ? data.picks : undefined;
+      const people: number | undefined = typeof data.people === 'number' ? data.people : undefined;
+
+      setMensajes((prev) => [
+        ...prev,
+        { role: 'assistant', content: data.message, picks, people },
+      ]);
 
       if (data.quiereReservar) {
-        if (Array.isArray(data.picks) && data.picks.length > 0) {
-          setReserva({ tours: data.picks as MockTour[], people: data.people || 1 });
+        if (picks) {
+          setReserva({ tours: picks, people: people || 1 });
         }
         onReservaLista?.(data);
       }
@@ -176,27 +186,42 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
         }}
       >
         {mensajes.map((msg, i) => (
-          <div
-            key={i}
-            style={{
-              display: 'flex',
-              justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-            }}
-          >
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div
               style={{
-                maxWidth: '80%',
-                padding: '12px 16px',
-                borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                background: msg.role === 'user' ? '#F5882A' : '#F7F7F7',
-                color: msg.role === 'user' ? 'white' : '#222',
-                fontSize: '14px',
-                lineHeight: '1.5',
-                whiteSpace: 'pre-wrap',
+                display: 'flex',
+                justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
               }}
             >
-              {msg.content}
+              <div
+                style={{
+                  maxWidth: '80%',
+                  padding: '12px 16px',
+                  borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                  background: msg.role === 'user' ? '#F5882A' : '#F7F7F7',
+                  color: msg.role === 'user' ? 'white' : '#222',
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  whiteSpace: 'pre-wrap',
+                  animation: 'msgIn 0.3s cubic-bezier(0.2, 0.9, 0.3, 1) both',
+                }}
+              >
+                {msg.content}
+              </div>
             </div>
+
+            {msg.role === 'assistant' && msg.picks && msg.picks.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {msg.picks.map((tour, idx) => (
+                  <TourCard
+                    key={tour.id}
+                    tour={tour}
+                    people={msg.people || 1}
+                    index={msg.picks!.length > 1 ? idx + 1 : undefined}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         ))}
 
@@ -320,6 +345,10 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
         @keyframes pulse {
           0%, 100% { opacity: 0.3; transform: scale(0.8); }
           50% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes msgIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
 
