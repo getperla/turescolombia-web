@@ -4,6 +4,9 @@ import Logo from './Logo';
 
 const BETA_KEY = 'laperla_beta';
 
+// Rutas exentas del beta gate — el agente IA es discoverable sin login.
+const PUBLIC_ROUTES = ['/agente', '/asesor', '/auth/callback'];
+
 type BetaRole = 'tourist' | 'jalador' | 'operator' | 'admin';
 
 const roles: { id: BetaRole; label: string; icon: string; desc: string; path: string; color: string }[] = [
@@ -54,6 +57,12 @@ export default function BetaGate({ children }: { children: ReactNode }) {
   const [loggingIn, setLoggingIn] = useState<BetaRole | null>(null);
 
   useEffect(() => {
+    // Rutas publicas — el agente IA vive sin login
+    if (PUBLIC_ROUTES.some((r) => router.pathname.startsWith(r))) {
+      setLoading(false);
+      return;
+    }
+
     // Check if user already has a real auth token
     const token = localStorage.getItem('turescol_token');
     const user = localStorage.getItem('turescol_user');
@@ -71,7 +80,7 @@ export default function BetaGate({ children }: { children: ReactNode }) {
     // Show beta gate
     setShow(true);
     setLoading(false);
-  }, []);
+  }, [router.pathname]);
 
   const enterBeta = async (role: BetaRole) => {
     setLoggingIn(role);
@@ -125,10 +134,35 @@ export default function BetaGate({ children }: { children: ReactNode }) {
       </p>
 
       {/* Beta badge */}
-      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8" style={{ background: '#FEF3E8', border: '1px solid #F5882A' }}>
+      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6" style={{ background: '#FEF3E8', border: '1px solid #F5882A' }}>
         <span className="text-sm">🚧</span>
         <span className="text-sm font-semibold" style={{ color: '#F5882A' }}>Versión Beta — Estamos en pruebas</span>
       </div>
+
+      {/* Probar el agente — acceso sin login */}
+      <button
+        onClick={() => router.push('/asesor')}
+        className="w-full max-w-md flex items-center gap-3 p-4 rounded-xl mb-6 transition-all active:scale-[0.98]"
+        style={{
+          background: 'linear-gradient(135deg, #0A1628, #0D5C8A)',
+          color: 'white',
+          boxShadow: '0 8px 24px rgba(10,22,40,0.25)',
+        }}
+      >
+        <span className="text-2xl" aria-hidden>🤖</span>
+        <div className="flex-1 text-left">
+          <div className="font-bold text-sm">Probar el Asesor IA</div>
+          <div className="text-xs" style={{ color: 'rgba(255,255,255,0.75)' }}>
+            Sin registrarte · arma tu plan en 30 segundos
+          </div>
+        </div>
+        <span
+          className="text-[10px] font-bold px-2 py-1 rounded-full"
+          style={{ background: '#C9A05C', color: 'white' }}
+        >
+          NUEVO
+        </span>
+      </button>
 
       {/* Role buttons */}
       <div className="w-full max-w-md space-y-3 mb-8">
