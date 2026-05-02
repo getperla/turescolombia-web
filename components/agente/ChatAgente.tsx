@@ -93,11 +93,12 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
     }
   };
 
-  const sugerencias = [
-    '4 días, presupuesto 800.000 pesos',
-    '2 días, 400.000 pesos, familia con niños',
-    '1 día, 200.000 pesos, aventura',
-    '3 días, 1.500.000 pesos, pareja',
+  const sugerencias: { emoji: string; label: string; prompt: string }[] = [
+    { emoji: '🏖️', label: '4 días · 800k', prompt: '4 días, 800.000 pesos, 2 personas' },
+    { emoji: '👨‍👩‍👧', label: 'Familia · 400k', prompt: '2 días, 400.000 pesos, familia con niños' },
+    { emoji: '🥾', label: 'Aventura · 200k', prompt: '1 día, 200.000 pesos, aventura' },
+    { emoji: '💑', label: 'Pareja · 1.5M', prompt: '3 días, 1.500.000 pesos, pareja' },
+    { emoji: '🌅', label: 'Sunset · 150k', prompt: '1 día, 150.000 pesos, atardecer en la playa' },
   ];
 
   return (
@@ -115,9 +116,17 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
     >
       <div
         style={{
-          padding: '16px',
-          borderBottom: '1px solid #EBEBEB',
-          background: 'linear-gradient(135deg, #0A1628, #0D5C8A)',
+          padding: '14px 16px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          // Frosted glass: gradiente translucido + blur de 24px
+          background:
+            'linear-gradient(135deg, rgba(10,22,40,0.82), rgba(13,92,138,0.82))',
+          backdropFilter: 'saturate(180%) blur(24px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(24px)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
@@ -258,29 +267,56 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
 
       {mensajes.length <= 1 && (
         <div
+          className="chat-suggestions-scroll"
           style={{
-            padding: '0 16px 12px',
             display: 'flex',
-            flexWrap: 'wrap',
             gap: '8px',
+            padding: '4px 16px 14px',
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            WebkitOverflowScrolling: 'touch',
+            scrollSnapType: 'x mandatory',
           }}
         >
           {sugerencias.map((s, i) => (
             <button
               key={i}
-              onClick={() => setInput(s)}
+              onClick={() => setInput(s.prompt)}
               style={{
-                padding: '6px 12px',
-                borderRadius: '20px',
+                flex: '0 0 auto',
+                scrollSnapAlign: 'start',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                minWidth: '88px',
+                padding: '10px 14px',
+                borderRadius: '14px',
                 border: '1px solid #EBEBEB',
                 background: 'white',
-                color: '#0D5C8A',
+                color: '#222',
                 fontSize: '12px',
                 cursor: 'pointer',
                 fontWeight: 600,
+                transition: 'transform 0.12s, box-shadow 0.12s, border-color 0.12s',
+                lineHeight: 1.2,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 18px rgba(10,22,40,0.08)';
+                e.currentTarget.style.borderColor = '#C9A05C';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.borderColor = '#EBEBEB';
               }}
             >
-              {s}
+              <span style={{ fontSize: '22px', lineHeight: 1 }} aria-hidden>
+                {s.emoji}
+              </span>
+              <span>{s.label}</span>
             </button>
           ))}
         </div>
@@ -349,6 +385,13 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
         @keyframes msgIn {
           from { opacity: 0; transform: translateY(6px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-suggestions-scroll {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .chat-suggestions-scroll::-webkit-scrollbar {
+          display: none;
         }
       `}</style>
 
