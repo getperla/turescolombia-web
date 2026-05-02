@@ -1,0 +1,15 @@
+export const ROUTES = {
+  HOME: '/',
+  EXPLORAR: '/explorar',
+  LOGIN: '/login',
+  REGISTER: '/register',
+  JALADORES: '/jaladores',
+  FAVORITOS: '/favoritos',
+  MIS_RESERVAS: '/mis-reservas',
+  PERFIL: '/perfil',
+  AUTH_CALLBACK: '/auth/callback',
+  PAGO_RESULTADO: '/pago-resultado',
+  DASHBOARD_JALADOR: '/dashboard/jalador',
+  DASHBOARD_OPERADOR: '/dashboard/operator',
+  DASHBOARD_ADMIN: '/dashboard/admin',
+} as const;
