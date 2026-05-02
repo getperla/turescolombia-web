@@ -57,6 +57,39 @@ const JaladorDashboard = () => {
           </button>
         </div>
 
+        {/* Asistente IA — entrada al agente conversacional */}
+        <Link
+          href={`/agente?ref=${jalador.refCode}`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            width: '100%',
+            padding: '16px',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, #0A1628, #0D5C8A)',
+            color: 'white',
+            fontWeight: 700,
+            fontSize: '16px',
+            textDecoration: 'none',
+            marginBottom: '16px',
+          }}
+        >
+          🤖 Vender con Asistente IA
+          <span
+            style={{
+              fontSize: '11px',
+              background: '#C9A05C',
+              padding: '2px 8px',
+              borderRadius: '20px',
+              fontWeight: 600,
+            }}
+          >
+            NUEVO
+          </span>
+        </Link>
+
         {/* Tarjeta motivacional — comisiones ganadas */}
         <div className="relative rounded-2xl p-5 mb-4 overflow-hidden" style={{ background: 'linear-gradient(135deg, #F5882A 0%, #E07020 100%)' }}>
           <div className="absolute top-0 right-0 text-6xl opacity-10">🎉</div>
