@@ -212,7 +212,7 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
                   fontSize: '14px',
                   lineHeight: 1.55,
                   whiteSpace: 'pre-wrap',
-                  animation: 'msgIn 0.3s cubic-bezier(0.2, 0.9, 0.3, 1) both',
+                  animation: 'msgIn 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) both',
                 }}
               >
                 {msg.content}
@@ -357,6 +357,7 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
           onClick={enviarMensaje}
           disabled={!input.trim() || cargando}
           aria-label="Enviar mensaje"
+          className="chat-send-button"
           style={{
             width: '44px',
             height: '44px',
@@ -368,7 +369,7 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '18px',
-            transition: 'background 0.2s',
+            transition: 'background 0.2s, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1)',
             flexShrink: 0,
             color: 'white',
           }}
@@ -382,9 +383,11 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
           0%, 100% { opacity: 0.3; transform: scale(0.8); }
           50% { opacity: 1; transform: scale(1); }
         }
+        /* Spring physics: overshoot pequeño, asentamiento suave (iOS spring) */
         @keyframes msgIn {
-          from { opacity: 0; transform: translateY(6px); }
-          to { opacity: 1; transform: translateY(0); }
+          0%   { opacity: 0; transform: translateY(10px) scale(0.98); }
+          60%  { opacity: 1; transform: translateY(-2px) scale(1.005); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         .chat-suggestions-scroll {
           scrollbar-width: none;
@@ -392,6 +395,12 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
         }
         .chat-suggestions-scroll::-webkit-scrollbar {
           display: none;
+        }
+        .chat-send-button:not(:disabled):active {
+          transform: scale(0.92);
+        }
+        .chat-send-button:not(:disabled):hover {
+          transform: scale(1.05);
         }
       `}</style>
 
