@@ -145,7 +145,7 @@ export default function TourDetail() {
       <Head>
         <title>{tour.name} — La Perla</title>
         <meta property="og:title" content={`${tour.name} — $${tour.priceAdult.toLocaleString()} COP | La Perla`} />
-        <meta property="og:description" content={tour.shortDescription || tour.description.substring(0, 160)} />
+        <meta property="og:description" content={tour.shortDescription || (tour.description ?? '').substring(0, 160) || tour.name} />
         <meta property="og:image" content={tour.coverImageUrl || `https://tourmarta-web.vercel.app/api/og?title=${encodeURIComponent(tour.name)}`} />
       </Head>
 
@@ -200,15 +200,19 @@ export default function TourDetail() {
             </div>
 
             {/* Operator */}
-            <div className="flex items-center gap-4 mb-6 pb-6 border-b" style={{ borderColor: '#EBEBEB' }}>
-              <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white" style={{ background: '#222' }}>
-                {tour.operator.companyName.charAt(0)}
+            {tour.operator?.companyName && (
+              <div className="flex items-center gap-4 mb-6 pb-6 border-b" style={{ borderColor: '#EBEBEB' }}>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white" style={{ background: '#222' }}>
+                  {tour.operator.companyName.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div className="font-semibold" style={{ color: '#222' }}>Tour por {tour.operator.companyName}</div>
+                  {typeof tour.operator.score === 'number' && (
+                    <div className="text-sm" style={{ color: '#717171' }}>Score: {tour.operator.score} pts</div>
+                  )}
+                </div>
               </div>
-              <div>
-                <div className="font-semibold" style={{ color: '#222' }}>Tour por {tour.operator.companyName}</div>
-                <div className="text-sm" style={{ color: '#717171' }}>Score: {tour.operator.score} pts</div>
-              </div>
-            </div>
+            )}
 
             {/* Description */}
             <div className="mb-6 pb-6 border-b" style={{ borderColor: '#EBEBEB' }}>
@@ -237,25 +241,27 @@ export default function TourDetail() {
               </div>
             </div>
 
-            {/* Includes / Excludes */}
-            <div className="mb-6 pb-6 border-b" style={{ borderColor: '#EBEBEB' }}>
-              <h2 className="font-bold text-lg mb-4" style={{ color: '#222' }}>Qué incluye</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {tour.includes.map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm"><span style={{ color: '#2D6A4F' }}>✓</span><span style={{ color: '#222' }}>{item}</span></div>
-                ))}
-                {tour.excludes.map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm"><span style={{ color: '#CC3333' }}>✗</span><span style={{ color: '#717171' }}>{item}</span></div>
-                ))}
+            {/* Includes / Excludes — defaults a [] si Render no devuelve los arrays */}
+            {((tour.includes ?? []).length > 0 || (tour.excludes ?? []).length > 0) && (
+              <div className="mb-6 pb-6 border-b" style={{ borderColor: '#EBEBEB' }}>
+                <h2 className="font-bold text-lg mb-4" style={{ color: '#222' }}>Qué incluye</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {(tour.includes ?? []).map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm"><span style={{ color: '#2D6A4F' }}>✓</span><span style={{ color: '#222' }}>{item}</span></div>
+                  ))}
+                  {(tour.excludes ?? []).map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm"><span style={{ color: '#CC3333' }}>✗</span><span style={{ color: '#717171' }}>{item}</span></div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Restrictions */}
-            {tour.restrictions.length > 0 && (
+            {(tour.restrictions ?? []).length > 0 && (
               <div className="mb-6 pb-6 border-b" style={{ borderColor: '#EBEBEB' }}>
                 <h2 className="font-bold text-lg mb-3" style={{ color: '#222' }}>Importante</h2>
                 <ul className="space-y-2">
-                  {tour.restrictions.map((r, i) => <li key={i} className="flex items-start gap-2 text-sm"><span>⚠️</span><span style={{ color: '#222' }}>{r}</span></li>)}
+                  {(tour.restrictions ?? []).map((r, i) => <li key={i} className="flex items-start gap-2 text-sm"><span>⚠️</span><span style={{ color: '#222' }}>{r}</span></li>)}
                 </ul>
                 {tour.observations && <p className="text-sm mt-3" style={{ color: '#717171' }}>{tour.observations}</p>}
               </div>
@@ -303,19 +309,24 @@ export default function TourDetail() {
               {bookingResult ? (
                 /* Confirmacion */
                 (() => {
-                  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(bookingResult.qrCode)}&bgcolor=ffffff&color=222222`;
-                  const calDate = tourDate.replace(/-/g, '');
-                  const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(tour.name)}&dates=${calDate}T${tour.departureTime.replace(':', '')}00/${calDate}T${tour.returnTime.replace(':', '')}00&location=${encodeURIComponent(tour.departurePoint + ', Santa Marta')}`;
+                  // Defaults defensivos por si el backend no devuelve todos los campos
+                  const bookingCode: string = bookingResult.bookingCode ?? 'PENDIENTE';
+                  const qrPayload: string = bookingResult.qrCode ?? bookingCode;
+                  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrPayload)}&bgcolor=ffffff&color=222222`;
+                  const calDate = (tourDate ?? '').replace(/-/g, '');
+                  const depTime = (tour.departureTime ?? '08:00').replace(':', '');
+                  const retTime = (tour.returnTime ?? '17:00').replace(':', '');
+                  const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(tour.name)}&dates=${calDate}T${depTime}00/${calDate}T${retTime}00&location=${encodeURIComponent((tour.departurePoint ?? '') + ', Santa Marta')}`;
                   const cleanPhone = clientPhone.replace(/\D/g, '');
                   const phoneC = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
-                  const waMsg = `✅ RESERVA CONFIRMADA\n━━━━━━━━━━━━━━━━━\n\nHola *${clientName}*!\n\n🏖 *${tour.name}*\n📅 ${formatDate(tourDate)}\n⏰ Salida: ${tour.departureTime}\n📍 ${tour.departurePoint}\n👥 ${numAdults} adulto(s)${numChildren > 0 ? ` + ${numChildren} nino(s)` : ''}\n\n💰 *Total: $${totalPrice.toLocaleString()} COP*\n\n━━━━━━━━━━━━━━━━━\n🎫 Reserva: *${bookingResult.bookingCode}*\n━━━━━━━━━━━━━━━━━\n\nPresenta este codigo el dia del tour.\n\n_La Perla — Tours verificados_`;
+                  const waMsg = `✅ RESERVA CONFIRMADA\n━━━━━━━━━━━━━━━━━\n\nHola *${clientName}*!\n\n🏖 *${tour.name}*\n📅 ${formatDate(tourDate)}\n⏰ Salida: ${tour.departureTime ?? '—'}\n📍 ${tour.departurePoint ?? 'Santa Marta'}\n👥 ${numAdults} adulto(s)${numChildren > 0 ? ` + ${numChildren} nino(s)` : ''}\n\n💰 *Total: $${totalPrice.toLocaleString()} COP*\n\n━━━━━━━━━━━━━━━━━\n🎫 Reserva: *${bookingCode}*\n━━━━━━━━━━━━━━━━━\n\nPresenta este codigo el dia del tour.\n\n_La Perla — Tours verificados_`;
 
                   return (
                     <div className="text-center">
                       <div className="p-4 rounded-xl mb-4" style={{ background: '#F7F7F7' }}>
                         <div className="text-2xl mb-1">✅</div>
                         <div className="font-bold" style={{ color: '#222' }}>Reserva confirmada</div>
-                        <div className="font-mono text-sm font-bold" style={{ color: '#F5882A' }}>{bookingResult.bookingCode}</div>
+                        <div className="font-mono text-sm font-bold" style={{ color: '#F5882A' }}>{bookingCode}</div>
                       </div>
                       <Image src={qrUrl} alt="QR" width={120} height={120} unoptimized className="mx-auto mb-3" />
                       <div className="flex gap-2 mb-3">
@@ -325,8 +336,27 @@ export default function TourDetail() {
                         className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-white font-semibold mb-3" style={{ background: '#25D366' }}>
                         WhatsApp al cliente
                       </a>
-                      <button onClick={() => { setBookingResult(null); setClientName(''); setClientLastName(''); setClientPhone(''); setClientHotel(''); setTourDate(''); }}
-                        className="w-full py-2 rounded-lg text-sm font-semibold" style={{ border: '1px solid #DDDDDD', color: '#222' }}>
+                      <button
+                        onClick={() => {
+                          // Reset COMPLETO — incluye todos los campos del flow, no solo
+                          // los datos del cliente. Asi una nueva reserva arranca limpia.
+                          setBookingResult(null);
+                          setClientName('');
+                          setClientLastName('');
+                          setClientPhone('');
+                          setClientHotel('');
+                          setTourDate('');
+                          setNumAdults(1);
+                          setNumChildren(0);
+                          setRefCode('');
+                          setPaymentMethod('');
+                          setPseBank('');
+                          setMessage('');
+                          setPaymentStep('form');
+                        }}
+                        className="w-full py-2 rounded-lg text-sm font-semibold"
+                        style={{ border: '1px solid #DDDDDD', color: '#222' }}
+                      >
                         Nueva reserva
                       </button>
                     </div>
@@ -340,7 +370,12 @@ export default function TourDetail() {
                   </div>
                   <div className="font-bold text-lg mb-1" style={{ color: '#222' }}>Procesando pago...</div>
                   <div className="text-sm" style={{ color: '#717171' }}>
-                    Verificando tu pago por {paymentMethod === 'pse' ? `PSE — ${pseBank || 'tu banco'}` : paymentMethod === 'nequi' ? 'Nequi' : paymentMethod === 'daviplata' ? 'Daviplata' : paymentMethod === 'transfiya' ? 'Transfiya' : 'Tarjeta'}
+                    {paymentMethod === 'pse' ? `Verificando pago PSE — ${pseBank || 'tu banco'}` :
+                      paymentMethod === 'nequi' ? 'Verificando pago Nequi' :
+                      paymentMethod === 'daviplata' ? 'Verificando pago Daviplata' :
+                      paymentMethod === 'transfiya' ? 'Verificando pago Transfiya' :
+                      paymentMethod === 'card' ? 'Verificando pago con tarjeta' :
+                      'Verificando tu pago'}
                   </div>
                   <div className="text-xs mt-3" style={{ color: '#B0B0B0' }}>No cierres esta ventana</div>
                 </div>
@@ -466,7 +501,22 @@ export default function TourDetail() {
                     <div><label className="block text-xs font-semibold mb-1" style={{ color: '#222' }}>Apellido</label><input type="text" value={clientLastName} onChange={e => setClientLastName(e.target.value)} placeholder="Apellido" className="input" /></div>
                   </div>
                   <div><label className="block text-xs font-semibold mb-1" style={{ color: '#222' }}>WhatsApp *</label><input type="tel" value={clientPhone} onChange={e => setClientPhone(e.target.value)} placeholder="300 000 0000" className="input" /></div>
-                  <div><label className="block text-xs font-semibold mb-1" style={{ color: '#222' }}>Fecha *</label><input type="date" value={tourDate} onChange={e => setTourDate(e.target.value)} className="input" /></div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: '#222' }}>Fecha *</label>
+                    <input
+                      type="date"
+                      value={tourDate}
+                      onChange={(e) => setTourDate(e.target.value)}
+                      min={(() => {
+                        // Dia LOCAL del usuario, no UTC. toISOString() en Colombia UTC-5
+                        // despues de 19:00 ya devuelve el dia siguiente y bloquea reservas
+                        // same-day. getFullYear/getMonth/getDate usan tz local.
+                        const d = new Date();
+                        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                      })()}
+                      className="input"
+                    />
+                  </div>
 
                   {/* Selector de personas estilo Airbnb con botones +/- */}
                   <div className="grid grid-cols-2 gap-3">
