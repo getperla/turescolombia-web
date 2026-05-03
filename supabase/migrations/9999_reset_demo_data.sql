@@ -87,18 +87,50 @@ end $$;
 -- ============================================================================
 
 -- begin;
--- -- Borrar EXPLICITAMENTE solo commissions is_demo=true (no depender del cascade)
+--
+-- -- Pre-check OBLIGATORIO: si hay commissions reales (is_demo=false) cuyo sale
+-- -- es demo (is_demo=true), ON DELETE CASCADE las borraria silenciosamente.
+-- -- RAISE EXCEPTION aborta la transaccion → rollback automatico → datos a salvo.
+-- do $$
+-- declare
+--   c_orphan_real int;
+--   c_orphan_demo int;
+-- begin
+--   select count(*) into c_orphan_real
+--     from public.commissions c
+--     join public.sales s on s.id = c.sale_id
+--     where c.is_demo = false and s.is_demo = true;
+--
+--   select count(*) into c_orphan_demo
+--     from public.commissions c
+--     join public.sales s on s.id = c.sale_id
+--     where c.is_demo = true and s.is_demo = false;
+--
+--   if c_orphan_real > 0 then
+--     raise exception 'ABORTANDO: % commissions REALES estan ligadas a sales DEMO. ON DELETE CASCADE las borraria. Resuelve primero: UPDATE sales SET is_demo=false donde corresponda, o UPDATE commissions SET is_demo=true. Luego re-corre.', c_orphan_real;
+--   end if;
+--
+--   if c_orphan_demo > 0 then
+--     raise exception 'ABORTANDO: % commissions DEMO estan ligadas a sales REALES. Quedarian commissions demo huerfanas que no se limpian con DELETE FROM sales is_demo=true. Resuelve primero y re-corre.', c_orphan_demo;
+--   end if;
+-- end $$;
+--
+-- -- Borrar EXPLICITAMENTE commissions is_demo=true (no depender del cascade).
 -- delete from public.commissions where is_demo = true;
--- -- Borrar sale_items demo explicitamente (aunque cascade lo haria, para no
--- -- depender de la FK config y para que el log de afectados sea claro)
+--
+-- -- Borrar sale_items demo explicitamente (aunque cascade lo haria, para que
+-- -- el log de afectados sea claro y no dependamos de la FK config).
 -- delete from public.sale_items
 --   where sale_id in (select id from public.sales where is_demo = true);
--- -- Borrar sales demo. Si ON DELETE CASCADE intenta tocar commissions reales
--- -- en sales demo, ya las borraste arriba — pero el chequeo de inconsistencias
--- -- te debio haber alertado de eso. Si confias, ejecuta:
+--
+-- -- Ahora si: borrar sales demo. El pre-check ya garantizo que ningun
+-- -- cascade va a tocar commissions reales.
 -- delete from public.sales where is_demo = true;
+--
+-- -- Si los counts post-apply (mira el bloque siguiente) NO son lo esperado,
+-- -- ejecuta "rollback;" en lugar de "commit;" abajo. Postgres mantiene la
+-- -- transaccion abierta hasta que ejecutas uno u otro.
 -- commit;
--- -- Si el snapshot no es lo esperado, ejecuta "rollback;" en lugar de "commit;"
 
 -- ============================================================================
 -- POST-APPLY: verificacion manual (ejecutar despues del bloque APPLY)
