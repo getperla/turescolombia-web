@@ -99,6 +99,9 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
     { emoji: '🥾', label: 'Aventura · 200k', prompt: '1 día, 200.000 pesos, aventura' },
     { emoji: '💑', label: 'Pareja · 1.5M', prompt: '3 días, 1.500.000 pesos, pareja' },
     { emoji: '🌅', label: 'Sunset · 150k', prompt: '1 día, 150.000 pesos, atardecer en la playa' },
+    { emoji: '🤿', label: 'Snorkel · 300k', prompt: '1 día, 300.000 pesos, buceo y snorkel' },
+    { emoji: '☕', label: 'Minca · 250k', prompt: '1 día, 250.000 pesos, cascadas y café en Minca' },
+    { emoji: '🏛️', label: 'Cultura · 180k', prompt: '1 día, 180.000 pesos, centro histórico y cultura' },
   ];
 
   return (
@@ -132,37 +135,35 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
           gap: '12px',
         }}
       >
-        <div
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            background: '#C9A05C',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '18px',
-          }}
-        >
-          🤖
-        </div>
-        <div>
-          <div style={{ color: 'white', fontWeight: 600, fontSize: '14px', letterSpacing: '-0.01em' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              color: 'white',
+              fontWeight: 600,
+              fontSize: '15px',
+              letterSpacing: '-0.01em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
             Asistente La Perla
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                background: '#2D6A4F',
+                boxShadow: '0 0 0 2px rgba(45,106,79,0.25)',
+                display: 'inline-block',
+              }}
+              aria-label="En linea"
+            />
           </div>
-          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
+          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginTop: '1px' }}>
             Te ayuda a vender más rápido
           </div>
         </div>
-        <div
-          style={{
-            marginLeft: 'auto',
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: '#2D6A4F',
-          }}
-        />
       </div>
 
       {esModoMock && (
@@ -269,13 +270,19 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
         <div
           className="chat-suggestions-scroll"
           style={{
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, minmax(80px, 1fr))',
             gap: '8px',
             padding: '4px 16px 14px',
-            overflowX: 'auto',
-            overflowY: 'hidden',
+            maxHeight: '128px',
+            overflowY: 'auto',
+            overflowX: 'hidden',
             WebkitOverflowScrolling: 'touch',
-            scrollSnapType: 'x mandatory',
+            // Mask: la 2da fila se desvanece — pista visual de "hay mas"
+            WebkitMaskImage:
+              'linear-gradient(to bottom, black 0%, black 60%, rgba(0,0,0,0.35) 100%)',
+            maskImage:
+              'linear-gradient(to bottom, black 0%, black 60%, rgba(0,0,0,0.35) 100%)',
           }}
         >
           {sugerencias.map((s, i) => (
@@ -283,24 +290,24 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
               key={i}
               onClick={() => setInput(s.prompt)}
               style={{
-                flex: '0 0 auto',
-                scrollSnapAlign: 'start',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '4px',
-                minWidth: '88px',
-                padding: '10px 14px',
+                padding: '10px 8px',
                 borderRadius: '14px',
                 border: '1px solid #EBEBEB',
                 background: 'white',
                 color: '#222',
-                fontSize: '12px',
+                fontSize: '11px',
                 cursor: 'pointer',
                 fontWeight: 600,
                 transition: 'transform 0.12s, box-shadow 0.12s, border-color 0.12s',
                 lineHeight: 1.2,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
