@@ -118,7 +118,7 @@ export default function ReservaModal({ tours, people, refCode, onClose }: Props)
             justifyContent: 'space-between',
           }}
         >
-          <h2 id="reserva-titulo" style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#222' }}>
+          <h2 id="reserva-titulo" style={{ margin: 0, fontSize: '17px', fontWeight: 600, color: '#222', letterSpacing: '-0.01em' }}>
             {resultado ? 'Link de pago listo' : 'Confirmar reserva'}
           </h2>
           <button
@@ -150,7 +150,7 @@ export default function ReservaModal({ tours, people, refCode, onClose }: Props)
                   color: '#222',
                 }}
               >
-                <div style={{ fontWeight: 700, marginBottom: '6px' }}>
+                <div style={{ fontWeight: 600, marginBottom: '6px', letterSpacing: '-0.005em' }}>
                   Itinerario · {people} {people === 1 ? 'persona' : 'personas'}
                 </div>
                 {tours.map((t) => (
@@ -173,12 +173,13 @@ export default function ReservaModal({ tours, people, refCode, onClose }: Props)
                     paddingTop: '8px',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: '#0A1628',
+                    fontSize: '15px',
                   }}
                 >
                   <span>Total</span>
-                  <span>${COP(totalEstimado)} COP</span>
+                  <span style={{ fontFeatureSettings: '"tnum"' }}>${COP(totalEstimado)} COP</span>
                 </div>
                 <div
                   style={{

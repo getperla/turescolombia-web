@@ -147,7 +147,7 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
           🤖
         </div>
         <div>
-          <div style={{ color: 'white', fontWeight: 700, fontSize: '14px' }}>
+          <div style={{ color: 'white', fontWeight: 600, fontSize: '14px', letterSpacing: '-0.01em' }}>
             Asistente La Perla
           </div>
           <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
@@ -210,7 +210,7 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
                   background: msg.role === 'user' ? '#F5882A' : '#F7F7F7',
                   color: msg.role === 'user' ? 'white' : '#222',
                   fontSize: '14px',
-                  lineHeight: '1.5',
+                  lineHeight: 1.55,
                   whiteSpace: 'pre-wrap',
                   animation: 'msgIn 0.3s cubic-bezier(0.2, 0.9, 0.3, 1) both',
                 }}
