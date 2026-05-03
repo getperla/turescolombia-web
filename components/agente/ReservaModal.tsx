@@ -96,6 +96,7 @@ export default function ReservaModal({ tours, people, refCode, onClose }: Props)
         alignItems: 'center',
         justifyContent: 'center',
         padding: '16px',
+        animation: 'reservaBackdrop 0.25s ease-out both',
       }}
     >
       <div
@@ -107,6 +108,7 @@ export default function ReservaModal({ tours, people, refCode, onClose }: Props)
           maxHeight: '92vh',
           overflowY: 'auto',
           boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          animation: 'reservaModalIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) both',
         }}
       >
         <div
@@ -118,7 +120,7 @@ export default function ReservaModal({ tours, people, refCode, onClose }: Props)
             justifyContent: 'space-between',
           }}
         >
-          <h2 id="reserva-titulo" style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#222' }}>
+          <h2 id="reserva-titulo" style={{ margin: 0, fontSize: '17px', fontWeight: 600, color: '#222', letterSpacing: '-0.01em' }}>
             {resultado ? 'Link de pago listo' : 'Confirmar reserva'}
           </h2>
           <button
@@ -150,7 +152,7 @@ export default function ReservaModal({ tours, people, refCode, onClose }: Props)
                   color: '#222',
                 }}
               >
-                <div style={{ fontWeight: 700, marginBottom: '6px' }}>
+                <div style={{ fontWeight: 600, marginBottom: '6px', letterSpacing: '-0.005em' }}>
                   Itinerario · {people} {people === 1 ? 'persona' : 'personas'}
                 </div>
                 {tours.map((t) => (
@@ -173,12 +175,13 @@ export default function ReservaModal({ tours, people, refCode, onClose }: Props)
                     paddingTop: '8px',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: '#0A1628',
+                    fontSize: '15px',
                   }}
                 >
                   <span>Total</span>
-                  <span>${COP(totalEstimado)} COP</span>
+                  <span style={{ fontFeatureSettings: '"tnum"' }}>${COP(totalEstimado)} COP</span>
                 </div>
                 <div
                   style={{
@@ -391,6 +394,19 @@ export default function ReservaModal({ tours, people, refCode, onClose }: Props)
           )}
         </div>
       </div>
+
+      <style>{`
+        @keyframes reservaBackdrop {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        /* Spring slide-up con overshoot pequeño tipo iOS sheet */
+        @keyframes reservaModalIn {
+          0%   { opacity: 0; transform: translateY(40px) scale(0.96); }
+          70%  { opacity: 1; transform: translateY(-4px) scale(1.005); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
     </div>
   );
 }

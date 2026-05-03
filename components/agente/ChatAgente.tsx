@@ -93,11 +93,15 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
     }
   };
 
-  const sugerencias = [
-    '4 días, presupuesto 800.000 pesos',
-    '2 días, 400.000 pesos, familia con niños',
-    '1 día, 200.000 pesos, aventura',
-    '3 días, 1.500.000 pesos, pareja',
+  const sugerencias: { emoji: string; label: string; prompt: string }[] = [
+    { emoji: '🏖️', label: '4 días · 800k', prompt: '4 días, 800.000 pesos, 2 personas' },
+    { emoji: '👨‍👩‍👧', label: 'Familia · 400k', prompt: '2 días, 400.000 pesos, familia con niños' },
+    { emoji: '🥾', label: 'Aventura · 200k', prompt: '1 día, 200.000 pesos, aventura' },
+    { emoji: '💑', label: 'Pareja · 1.5M', prompt: '3 días, 1.500.000 pesos, pareja' },
+    { emoji: '🌅', label: 'Sunset · 150k', prompt: '1 día, 150.000 pesos, atardecer en la playa' },
+    { emoji: '🤿', label: 'Snorkel · 300k', prompt: '1 día, 300.000 pesos, buceo y snorkel' },
+    { emoji: '☕', label: 'Minca · 250k', prompt: '1 día, 250.000 pesos, cascadas y café en Minca' },
+    { emoji: '🏛️', label: 'Cultura · 180k', prompt: '1 día, 180.000 pesos, centro histórico y cultura' },
   ];
 
   return (
@@ -115,45 +119,51 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
     >
       <div
         style={{
-          padding: '16px',
-          borderBottom: '1px solid #EBEBEB',
-          background: 'linear-gradient(135deg, #0A1628, #0D5C8A)',
+          padding: '14px 16px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          // Frosted glass: gradiente translucido + blur de 24px
+          background:
+            'linear-gradient(135deg, rgba(10,22,40,0.82), rgba(13,92,138,0.82))',
+          backdropFilter: 'saturate(180%) blur(24px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(24px)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
         }}
       >
-        <div
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            background: '#C9A05C',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '18px',
-          }}
-        >
-          🤖
-        </div>
-        <div>
-          <div style={{ color: 'white', fontWeight: 700, fontSize: '14px' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              color: 'white',
+              fontWeight: 600,
+              fontSize: '15px',
+              letterSpacing: '-0.01em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
             Asistente La Perla
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                background: '#2D6A4F',
+                boxShadow: '0 0 0 2px rgba(45,106,79,0.25)',
+                display: 'inline-block',
+              }}
+              aria-label="En linea"
+            />
           </div>
-          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
+          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginTop: '1px' }}>
             Te ayuda a vender más rápido
           </div>
         </div>
-        <div
-          style={{
-            marginLeft: 'auto',
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: '#2D6A4F',
-          }}
-        />
       </div>
 
       {esModoMock && (
@@ -201,9 +211,9 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
                   background: msg.role === 'user' ? '#F5882A' : '#F7F7F7',
                   color: msg.role === 'user' ? 'white' : '#222',
                   fontSize: '14px',
-                  lineHeight: '1.5',
+                  lineHeight: 1.55,
                   whiteSpace: 'pre-wrap',
-                  animation: 'msgIn 0.3s cubic-bezier(0.2, 0.9, 0.3, 1) both',
+                  animation: 'msgIn 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) both',
                 }}
               >
                 {msg.content}
@@ -258,29 +268,62 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
 
       {mensajes.length <= 1 && (
         <div
+          className="chat-suggestions-scroll"
           style={{
-            padding: '0 16px 12px',
-            display: 'flex',
-            flexWrap: 'wrap',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, minmax(80px, 1fr))',
             gap: '8px',
+            padding: '4px 16px 14px',
+            maxHeight: '128px',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            WebkitOverflowScrolling: 'touch',
+            // Mask: la 2da fila se desvanece — pista visual de "hay mas"
+            WebkitMaskImage:
+              'linear-gradient(to bottom, black 0%, black 60%, rgba(0,0,0,0.35) 100%)',
+            maskImage:
+              'linear-gradient(to bottom, black 0%, black 60%, rgba(0,0,0,0.35) 100%)',
           }}
         >
           {sugerencias.map((s, i) => (
             <button
               key={i}
-              onClick={() => setInput(s)}
+              onClick={() => setInput(s.prompt)}
               style={{
-                padding: '6px 12px',
-                borderRadius: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                padding: '10px 8px',
+                borderRadius: '14px',
                 border: '1px solid #EBEBEB',
                 background: 'white',
-                color: '#0D5C8A',
-                fontSize: '12px',
+                color: '#222',
+                fontSize: '11px',
                 cursor: 'pointer',
                 fontWeight: 600,
+                transition: 'transform 0.12s, box-shadow 0.12s, border-color 0.12s',
+                lineHeight: 1.2,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 18px rgba(10,22,40,0.08)';
+                e.currentTarget.style.borderColor = '#C9A05C';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.borderColor = '#EBEBEB';
               }}
             >
-              {s}
+              <span style={{ fontSize: '22px', lineHeight: 1 }} aria-hidden>
+                {s.emoji}
+              </span>
+              <span>{s.label}</span>
             </button>
           ))}
         </div>
@@ -321,6 +364,7 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
           onClick={enviarMensaje}
           disabled={!input.trim() || cargando}
           aria-label="Enviar mensaje"
+          className="chat-send-button"
           style={{
             width: '44px',
             height: '44px',
@@ -332,7 +376,7 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '18px',
-            transition: 'background 0.2s',
+            transition: 'background 0.2s, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1)',
             flexShrink: 0,
             color: 'white',
           }}
@@ -346,9 +390,24 @@ export default function ChatAgente({ refCode, onReservaLista }: Props) {
           0%, 100% { opacity: 0.3; transform: scale(0.8); }
           50% { opacity: 1; transform: scale(1); }
         }
+        /* Spring physics: overshoot pequeño, asentamiento suave (iOS spring) */
         @keyframes msgIn {
-          from { opacity: 0; transform: translateY(6px); }
-          to { opacity: 1; transform: translateY(0); }
+          0%   { opacity: 0; transform: translateY(10px) scale(0.98); }
+          60%  { opacity: 1; transform: translateY(-2px) scale(1.005); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .chat-suggestions-scroll {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .chat-suggestions-scroll::-webkit-scrollbar {
+          display: none;
+        }
+        .chat-send-button:not(:disabled):active {
+          transform: scale(0.92);
+        }
+        .chat-send-button:not(:disabled):hover {
+          transform: scale(1.05);
         }
       `}</style>
 
