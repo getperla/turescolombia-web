@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -11,17 +11,50 @@ const JaladorDashboard = () => {
   const { authorized, loading: authLoading } = useRequireAuth(['jalador']);
   const [data, setData] = useState<any>(null);
   const [tours, setTours] = useState<Tour[]>([]);
+  const [toursError, setToursError] = useState(false);
   const [error, setError] = useState('');
-  const [linkCopied, setLinkCopied] = useState(false);
+  // copiedKey diferencia el botón "Copiar" del link del jalador (key='main')
+  // de los botones por tour (key=`tour-${id}`). Antes era un boolean global y
+  // copiar un tour específico hacía que el botón del header también mostrara ✓.
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const copyToClipboard = async (text: string, key: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Fallback para contextos no-seguros (HTTP, browsers viejos)
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch { /* noop */ }
+      document.body.removeChild(ta);
+    }
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 2000);
+  };
+
+  const loadTours = useCallback(() => {
+    setToursError(false);
+    api
+      .get('/tours', { params: { sortBy: 'price', order: 'desc', limit: '50' } })
+      .then((r) => {
+        const sorted = (r.data?.data || []).sort((a: Tour, b: Tour) => b.priceAdult - a.priceAdult);
+        setTours(sorted);
+      })
+      .catch((e) => {
+        console.error('Failed to load tours:', e);
+        setToursError(true);
+      });
+  }, []);
 
   useEffect(() => {
     if (!authorized) return;
-    api.get('/dashboard/jalador').then(r => setData(r.data)).catch(() => setError('Inicia sesion como jalador.'));
-    api.get('/tours', { params: { sortBy: 'price', order: 'desc', limit: '50' } }).then(r => {
-      const sorted = (r.data?.data || []).sort((a: Tour, b: Tour) => b.priceAdult - a.priceAdult);
-      setTours(sorted);
-    }).catch((e) => console.error('Failed to load tours:', e));
-  }, [authorized]);
+    api.get('/dashboard/jalador').then((r) => setData(r.data)).catch(() => setError('Inicia sesion como jalador.'));
+    loadTours();
+  }, [authorized, loadTours]);
 
   if (authLoading || !authorized) return null;
 
@@ -42,8 +75,29 @@ const JaladorDashboard = () => {
     </div></Layout>
   );
 
-  const { jalador, sales, commissions } = data;
+  const jalador = data?.jalador ?? null;
+  const sales = data?.sales ?? { today: 0, week: 0, month: 0 };
+  const commissions = data?.commissions ?? { pending: 0 };
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
+  // Si no llego info del jalador, mostrar error en lugar de crashear con
+  // jalador.refCode undefined. Render legacy a veces devuelve {} cuando
+  // el user no esta aprobado todavia.
+  if (!jalador?.refCode) {
+    return (
+      <Layout>
+        <div className="max-w-3xl mx-auto py-16 px-4 text-center">
+          <p className="font-semibold text-lg mb-4" style={{ color: '#222' }}>
+            Tu cuenta de jalador aún no está activa.
+          </p>
+          <p className="text-sm mb-4" style={{ color: '#717171' }}>
+            Espera a que un admin la apruebe o contacta soporte.
+          </p>
+          <Link href="/" className="btn-primary inline-block">Volver al inicio</Link>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -56,9 +110,12 @@ const JaladorDashboard = () => {
             <div className="text-xs font-semibold mb-1" style={{ color: '#717171' }}>Tu link de ventas — {jalador.refCode}</div>
             <code className="text-sm block truncate" style={{ color: '#222' }}>{baseUrl}/j/{jalador.refCode}/tours</code>
           </div>
-          <button onClick={() => { navigator.clipboard.writeText(`${baseUrl}/j/${jalador.refCode}/tours`); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); }}
-            className="shrink-0 px-4 py-2 rounded-lg text-sm font-semibold" style={{ background: linkCopied ? '#222' : '#F5882A', color: 'white' }}>
-            {linkCopied ? '✓' : 'Copiar'}
+          <button
+            onClick={() => copyToClipboard(`${baseUrl}/j/${jalador.refCode}/tours`, 'main')}
+            className="shrink-0 px-4 py-2 rounded-lg text-sm font-semibold"
+            style={{ background: copiedKey === 'main' ? '#222' : '#F5882A', color: 'white' }}
+          >
+            {copiedKey === 'main' ? '✓' : 'Copiar'}
           </button>
         </div>
 
@@ -123,8 +180,27 @@ const JaladorDashboard = () => {
         {/* Tours disponibles para vender — ordenados por precio mayor a menor */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-lg" style={{ color: '#222' }}>Tours para vender</h2>
-          <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: '#FEF3E8', color: '#F5882A' }}>{tours.length} disponibles</span>
+          <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: '#FEF3E8', color: '#F5882A' }}>
+            {toursError ? '—' : `${tours.length} disponibles`}
+          </span>
         </div>
+
+        {toursError && (
+          <div
+            className="px-4 py-3 rounded-xl text-sm mb-4 flex items-center gap-2"
+            style={{ background: '#FFF0F0', color: '#CC3333' }}
+          >
+            <span>⚠️</span>
+            <span className="flex-1">No se pudieron cargar los tours. Verifica tu conexión.</span>
+            <button
+              onClick={loadTours}
+              className="text-xs font-semibold underline"
+              style={{ color: '#CC3333' }}
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {tours.map((tour) => {
             const commission = Math.round(tour.priceAdult * 0.20);
@@ -175,15 +251,16 @@ const JaladorDashboard = () => {
                   <button
                     onClick={(e) => {
                       e.preventDefault();
-                      navigator.clipboard.writeText(tourUrl);
-                      setLinkCopied(true);
-                      setTimeout(() => setLinkCopied(false), 2000);
+                      copyToClipboard(tourUrl, `tour-${tour.id}`);
                     }}
                     className="px-3 py-2.5 rounded-lg text-xs font-semibold border"
-                    style={{ borderColor: '#EBEBEB', color: '#222' }}
+                    style={{
+                      borderColor: copiedKey === `tour-${tour.id}` ? '#2D6A4F' : '#EBEBEB',
+                      color: copiedKey === `tour-${tour.id}` ? '#2D6A4F' : '#222',
+                    }}
                     title="Copiar link"
                   >
-                    📋
+                    {copiedKey === `tour-${tour.id}` ? '✓' : '📋'}
                   </button>
                 </div>
               </div>
