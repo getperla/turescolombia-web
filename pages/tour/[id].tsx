@@ -507,7 +507,13 @@ export default function TourDetail() {
                       type="date"
                       value={tourDate}
                       onChange={(e) => setTourDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
+                      min={(() => {
+                        // Dia LOCAL del usuario, no UTC. toISOString() en Colombia UTC-5
+                        // despues de 19:00 ya devuelve el dia siguiente y bloquea reservas
+                        // same-day. getFullYear/getMonth/getDate usan tz local.
+                        const d = new Date();
+                        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                      })()}
                       className="input"
                     />
                   </div>
