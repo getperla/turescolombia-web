@@ -118,12 +118,18 @@ end $$;
 --     join public.sales s on s.id = c.sale_id
 --     where c.is_demo = true and s.is_demo = false;
 --
+--   -- ABORT solo cuando hay riesgo REAL de perder datos:
+--   -- commissions reales (is_demo=false) cuyo sale es demo (is_demo=true).
+--   -- El DELETE FROM sales is_demo=true cascadearia y las borraria.
 --   if c_orphan_real > 0 then
 --     raise exception 'ABORTANDO: % commissions REALES estan ligadas a sales DEMO. ON DELETE CASCADE las borraria. Resuelve primero: UPDATE sales SET is_demo=false donde corresponda, o UPDATE commissions SET is_demo=true. Luego re-corre.', c_orphan_real;
 --   end if;
 --
+--   -- WARNING (no aborta) cuando hay commissions demo en sales reales:
+--   -- el siguiente DELETE FROM commissions WHERE is_demo=true las limpia
+--   -- sin tocar la sale real. Es cleanup valido, no perdida de datos.
 --   if c_orphan_demo > 0 then
---     raise exception 'ABORTANDO: % commissions DEMO estan ligadas a sales REALES. Quedarian commissions demo huerfanas que no se limpian con DELETE FROM sales is_demo=true. Resuelve primero y re-corre.', c_orphan_demo;
+--     raise notice '⚠️  % commissions DEMO estan ligadas a sales REALES. Se limpiaran (DELETE WHERE is_demo=true) sin tocar las sales reales. OK.', c_orphan_demo;
 --   end if;
 -- end $$;
 --
