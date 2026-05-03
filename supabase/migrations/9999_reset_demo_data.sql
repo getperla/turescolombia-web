@@ -82,10 +82,22 @@ begin
 end $$;
 
 -- ============================================================================
--- ↓ DESCOMENTAR PARA APLICAR ↓
--- (Selecciona las 12 lineas siguientes y quita los "--" de cada una)
+-- ↓ APPLY BLOCK — desde "BEGIN APPLY BLOCK" hasta "END APPLY BLOCK" ↓
+--
+-- INSTRUCCIONES PARA APLICAR:
+--   1. Selecciona TODO el bloque entre los marcadores "BEGIN APPLY BLOCK" y
+--      "END APPLY BLOCK" (incluye begin, DO block, los DELETE y commit).
+--   2. Quita el "-- " (con espacio) del inicio de CADA linea seleccionada.
+--      En la mayoria de editores: Find/Replace con regex sobre la seleccion,
+--      buscar `^-- ?` y reemplazar por nada.
+--   3. Re-ejecuta el script completo.
+--
+-- ⚠️  Si descomentas SOLO PARTE del bloque (ej: solo los DELETE pero no el
+--     DO block o el commit), Postgres lanzara syntax error o ejecutara una
+--     transaccion incompleta. Descomentar TODO o nada.
 -- ============================================================================
 
+-- BEGIN APPLY BLOCK
 -- begin;
 --
 -- -- Pre-check OBLIGATORIO: si hay commissions reales (is_demo=false) cuyo sale
@@ -131,6 +143,7 @@ end $$;
 -- -- ejecuta "rollback;" en lugar de "commit;" abajo. Postgres mantiene la
 -- -- transaccion abierta hasta que ejecutas uno u otro.
 -- commit;
+-- END APPLY BLOCK
 
 -- ============================================================================
 -- POST-APPLY: verificacion manual (ejecutar despues del bloque APPLY)
