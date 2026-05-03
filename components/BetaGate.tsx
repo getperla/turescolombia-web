@@ -59,6 +59,7 @@ export default function BetaGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Rutas publicas — el agente IA vive sin login
     if (PUBLIC_ROUTES.some((r) => router.pathname.startsWith(r))) {
+      setShow(false);
       setLoading(false);
       return;
     }
@@ -67,12 +68,14 @@ export default function BetaGate({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('turescol_token');
     const user = localStorage.getItem('turescol_user');
     if (token && user) {
+      setShow(false);
       setLoading(false);
       return;
     }
 
     // Check if beta mode is active
     if (isBetaActive()) {
+      setShow(false);
       setLoading(false);
       return;
     }
