@@ -15,13 +15,29 @@ const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.Respons
 
 type Tab = 'dashboard' | 'jaladores' | 'operators' | 'tours' | 'bookings' | 'reports' | 'notifications';
 
+type ActionMsg = { kind: 'success' | 'error'; text: string } | null;
+
+// Labels legibles para los status que entrega el backend.
+const STATUS_LABELS: Record<string, string> = {
+  active: 'Activo',
+  pending: 'Pendiente',
+  pending_review: 'En revisión',
+  suspended: 'Suspendido',
+  confirmed: 'Confirmada',
+  completed: 'Completada',
+  cancelled: 'Cancelada',
+  in_progress: 'En curso',
+  refunded: 'Reembolsada',
+  rejected: 'Rechazado',
+};
+
 export default function AdminDashboard() {
-  const { authorized } = useRequireAuth(['admin']);
+  const { authorized, loading: authLoading } = useRequireAuth(['admin']);
   const [data, setData] = useState<any>(null);
   const [tab, setTab] = useState<Tab>('dashboard');
   const [list, setList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [actionMsg, setActionMsg] = useState('');
+  const [actionMsg, setActionMsg] = useState<ActionMsg>(null);
   const [listError, setListError] = useState('');
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifs, setShowNotifs] = useState(false);
@@ -30,16 +46,19 @@ export default function AdminDashboard() {
   const [editType, setEditType] = useState<'jalador' | 'operator' | null>(null);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
   const [editSaving, setEditSaving] = useState(false);
+  // Lock global: si hay acción en proceso, deshabilita todos los botones de
+  // acción para que el doble-click no dispare la misma operación 2 veces.
+  const [processingAction, setProcessingAction] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
     api.get('/dashboard/admin').then(r => setData(r.data)).catch(() => setData(null));
     api.get('/notifications').then(r => { setNotifications(r.data || []); setUnread((r.data || []).filter((n: any) => !n.isRead).length); }).catch((e) => console.error('Failed to load notifications:', e));
   }, []);
 
-  // Auto-refresh cada 60s (antes 30s) — reduce carga y re-renders del chart
+  // Auto-refresh cada 60s — reduce carga y re-renders del chart.
   useEffect(() => { if (authorized) { refresh(); const iv = setInterval(refresh, 60000); return () => clearInterval(iv); } }, [authorized, refresh]);
 
-  const loadList = async (type: Tab) => {
+  const loadList = useCallback(async (type: Tab) => {
     setLoading(true);
     setList([]);
     setListError('');
@@ -53,12 +72,27 @@ export default function AdminDashboard() {
       setListError('No se pudo conectar al servidor. Verifica que el backend este corriendo.');
     }
     setLoading(false);
-  };
+  }, []);
 
-  const openTab = (t: Tab) => { setTab(t); setActionMsg(''); setListError(''); if (!['dashboard', 'reports', 'notifications'].includes(t)) loadList(t); };
+  const openTab = useCallback((t: Tab) => {
+    setTab(t);
+    setActionMsg(null);
+    setListError('');
+    if (!['dashboard', 'reports', 'notifications'].includes(t)) loadList(t);
+  }, [loadList]);
 
-  const doAction = async (action: string, id: number) => {
-    setActionMsg('');
+  // Auto-clear del mensaje a los 4s — evita banners pegados que confunden
+  // entre operaciones consecutivas.
+  useEffect(() => {
+    if (!actionMsg) return;
+    const t = setTimeout(() => setActionMsg(null), 4000);
+    return () => clearTimeout(t);
+  }, [actionMsg]);
+
+  const doAction = useCallback(async (action: string, id: number) => {
+    if (processingAction !== null) return;
+    setProcessingAction(`${action}-${id}`);
+    setActionMsg(null);
     try {
       if (action === 'approve-jalador') await api.post(`/admin/jaladores/${id}/approve`);
       else if (action === 'approve-operator') await api.post(`/admin/operators/${id}/approve`);
@@ -66,9 +100,14 @@ export default function AdminDashboard() {
       else if (action === 'reactivate') await api.post(`/admin/users/${id}/reactivate`);
       else if (action === 'approve-tour') await api.post(`/admin/tours/${id}/approve`);
       else if (action === 'reject-tour') await api.post(`/admin/tours/${id}/reject`);
-      setActionMsg('Hecho'); loadList(tab); refresh();
-    } catch (e: any) { setActionMsg(e.response?.data?.message || 'Error'); }
-  };
+      setActionMsg({ kind: 'success', text: 'Hecho' });
+      loadList(tab);
+      refresh();
+    } catch (e: any) {
+      setActionMsg({ kind: 'error', text: e.response?.data?.message || 'Error al procesar la acción' });
+    }
+    setProcessingAction(null);
+  }, [tab, loadList, refresh, processingAction]);
 
   const markAllRead = async () => {
     await api.post('/notifications/read-all'); refresh();
@@ -129,23 +168,44 @@ export default function AdminDashboard() {
           rntNumber: editForm.rntNumber || undefined,
         });
       }
-      setActionMsg('Actualizado');
+      setActionMsg({ kind: 'success', text: 'Actualizado' });
       setEditItem(null);
       setEditType(null);
       loadList(tab);
     } catch (e: any) {
-      setActionMsg(e.response?.data?.message || 'Error al guardar');
+      setActionMsg({ kind: 'error', text: e.response?.data?.message || 'Error al guardar' });
     }
     setEditSaving(false);
   };
 
-  const exportCSV = (data: any[], filename: string) => {
-    if (!data.length) return;
-    const keys = Object.keys(data[0]);
-    const csv = [keys.join(','), ...data.map(r => keys.map(k => JSON.stringify(r[k] ?? '')).join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+  // Escapa correctamente segun RFC 4180: si el valor contiene comma, newline,
+  // o quote, lo envuelve en quotes y duplica los quotes internos.
+  const escapeCSV = (val: unknown): string => {
+    if (val === null || val === undefined) return '';
+    const s = String(val);
+    if (/[",\n\r]/.test(s)) {
+      return `"${s.replace(/"/g, '""')}"`;
+    }
+    return s;
+  };
+
+  const exportCSV = (rows: any[], filename: string) => {
+    if (!rows.length) return;
+    const keys = Object.keys(rows[0]);
+    const header = keys.map(escapeCSV).join(',');
+    const body = rows.map(r => keys.map(k => escapeCSV(r[k])).join(',')).join('\r\n');
+    const csv = `${header}\r\n${body}`;
+    // BOM UTF-8 para que Excel reconozca tildes y eñes correctamente.
+    const blob = new Blob(['﻿', csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `${filename}.csv`; a.click();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    // Liberar memoria — el blob ya no se necesita despues del download.
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   };
 
   // Chart data from bookings breakdown — memoizado para evitar recrear array en cada render.
@@ -155,7 +215,13 @@ export default function AdminDashboard() {
     [data?.bookingsByStatus]
   );
 
-  if (!authorized) return null;
+  // Top tours ordenados — copia con [...list] para no mutar el state.
+  const topTours = useMemo(
+    () => [...list].sort((a: any, b: any) => (b.totalBookings || 0) - (a.totalBookings || 0)).slice(0, 10),
+    [list]
+  );
+
+  if (authLoading || !authorized) return null;
 
   const cards = [
     { key: 'jaladores' as Tab, label: 'Jaladores', value: data?.totalJaladores ?? '-', icon: '💰', color: '#F5882A' },
@@ -165,22 +231,28 @@ export default function AdminDashboard() {
     { key: 'reports' as Tab, label: 'Reportes', value: '📊', icon: '📊', color: '#717171' },
   ];
 
-  const badge = (status: string) => {
+  const badge = (status: string | null | undefined) => {
+    const s = status ?? 'pending';
     const m: Record<string, { bg: string; c: string }> = {
       active: { bg: '#E8F5EF', c: '#2D6A4F' }, pending: { bg: '#FEF3E8', c: '#F5882A' },
+      pending_review: { bg: '#FEF3E8', c: '#F5882A' }, suspended: { bg: '#FFF0F0', c: '#CC3333' },
       confirmed: { bg: '#E8F4FA', c: '#0D5C8A' }, completed: { bg: '#E8F5EF', c: '#2D6A4F' },
       cancelled: { bg: '#FFF0F0', c: '#CC3333' }, in_progress: { bg: '#FEF3E8', c: '#E07020' },
+      rejected: { bg: '#FFF0F0', c: '#CC3333' },
     };
-    const s = m[status] || m.pending;
-    return <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{ background: s.bg, color: s.c }}>{status}</span>;
+    const style = m[s] || m.pending;
+    const label = STATUS_LABELS[s] || s;
+    return <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{ background: style.bg, color: style.c }}>{label}</span>;
   };
+
+  const isProcessing = (action: string, id: number) => processingAction === `${action}-${id}`;
 
   return (
     <Layout>
       <Head><title>Admin — La Perla</title></Head>
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Header con campana */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 gap-3">
           {tab === 'dashboard' ? (
             <h1 className="font-bold text-xl" style={{ color: '#222' }}>Panel Admin</h1>
           ) : (
@@ -189,7 +261,18 @@ export default function AdminDashboard() {
             </button>
           )}
           <div className="flex items-center gap-3">
-            {actionMsg && <span className="text-xs px-2 py-1 rounded" style={{ background: actionMsg === 'Error' ? '#FFF0F0' : '#E8F5EF', color: actionMsg === 'Error' ? '#CC3333' : '#2D6A4F' }}>{actionMsg}</span>}
+            {actionMsg && (
+              <span
+                className="text-xs px-3 py-1.5 rounded font-semibold"
+                style={
+                  actionMsg.kind === 'success'
+                    ? { background: '#E8F5EF', color: '#2D6A4F' }
+                    : { background: '#FFF0F0', color: '#CC3333' }
+                }
+              >
+                {actionMsg.kind === 'success' ? '✓ ' : '⚠️ '}{actionMsg.text}
+              </span>
+            )}
             {/* Campana */}
             <button onClick={() => { setShowNotifs(!showNotifs); if (tab !== 'notifications') openTab('notifications'); }} className="relative p-2 rounded-lg hover:bg-gray-100">
               <svg className="w-6 h-6" fill="none" stroke="#222" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
@@ -216,15 +299,15 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
                   <div className="p-4 rounded-xl" style={{ background: '#F7F7F7' }}>
                     <div className="text-xs" style={{ color: '#717171' }}>GTV Total</div>
-                    <div className="text-xl font-bold" style={{ color: '#222' }}>${Number(data.gmv || 0).toLocaleString()}</div>
+                    <div className="text-xl font-bold" style={{ color: '#222' }}>${Number(data.gmv ?? 0).toLocaleString()}</div>
                   </div>
                   <div className="p-4 rounded-xl" style={{ background: '#F7F7F7' }}>
                     <div className="text-xs" style={{ color: '#717171' }}>Revenue (20%)</div>
-                    <div className="text-xl font-bold" style={{ color: '#F5882A' }}>${Number(data.platformRevenue || 0).toLocaleString()}</div>
+                    <div className="text-xl font-bold" style={{ color: '#F5882A' }}>${Number(data.platformRevenue ?? 0).toLocaleString()}</div>
                   </div>
                   <div className="p-4 rounded-xl" style={{ background: '#F7F7F7' }}>
                     <div className="text-xs" style={{ color: '#717171' }}>Comisiones Jaladores</div>
-                    <div className="text-xl font-bold" style={{ color: '#2D6A4F' }}>${Number(data.jaladorCommissions || 0).toLocaleString()}</div>
+                    <div className="text-xl font-bold" style={{ color: '#2D6A4F' }}>${Number(data.jaladorCommissions ?? 0).toLocaleString()}</div>
                   </div>
                 </div>
 
@@ -255,21 +338,21 @@ export default function AdminDashboard() {
           <>
             <div className="flex justify-between items-center mb-4">
               <span className="text-sm" style={{ color: '#717171' }}>{list.length} jaladores</span>
-              <button onClick={() => exportCSV(list.map(j => ({ nombre: j.user?.name, email: j.user?.email, zona: j.zone, ventas: j.totalSales, score: j.score, estado: j.status, codigo: j.refCode })), 'jaladores')} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: '#F7F7F7', color: '#222' }}>Exportar CSV</button>
+              <button onClick={() => exportCSV(list.map(j => ({ nombre: j.user?.name ?? '', email: j.user?.email ?? '', zona: j.zone ?? '', ventas: j.totalSales ?? 0, score: j.score ?? 0, estado: j.status ?? '', codigo: j.refCode ?? '' })), 'jaladores')} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: '#F7F7F7', color: '#222' }}>Exportar CSV</button>
             </div>
             {loading ? <Skeleton /> : list.map((j: any) => (
               <div key={j.id} className="flex items-center gap-3 p-3 mb-2 rounded-xl border" style={{ borderColor: '#EBEBEB' }}>
-                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: '#F5882A' }}>{j.user?.name?.charAt(0)}</div>
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: '#F5882A' }}>{j.user?.name?.charAt(0) ?? '?'}</div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm truncate" style={{ color: '#222' }}>{j.user?.name} <span className="font-mono text-xs" style={{ color: '#717171' }}>{j.refCode}</span></div>
-                  <div className="text-xs truncate" style={{ color: '#717171' }}>{j.user?.email} · {j.zone || '-'} · {j.totalSales} ventas · Score {j.score}</div>
+                  <div className="font-semibold text-sm truncate" style={{ color: '#222' }}>{j.user?.name ?? 'Sin nombre'} <span className="font-mono text-xs" style={{ color: '#717171' }}>{j.refCode ?? ''}</span></div>
+                  <div className="text-xs truncate" style={{ color: '#717171' }}>{j.user?.email ?? '—'} · {j.zone || '-'} · {j.totalSales ?? 0} ventas · Score {j.score ?? 0}</div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {badge(j.status)}
-                  <Btn label="Editar" bg="#F7F7F7" c="#222" onClick={() => openEditJalador(j)} />
-                  {j.status === 'pending' && <Btn label="Aprobar" bg="#2D6A4F" onClick={() => doAction('approve-jalador', j.id)} />}
-                  {j.status === 'active' && <Btn label="Suspender" bg="#FFF0F0" c="#CC3333" onClick={() => doAction('suspend', j.user?.id)} />}
-                  {j.status === 'suspended' && <Btn label="Reactivar" bg="#E8F5EF" c="#2D6A4F" onClick={() => doAction('reactivate', j.user?.id)} />}
+                  <Btn label="Editar" bg="#F7F7F7" c="#222" onClick={() => openEditJalador(j)} disabled={processingAction !== null} />
+                  {j.status === 'pending' && <Btn label={isProcessing('approve-jalador', j.id) ? '…' : 'Aprobar'} bg="#2D6A4F" onClick={() => doAction('approve-jalador', j.id)} disabled={processingAction !== null} />}
+                  {j.status === 'active' && <Btn label={isProcessing('suspend', j.user?.id) ? '…' : 'Suspender'} bg="#FFF0F0" c="#CC3333" onClick={() => doAction('suspend', j.user?.id)} disabled={processingAction !== null} />}
+                  {j.status === 'suspended' && <Btn label={isProcessing('reactivate', j.user?.id) ? '…' : 'Reactivar'} bg="#E8F5EF" c="#2D6A4F" onClick={() => doAction('reactivate', j.user?.id)} disabled={processingAction !== null} />}
                 </div>
               </div>
             ))}
@@ -281,19 +364,19 @@ export default function AdminDashboard() {
           <>
             <div className="flex justify-between items-center mb-4">
               <span className="text-sm" style={{ color: '#717171' }}>{list.length} operadores</span>
-              <button onClick={() => exportCSV(list.map(o => ({ empresa: o.companyName, email: o.user?.email, rnt: o.rntNumber, tours: o.totalTours, score: o.score, aprobado: o.isApproved })), 'operadores')} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: '#F7F7F7', color: '#222' }}>Exportar CSV</button>
+              <button onClick={() => exportCSV(list.map(o => ({ empresa: o.companyName ?? '', email: o.user?.email ?? '', rnt: o.rntNumber ?? '', tours: o.totalTours ?? 0, score: o.score ?? 0, aprobado: o.isApproved ? 'si' : 'no' })), 'operadores')} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: '#F7F7F7', color: '#222' }}>Exportar CSV</button>
             </div>
             {loading ? <Skeleton /> : list.map((op: any) => (
               <div key={op.id} className="flex items-center gap-3 p-3 mb-2 rounded-xl border" style={{ borderColor: '#EBEBEB' }}>
-                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: '#2D6A4F' }}>{op.companyName?.charAt(0)}</div>
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: '#2D6A4F' }}>{op.companyName?.charAt(0) ?? '?'}</div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm truncate" style={{ color: '#222' }}>{op.companyName}</div>
-                  <div className="text-xs truncate" style={{ color: '#717171' }}>{op.user?.email} · RNT: {op.rntNumber || 'N/A'} · {op.totalTours} tours</div>
+                  <div className="font-semibold text-sm truncate" style={{ color: '#222' }}>{op.companyName ?? 'Sin nombre'}</div>
+                  <div className="text-xs truncate" style={{ color: '#717171' }}>{op.user?.email ?? '—'} · RNT: {op.rntNumber || 'N/A'} · {op.totalTours ?? 0} tours</div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {badge(op.isApproved ? 'active' : 'pending')}
-                  <Btn label="Editar" bg="#F7F7F7" c="#222" onClick={() => openEditOperator(op)} />
-                  {!op.isApproved && <Btn label="Aprobar" bg="#2D6A4F" onClick={() => doAction('approve-operator', op.id)} />}
+                  <Btn label="Editar" bg="#F7F7F7" c="#222" onClick={() => openEditOperator(op)} disabled={processingAction !== null} />
+                  {!op.isApproved && <Btn label={isProcessing('approve-operator', op.id) ? '…' : 'Aprobar'} bg="#2D6A4F" onClick={() => doAction('approve-operator', op.id)} disabled={processingAction !== null} />}
                 </div>
               </div>
             ))}
@@ -305,22 +388,24 @@ export default function AdminDashboard() {
           <>
             <div className="flex justify-between items-center mb-4">
               <span className="text-sm" style={{ color: '#717171' }}>{list.length} tours</span>
-              <button onClick={() => exportCSV(list.map(t => ({ nombre: t.name, operador: t.operator?.companyName, precio: t.priceAdult, reservas: t.totalBookings, rating: t.avgRating, estado: t.status })), 'tours')} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: '#F7F7F7', color: '#222' }}>Exportar CSV</button>
+              <button onClick={() => exportCSV(list.map(t => ({ nombre: t.name ?? '', operador: t.operator?.companyName ?? '', precio: t.priceAdult ?? 0, reservas: t.totalBookings ?? 0, rating: t.avgRating ?? 0, estado: t.status ?? '' })), 'tours')} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: '#F7F7F7', color: '#222' }}>Exportar CSV</button>
             </div>
             {loading ? <Skeleton /> : list.map((t: any) => (
               <div key={t.id} className="flex items-center gap-3 p-3 mb-2 rounded-xl border" style={{ borderColor: '#EBEBEB' }}>
                 <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 relative">
-                  {t.coverImageUrl ? <Image src={t.coverImageUrl} alt={t.name} fill sizes="48px" className="object-cover" /> : <div className="w-full h-full" style={{ background: '#F0F0F0' }}></div>}
+                  {t.coverImageUrl ? <Image src={t.coverImageUrl} alt={t.name ?? 'Tour'} fill sizes="48px" className="object-cover" /> : <div className="w-full h-full" style={{ background: '#F0F0F0' }}></div>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm truncate" style={{ color: '#222' }}>{t.name}</div>
-                  <div className="text-xs truncate" style={{ color: '#717171' }}>{t.operator?.companyName} · ${t.priceAdult?.toLocaleString()} · {t.totalBookings} reservas · ★{t.avgRating?.toFixed(1)}</div>
+                  <div className="font-semibold text-sm truncate" style={{ color: '#222' }}>{t.name ?? 'Sin nombre'}</div>
+                  <div className="text-xs truncate" style={{ color: '#717171' }}>
+                    {t.operator?.companyName ?? 'Sin operador'} · ${Number(t.priceAdult ?? 0).toLocaleString()} · {t.totalBookings ?? 0} reservas · ★{Number(t.avgRating ?? 0).toFixed(1)}
+                  </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {badge(t.status)}
                   {t.status === 'pending_review' && <>
-                    <Btn label="Aprobar" bg="#2D6A4F" onClick={() => doAction('approve-tour', t.id)} />
-                    <Btn label="Rechazar" bg="#FFF0F0" c="#CC3333" onClick={() => doAction('reject-tour', t.id)} />
+                    <Btn label={isProcessing('approve-tour', t.id) ? '…' : 'Aprobar'} bg="#2D6A4F" onClick={() => doAction('approve-tour', t.id)} disabled={processingAction !== null} />
+                    <Btn label={isProcessing('reject-tour', t.id) ? '…' : 'Rechazar'} bg="#FFF0F0" c="#CC3333" onClick={() => doAction('reject-tour', t.id)} disabled={processingAction !== null} />
                   </>}
                 </div>
               </div>
@@ -333,16 +418,16 @@ export default function AdminDashboard() {
           <>
             <div className="flex justify-between items-center mb-4">
               <span className="text-sm" style={{ color: '#717171' }}>{list.length} reservas</span>
-              <button onClick={() => exportCSV(list.map(b => ({ codigo: b.bookingCode, tour: b.tour?.name, cliente: b.tourist?.user?.name, fecha: b.tourDate, monto: b.totalAmount, estado: b.status })), 'reservas')} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: '#F7F7F7', color: '#222' }}>Exportar CSV</button>
+              <button onClick={() => exportCSV(list.map(b => ({ codigo: b.bookingCode ?? '', tour: b.tour?.name ?? '', cliente: b.tourist?.user?.name ?? '', fecha: b.tourDate ?? '', monto: b.totalAmount ?? 0, estado: b.status ?? '' })), 'reservas')} className="text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: '#F7F7F7', color: '#222' }}>Exportar CSV</button>
             </div>
             {loading ? <Skeleton /> : list.map((b: any) => (
               <div key={b.id} className="flex items-center gap-3 p-3 mb-2 rounded-xl border" style={{ borderColor: '#EBEBEB' }}>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm truncate" style={{ color: '#222' }}>{b.tour?.name}</div>
-                  <div className="text-xs truncate" style={{ color: '#717171' }}>{b.bookingCode} · {b.tourist?.user?.name || 'Cliente'} · {new Date(b.tourDate).toLocaleDateString('es-CO')}</div>
+                  <div className="font-semibold text-sm truncate" style={{ color: '#222' }}>{b.tour?.name ?? 'Tour eliminado'}</div>
+                  <div className="text-xs truncate" style={{ color: '#717171' }}>{b.bookingCode ?? '—'} · {b.tourist?.user?.name ?? 'Cliente'} · {new Date(b.tourDate).toLocaleDateString('es-CO')}</div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="font-bold text-sm" style={{ color: '#222' }}>${Number(b.totalAmount).toLocaleString()}</div>
+                  <div className="font-bold text-sm" style={{ color: '#222' }}>${Number(b.totalAmount ?? 0).toLocaleString()}</div>
                   {badge(b.status)}
                 </div>
               </div>
@@ -357,12 +442,12 @@ export default function AdminDashboard() {
             <div className="mb-6">
               <h3 className="font-bold text-sm mb-3" style={{ color: '#222' }}>Top Tours por reservas</h3>
               <div className="space-y-2">
-                {(list.length ? list : []).sort((a: any, b: any) => (b.totalBookings || 0) - (a.totalBookings || 0)).slice(0, 10).map((t: any, i: number) => (
+                {topTours.map((t: any, i: number) => (
                   <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: '#F7F7F7' }}>
                     <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: i < 3 ? '#F5882A' : '#EBEBEB', color: i < 3 ? 'white' : '#222' }}>{i + 1}</span>
-                    <span className="flex-1 text-sm font-semibold truncate" style={{ color: '#222' }}>{t.name}</span>
-                    <span className="text-sm" style={{ color: '#717171' }}>{t.totalBookings} reservas</span>
-                    <span className="text-sm font-bold" style={{ color: '#0D5C8A' }}>${t.priceAdult?.toLocaleString()}</span>
+                    <span className="flex-1 text-sm font-semibold truncate" style={{ color: '#222' }}>{t.name ?? 'Sin nombre'}</span>
+                    <span className="text-sm" style={{ color: '#717171' }}>{t.totalBookings ?? 0} reservas</span>
+                    <span className="text-sm font-bold" style={{ color: '#0D5C8A' }}>${Number(t.priceAdult ?? 0).toLocaleString()}</span>
                   </div>
                 ))}
               </div>
@@ -373,15 +458,15 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
               <div className="p-4 rounded-xl" style={{ background: '#F7F7F7' }}>
                 <div className="text-xs" style={{ color: '#717171' }}>GTV Total</div>
-                <div className="text-2xl font-bold" style={{ color: '#222' }}>${Number(data.gmv || 0).toLocaleString()}</div>
+                <div className="text-2xl font-bold" style={{ color: '#222' }}>${Number(data.gmv ?? 0).toLocaleString()}</div>
               </div>
               <div className="p-4 rounded-xl" style={{ background: '#F7F7F7' }}>
                 <div className="text-xs" style={{ color: '#717171' }}>Revenue Plataforma</div>
-                <div className="text-2xl font-bold" style={{ color: '#F5882A' }}>${Number(data.platformRevenue || 0).toLocaleString()}</div>
+                <div className="text-2xl font-bold" style={{ color: '#F5882A' }}>${Number(data.platformRevenue ?? 0).toLocaleString()}</div>
               </div>
               <div className="p-4 rounded-xl" style={{ background: '#F7F7F7' }}>
                 <div className="text-xs" style={{ color: '#717171' }}>Comisiones Jaladores</div>
-                <div className="text-2xl font-bold" style={{ color: '#2D6A4F' }}>${Number(data.jaladorCommissions || 0).toLocaleString()}</div>
+                <div className="text-2xl font-bold" style={{ color: '#2D6A4F' }}>${Number(data.jaladorCommissions ?? 0).toLocaleString()}</div>
               </div>
             </div>
 
@@ -412,9 +497,9 @@ export default function AdminDashboard() {
                   {n.type?.includes('booking') ? '📋' : n.type?.includes('sale') ? '💰' : n.type?.includes('review') ? '⭐' : n.type?.includes('commission') ? '💵' : '🔔'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm" style={{ color: '#222' }}>{n.title}</div>
-                  <div className="text-xs" style={{ color: '#717171' }}>{n.body}</div>
-                  <div className="text-xs mt-1" style={{ color: '#B0B0B0' }}>{new Date(n.createdAt).toLocaleString('es-CO')}</div>
+                  <div className="font-semibold text-sm" style={{ color: '#222' }}>{n.title ?? 'Notificación'}</div>
+                  <div className="text-xs" style={{ color: '#717171' }}>{n.body ?? ''}</div>
+                  <div className="text-xs mt-1" style={{ color: '#B0B0B0' }}>{n.createdAt ? new Date(n.createdAt).toLocaleString('es-CO') : ''}</div>
                 </div>
                 {!n.isRead && <div className="w-2 h-2 rounded-full shrink-0 mt-2" style={{ background: '#FF5F5F' }}></div>}
               </div>
@@ -423,8 +508,8 @@ export default function AdminDashboard() {
         )}
         {/* === MODAL EDICION === */}
         {editItem && editType && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.4)' }} onClick={() => { if (!editSaving) { setEditItem(null); setEditType(null); } }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: '#EBEBEB' }}>
                 <h2 className="font-bold text-lg" style={{ color: '#222' }}>
                   Editar {editType === 'jalador' ? 'Jalador' : 'Operador'}
@@ -503,6 +588,6 @@ function EditField({ label, value, onChange, type, placeholder, textarea }: { la
 }
 
 function Skeleton() { return <div className="space-y-2">{[1,2,3,4,5].map(i => <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: '#F0F0F0' }}></div>)}</div>; }
-function Btn({ label, bg, c, onClick }: { label: string; bg: string; c?: string; onClick: () => void }) {
-  return <button onClick={onClick} className="text-xs px-2.5 py-1 rounded-lg font-semibold" style={{ background: bg, color: c || 'white' }}>{label}</button>;
+function Btn({ label, bg, c, onClick, disabled }: { label: string; bg: string; c?: string; onClick: () => void; disabled?: boolean }) {
+  return <button onClick={onClick} disabled={disabled} className="text-xs px-2.5 py-1 rounded-lg font-semibold disabled:opacity-50" style={{ background: bg, color: c || 'white' }}>{label}</button>;
 }
