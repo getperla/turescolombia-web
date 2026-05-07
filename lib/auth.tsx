@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/router';
 import api, { invalidateDemoModeCache } from './api';
+import { supabase, isSupabaseConfigured } from './supabase';
 
 export type AuthUser = {
   id: number;
@@ -61,6 +62,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('laperla_beta');
     invalidateDemoModeCache();
     setUser(null);
+    // Tambien limpiamos la sesion interna de supabase-js. Si no, queda
+    // persistida y /auth/callback (o cualquier flujo que llame
+    // supabase.auth.getSession) la "resucita" y vuelve a loguear al
+    // usuario sin querer (P2 Codex review #31).
+    if (isSupabaseConfigured()) {
+      supabase.auth.signOut().catch(() => { /* noop */ });
+    }
     // Hard reload to reset the whole app state and re-show BetaGate
     window.location.href = '/';
   }, []);

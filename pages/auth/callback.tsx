@@ -53,25 +53,65 @@ export default function AuthCallback() {
     };
 
     const tryRecover = async () => {
+      const search = new URLSearchParams(window.location.search);
+      const hash = new URLSearchParams(
+        window.location.hash.startsWith('#')
+          ? window.location.hash.slice(1)
+          : window.location.hash,
+      );
+      const code = search.get('code');
+      // Senales de que aterrizamos aqui desde un flujo real de Supabase:
+      // - PKCE: ?code=
+      // - Hash flow: #access_token=, #refresh_token=, #type=
+      // - Implicit / token_hash: ?token_hash=, ?type=
+      // - Errores devueltos por Supabase: ?error=, ?error_description=
+      // Si NADA de esto esta en la URL, el usuario llego a /auth/callback
+      // por accidente o con un link viejo. NO reusamos getSession() porque
+      // resucitaria una sesion que el usuario tal vez ya cerro.
+      const looksLikeAuthCallback =
+        !!code ||
+        !!search.get('token_hash') ||
+        !!search.get('type') ||
+        !!search.get('error') ||
+        !!hash.get('access_token') ||
+        !!hash.get('refresh_token') ||
+        !!hash.get('type') ||
+        !!hash.get('error');
+
+      if (!looksLikeAuthCallback) {
+        setErrorMsg(
+          'No detectamos un link de confirmacion valido. Si vienes de tu correo, abre el link mas reciente.',
+        );
+        return;
+      }
+
+      // Si Supabase nos paso un error directo, lo mostramos tal cual.
+      const errParam = search.get('error_description') || hash.get('error_description');
+      if (errParam) {
+        setErrorMsg(decodeURIComponent(errParam.replace(/\+/g, ' ')));
+        return;
+      }
+
       // 1) PKCE flow: ?code=... en URL
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
-        if (code) {
+      if (code) {
+        try {
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) throw error;
           if (data?.session) {
             finish(data.session);
             return;
           }
+        } catch (err: any) {
+          // Si exchange falla (code ya usado, expirado, etc), seguimos
+          // a getSession por si supabase-js ya proceso el flow.
+          console.warn('exchangeCodeForSession failed:', err?.message);
         }
-      } catch (err: any) {
-        // Si exchange falla (code ya usado, expirado, etc), seguimos
-        // a getSession por si supabase-js ya proceso el flow.
-        console.warn('exchangeCodeForSession failed:', err?.message);
       }
 
       // 2) Hash flow / sesion ya procesada: leer la sesion actual.
+      // Solo llegamos aqui cuando looksLikeAuthCallback === true, asi que
+      // confiar en getSession aqui es seguro: no resucitamos sesiones de
+      // usuarios que cerraron antes y aterrizan sin parametros de auth.
       const { data, error } = await supabase.auth.getSession();
       if (error) {
         setErrorMsg(error.message || 'No pudimos verificar tu correo');
@@ -82,7 +122,7 @@ export default function AuthCallback() {
         return;
       }
 
-      // 3) Sin sesion: probablemente el link expiro o ya fue usado.
+      // 3) URL parecia callback pero no produjo sesion: link invalido / usado.
       setErrorMsg(
         'El link de confirmacion no es valido o ya fue usado. Intenta entrar con tu correo y contrasena.',
       );
