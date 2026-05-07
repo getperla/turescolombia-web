@@ -139,9 +139,22 @@ function parsePeople(text: string): number {
   return 1;
 }
 
+// Normaliza texto del usuario: lowercase + quita tildes/diacríticos.
+// Permite que regex ASCII matcheen palabras con tildes ("sí" → "si",
+// "opción" → "opcion", etc). Resuelve P2 de Cowork QA: "sí, dale" no
+// se reconocía como confirmación porque \b en regex JS sin flag u
+// no maneja bien caracteres unicode con diacríticos.
+function normalize(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim();
+}
+
 function isConfirmation(text: string): boolean {
-  const t = text.toLowerCase().trim();
-  return /^(s[ií]\b|listo|confirm|dale|hagamos|me parece|el primero|la primera|opcion 1|opci[oó]n 1|esa misma|perfecto)/i.test(
+  const t = normalize(text);
+  return /^(si\b|listo|confirm|dale|hagamos|me parece|el primero|la primera|opcion 1|esa misma|perfecto|de una|claro|esta bien)/i.test(
     t,
   );
 }
@@ -166,7 +179,12 @@ function pickToursForBudget(
   return picked;
 }
 
-function formatRecommendation(picks: MockTour[], people: number, jaladorName: string): string {
+function formatRecommendation(
+  picks: MockTour[],
+  people: number,
+  jaladorName: string,
+  daysRequested: number,
+): string {
   if (picks.length === 0) {
     return `${jaladorName ? `Hola ${jaladorName}, ` : ''}con ese presupuesto no me alcanza ni para el tour mas economico (City tour Santa Marta — $${COP(60000)} COP por persona). Quieres que ajustemos el presupuesto o el numero de personas?`;
   }
@@ -176,7 +194,15 @@ function formatRecommendation(picks: MockTour[], people: number, jaladorName: st
   const personas = people === 1 ? 'persona' : 'personas';
   const planes = picks.length === 1 ? 'este plan' : `un plan de ${picks.length} dias`;
 
-  return `Listo, te armo ${planes} para ${people} ${personas}:
+  // Resuelve P2 de Cowork QA: si el presupuesto no alcanza para todos los
+  // dias pedidos, avisamos en lugar de devolver silenciosamente menos planes
+  // que los solicitados (el jalador no se daba cuenta y prometia mal al cliente).
+  const aviso =
+    picks.length < daysRequested
+      ? `\n\n⚠️ Con tu presupuesto solo me alcanza para ${picks.length} de los ${daysRequested} dias que pediste. Quieres ajustar presupuesto o reducir dias?`
+      : '';
+
+  return `Listo, te armo ${planes} para ${people} ${personas}:${aviso}
 
 💰 *Total grupo:* $${COP(total)} COP
 🪙 *Tu comision (20%):* $${COP(comision)} COP
@@ -273,7 +299,7 @@ export function buildMockResponse(input: MockResponseInput): MockResponseOutput 
 
   const picks = pickToursForBudget(source, budget, days, people);
   return {
-    message: formatRecommendation(picks, people, jaladorName),
+    message: formatRecommendation(picks, people, jaladorName, days),
     quiereReservar: false,
     picks,
     people,
