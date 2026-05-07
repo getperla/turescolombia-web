@@ -58,6 +58,16 @@ export default function RegisterPage() {
           profile.companyName = companyName;
           if (rntNumber) profile.rntNumber = rntNumber;
         }
+        // NOTA TÉCNICA (deuda conocida — Codex P2 #23):
+        // El teléfono se guarda en `options.data.phone` (user_metadata),
+        // NO en la identidad oficial de Supabase Auth (auth.users.phone).
+        // Consecuencia: si este usuario después intenta loguear con
+        // "WhatsApp OTP", Supabase no encontrará match por phone identity
+        // y creará/buscará un usuario distinto sin role metadata
+        // → caerá a 'tourist' por default.
+        // FIX FUTURO: cuando se active Phone Provider de Supabase + Twilio,
+        // hacer supabase.auth.updateUser({ phone }) tras el signUp para
+        // vincular la identidad. Ver login.tsx — badge "Próximamente".
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,

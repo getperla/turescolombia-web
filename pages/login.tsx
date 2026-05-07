@@ -143,9 +143,16 @@ export default function LoginPage() {
                 ✉️ Correo
               </button>
               <button onClick={() => { setLoginMode('phone'); setError(''); setOtpSent(false); }}
-                className="flex-1 py-2 rounded-full text-xs font-semibold transition-all"
+                className="flex-1 py-2 rounded-full text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
                 style={{ background: loginMode === 'phone' ? 'white' : 'transparent', color: loginMode === 'phone' ? '#222' : '#717171', boxShadow: loginMode === 'phone' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
                 📱 WhatsApp
+                <span
+                  className="text-[9px] px-1.5 py-0.5 rounded-full font-bold"
+                  style={{ background: '#FEF3E8', color: '#F5882A' }}
+                  title="Phone Provider de Supabase + Twilio aún no configurado. Si te registraste con email, tu rol no se vinculará por ahora."
+                >
+                  PRÓXIMAMENTE
+                </span>
               </button>
             </div>
 
