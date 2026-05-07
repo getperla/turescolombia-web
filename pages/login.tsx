@@ -18,15 +18,23 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const registered = router.query.registered === '1';
+  // Cuando Supabase tiene "Confirm email" habilitado, register.tsx pasa
+  // confirm=1 — el usuario tiene que revisar su correo ANTES de poder
+  // loguear, sino le dirá credenciales invalidas. Mensaje distinto.
+  const needsConfirm = router.query.confirm === '1';
   const role = router.query.role as string || '';
   const redirect = (router.query.redirect as string) || null;
 
+  const getRedirectPath = (userRole: string): string => {
+    if (redirect) return redirect;
+    if (userRole === 'admin') return '/dashboard/admin';
+    if (userRole === 'operator') return '/dashboard/operator';
+    if (userRole === 'jalador') return '/dashboard/jalador';
+    return '/explorar';
+  };
+
   const navigateByRole = (userRole: string) => {
-    if (redirect) router.push(redirect);
-    else if (userRole === 'admin') router.push('/dashboard/admin');
-    else if (userRole === 'operator') router.push('/dashboard/operator');
-    else if (userRole === 'jalador') router.push('/dashboard/jalador');
-    else router.push('/explorar');
+    router.push(getRedirectPath(userRole));
   };
 
   const doLogin = async (loginEmail: string, loginPassword: string) => {
@@ -47,12 +55,17 @@ export default function LoginPage() {
         const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
         if (err) throw err;
         if (data.session) {
+          const userRole = data.user?.user_metadata?.role || 'tourist';
           localStorage.setItem('turescol_token', data.session.access_token);
           localStorage.setItem('turescol_user', JSON.stringify({
             id: data.user?.id, name: data.user?.user_metadata?.name || email.split('@')[0],
-            email, role: data.user?.user_metadata?.role || 'tourist',
+            email, role: userRole,
           }));
-          navigateByRole(data.user?.user_metadata?.role || 'tourist');
+          // Hard navigation: AuthProvider solo lee localStorage al mount
+          // inicial. Sin esto el contexto sigue con user=null y
+          // useRequireAuth redirige al login → loop infinito.
+          window.location.assign(getRedirectPath(userRole));
+          return;
         }
       } catch (err: any) { setError(err.message || 'Correo o contraseña incorrectos.'); }
     } else {
@@ -87,12 +100,15 @@ export default function LoginPage() {
       const { data, error: err } = await supabase.auth.verifyOtp({ phone: fullPhone, token: otpCode, type: 'sms' });
       if (err) { setError(err.message); }
       else if (data.session) {
+        const userRole = data.user?.user_metadata?.role || 'tourist';
         localStorage.setItem('turescol_token', data.session.access_token);
         localStorage.setItem('turescol_user', JSON.stringify({
           id: data.user?.id, name: data.user?.user_metadata?.name || 'Usuario',
-          email: data.user?.email || '', role: data.user?.user_metadata?.role || 'tourist',
+          email: data.user?.email || '', role: userRole,
         }));
-        navigateByRole(data.user?.user_metadata?.role || 'tourist');
+        // Hard navigation — ver comentario en handleSubmit.
+        window.location.assign(getRedirectPath(userRole));
+        return;
       }
     } else {
       // Demo mode
@@ -129,9 +145,14 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {registered && (
+            {registered && needsConfirm && (
+              <div className="px-4 py-3 rounded-2xl text-sm mb-4 font-sans" style={{ background: '#FFF8E5', color: '#7A5C00', border: '1px solid #F5E0A8' }}>
+                📧 <strong>Cuenta creada.</strong> Te enviamos un correo de confirmación — ábrelo y haz clic en el link para activar tu cuenta. Después puedes entrar aquí.
+              </div>
+            )}
+            {registered && !needsConfirm && (
               <div className="px-4 py-3 rounded-2xl text-sm mb-4 font-sans" style={{ background: '#E8F5EF', color: '#2D6A4F' }}>
-                Cuenta creada exitosamente. Ahora puedes entrar.
+                ✓ Cuenta creada exitosamente. Ahora puedes entrar.
               </div>
             )}
 
@@ -143,9 +164,16 @@ export default function LoginPage() {
                 ✉️ Correo
               </button>
               <button onClick={() => { setLoginMode('phone'); setError(''); setOtpSent(false); }}
-                className="flex-1 py-2 rounded-full text-xs font-semibold transition-all"
+                className="flex-1 py-2 rounded-full text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
                 style={{ background: loginMode === 'phone' ? 'white' : 'transparent', color: loginMode === 'phone' ? '#222' : '#717171', boxShadow: loginMode === 'phone' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
                 📱 WhatsApp
+                <span
+                  className="text-[9px] px-1.5 py-0.5 rounded-full font-bold"
+                  style={{ background: '#FEF3E8', color: '#F5882A' }}
+                  title="Phone Provider de Supabase + Twilio aún no configurado. Si te registraste con email, tu rol no se vinculará por ahora."
+                >
+                  PRÓXIMAMENTE
+                </span>
               </button>
             </div>
 
