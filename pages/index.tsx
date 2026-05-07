@@ -4,7 +4,6 @@ import { useAuth } from '../lib/auth';
 import Layout from '../components/Layout';
 import Logo from '../components/Logo';
 import Link from 'next/link';
-import { isBetaActive, getBetaRole } from '../components/BetaGate';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -23,17 +22,6 @@ export default function Home() {
         : '/explorar';
       router.replace(path);
       return;
-    }
-
-    // If beta mode is active, redirect based on beta role
-    if (isBetaActive()) {
-      setRedirecting(true);
-      const role = getBetaRole();
-      const path = role === 'admin' ? '/dashboard/admin'
-        : role === 'operator' ? '/dashboard/operator'
-        : role === 'jalador' ? '/dashboard/jalador'
-        : '/explorar';
-      router.replace(path);
     }
   }, [user, loading, router]);
 

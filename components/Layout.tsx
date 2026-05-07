@@ -2,9 +2,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
-import api, { invalidateDemoModeCache } from '../lib/api';
+import api from '../lib/api';
 import Logo from './Logo';
-import { isBetaActive } from './BetaGate';
 import { useFavorites } from '../lib/useFavorites';
 
 const FAB_HIDDEN_ROUTES = ['/agente', '/asesor', '/login', '/register', '/auth/callback'];
@@ -14,23 +13,11 @@ export default function Layout({ children, hideSearch }: { children: React.React
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [betaMode, setBetaMode] = useState(false);
   const { count: favCount } = useFavorites();
 
   const fabTarget = user?.role === 'jalador' ? '/agente' : '/asesor';
   const fabLabel = user?.role === 'jalador' ? 'Asistente de ventas' : 'Asesor de viaje';
   const showFab = !FAB_HIDDEN_ROUTES.some((r) => router.pathname.startsWith(r));
-
-  useEffect(() => { setBetaMode(isBetaActive()); }, [user]);
-
-  const switchRole = () => {
-    localStorage.removeItem('turescol_token');
-    localStorage.removeItem('turescol_refresh');
-    localStorage.removeItem('turescol_user');
-    localStorage.removeItem('laperla_beta');
-    invalidateDemoModeCache();
-    window.location.href = '/';
-  };
 
   useEffect(() => {
     if (user) { api.get('/notifications/count').then(r => setUnreadCount(r.data?.count || 0)).catch((e) => console.error('Failed to load notification count:', e)); }
@@ -44,12 +31,6 @@ export default function Layout({ children, hideSearch }: { children: React.React
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#FFFFFF' }}>
-      {/* Banner Modo Demo — solo visible en demo mode, anuncia que son datos de muestra */}
-      {betaMode && (
-        <div className="text-white text-xs font-semibold py-1.5 px-4 text-center" style={{ background: 'linear-gradient(90deg, #F5882A 0%, #C9A05C 50%, #F5882A 100%)' }}>
-          🚧 Modo Demo — Estás viendo datos de muestra · Para reservas reales, contacta tu jalador
-        </div>
-      )}
       {/* Header — Airbnb style */}
       <header className="sticky top-0 z-50 bg-white border-b" style={{ borderColor: '#EBEBEB' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,17 +51,6 @@ export default function Layout({ children, hideSearch }: { children: React.React
 
             {/* Right nav */}
             <div className="flex items-center gap-2">
-              {betaMode && user && (
-                <button
-                  onClick={switchRole}
-                  title="Cambiar de rol demo"
-                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-full transition-colors"
-                  style={{ background: '#FEF3E8', color: '#F5882A', border: '1px solid #F5882A' }}
-                >
-                  <span>🔄</span>
-                  <span className="hidden sm:inline">Cambiar rol</span>
-                </button>
-              )}
               {user ? (
                 <>
                   {dashboardPath && (
