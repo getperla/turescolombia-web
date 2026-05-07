@@ -4,8 +4,10 @@ import Logo from './Logo';
 
 const BETA_KEY = 'laperla_beta';
 
-// Rutas exentas del beta gate — el agente IA es discoverable sin login.
-const PUBLIC_ROUTES = ['/agente', '/asesor', '/auth/callback'];
+// Rutas exentas del beta gate. /register y /login deben estar exentas para
+// que un visitor no autenticado pueda llegar al form de registro/login —
+// si no, el gate vuelve a aparecer al navegar y el form queda inalcanzable.
+const PUBLIC_ROUTES = ['/agente', '/asesor', '/auth/callback', '/register', '/login'];
 
 type BetaRole = 'tourist' | 'jalador' | 'operator' | 'admin';
 
@@ -195,13 +197,23 @@ export default function BetaGate({ children }: { children: ReactNode }) {
         <p className="text-xs mb-4 text-center" style={{ color: '#CC3333' }}>{loginError}</p>
       )}
 
-      {/* Normal login link */}
-      <button
-        onClick={() => { setShow(false); router.push('/login'); }}
-        className="text-xs underline mb-6" style={{ color: '#717171' }}
-      >
-        Ya tengo cuenta, iniciar sesión normal
-      </button>
+      {/* Cuenta real — registro y login con Supabase */}
+      <div className="w-full max-w-md flex flex-col sm:flex-row gap-2 mb-6">
+        <button
+          onClick={() => { setShow(false); router.push('/register'); }}
+          className="flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-all active:scale-[0.98]"
+          style={{ background: '#F5882A' }}
+        >
+          Crear cuenta nueva
+        </button>
+        <button
+          onClick={() => { setShow(false); router.push('/login'); }}
+          className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.98]"
+          style={{ background: 'white', color: '#222', border: '1px solid #DDD' }}
+        >
+          Iniciar sesión
+        </button>
+      </div>
 
       <p className="text-xs" style={{ color: '#B0B0B0' }}>
         Santa Marta · Tayrona · Sierra Nevada
