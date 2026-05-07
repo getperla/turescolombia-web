@@ -4,8 +4,10 @@ import Logo from './Logo';
 
 const BETA_KEY = 'laperla_beta';
 
-// Rutas exentas del beta gate — el agente IA es discoverable sin login.
-const PUBLIC_ROUTES = ['/agente', '/asesor', '/auth/callback'];
+// Rutas exentas del beta gate. /register y /login deben estar exentas para
+// que un visitor no autenticado pueda llegar al form de registro/login —
+// si no, el gate vuelve a aparecer al navegar y el form queda inalcanzable.
+const PUBLIC_ROUTES = ['/agente', '/asesor', '/auth/callback', '/register', '/login'];
 
 type BetaRole = 'tourist' | 'jalador' | 'operator' | 'admin';
 
