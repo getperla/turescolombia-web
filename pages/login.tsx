@@ -18,6 +18,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const registered = router.query.registered === '1';
+  // Cuando Supabase tiene "Confirm email" habilitado, register.tsx pasa
+  // confirm=1 — el usuario tiene que revisar su correo ANTES de poder
+  // loguear, sino le dirá credenciales invalidas. Mensaje distinto.
+  const needsConfirm = router.query.confirm === '1';
   const role = router.query.role as string || '';
   const redirect = (router.query.redirect as string) || null;
 
@@ -129,9 +133,14 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {registered && (
+            {registered && needsConfirm && (
+              <div className="px-4 py-3 rounded-2xl text-sm mb-4 font-sans" style={{ background: '#FFF8E5', color: '#7A5C00', border: '1px solid #F5E0A8' }}>
+                📧 <strong>Cuenta creada.</strong> Te enviamos un correo de confirmación — ábrelo y haz clic en el link para activar tu cuenta. Después puedes entrar aquí.
+              </div>
+            )}
+            {registered && !needsConfirm && (
               <div className="px-4 py-3 rounded-2xl text-sm mb-4 font-sans" style={{ background: '#E8F5EF', color: '#2D6A4F' }}>
-                Cuenta creada exitosamente. Ahora puedes entrar.
+                ✓ Cuenta creada exitosamente. Ahora puedes entrar.
               </div>
             )}
 
