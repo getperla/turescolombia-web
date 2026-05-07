@@ -15,7 +15,7 @@ type AuthContextType = {
   user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<AuthUser>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUser: (updates: Partial<AuthUser>) => void;
 };
 
@@ -23,7 +23,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   login: async () => { throw new Error('AuthProvider not mounted'); },
-  logout: () => {},
+  logout: async () => {},
   updateUser: () => {},
 });
 
@@ -55,20 +55,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return authUser;
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    // Limpiamos primero la sesion interna de supabase-js. Si no, queda
+    // persistida y /auth/callback (getSession / INITIAL_SESSION) la
+    // "resucita" y vuelve a loguear al usuario sin querer.
+    // Espera al signOut antes de redirigir para evitar que la nav
+    // corte la limpieza async (Codex P2 #31, segunda iteracion).
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // Si falla la red, igual seguimos limpiando local — un signOut
+        // colgado no debe bloquear al usuario que quiere salir.
+      }
+    }
     localStorage.removeItem('turescol_token');
     localStorage.removeItem('turescol_refresh');
     localStorage.removeItem('turescol_user');
     localStorage.removeItem('laperla_beta');
     invalidateDemoModeCache();
     setUser(null);
-    // Tambien limpiamos la sesion interna de supabase-js. Si no, queda
-    // persistida y /auth/callback (o cualquier flujo que llame
-    // supabase.auth.getSession) la "resucita" y vuelve a loguear al
-    // usuario sin querer (P2 Codex review #31).
-    if (isSupabaseConfigured()) {
-      supabase.auth.signOut().catch(() => { /* noop */ });
-    }
     // Hard reload to reset the whole app state and re-show BetaGate
     window.location.href = '/';
   }, []);

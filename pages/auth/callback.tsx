@@ -108,7 +108,30 @@ export default function AuthCallback() {
         }
       }
 
-      // 2) Hash flow / sesion ya procesada: leer la sesion actual.
+      // 2) Token hash flow: ?token_hash=...&type=signup|magiclink|recovery|email_change|invite
+      // Algunos templates de email de Supabase usan este formato (especialmente
+      // si "Email OTP" esta activado o si la plantilla usa {{ .TokenHash }}).
+      // verifyOtp con token_hash genera la sesion sin necesidad de codigo PKCE.
+      const tokenHash = search.get('token_hash');
+      const type = search.get('type');
+      if (tokenHash && type) {
+        try {
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            // Tipos validos: signup, magiclink, recovery, email_change, invite, email
+            type: type as any,
+          });
+          if (error) throw error;
+          if (data?.session) {
+            finish(data.session);
+            return;
+          }
+        } catch (err: any) {
+          console.warn('verifyOtp(token_hash) failed:', err?.message);
+        }
+      }
+
+      // 3) Hash flow / sesion ya procesada: leer la sesion actual.
       // Solo llegamos aqui cuando looksLikeAuthCallback === true, asi que
       // confiar en getSession aqui es seguro: no resucitamos sesiones de
       // usuarios que cerraron antes y aterrizan sin parametros de auth.
@@ -122,7 +145,7 @@ export default function AuthCallback() {
         return;
       }
 
-      // 3) URL parecia callback pero no produjo sesion: link invalido / usado.
+      // 4) URL parecia callback pero no produjo sesion: link invalido / usado.
       setErrorMsg(
         'El link de confirmacion no es valido o ya fue usado. Intenta entrar con tu correo y contrasena.',
       );
