@@ -68,10 +68,18 @@ export default function RegisterPage() {
         // FIX FUTURO: cuando se active Phone Provider de Supabase + Twilio,
         // hacer supabase.auth.updateUser({ phone }) tras el signUp para
         // vincular la identidad. Ver login.tsx — badge "Próximamente".
+        // emailRedirectTo: forzamos que el link del email de confirmacion
+        // apunte al origen actual (Vercel preview, prod, o localhost), no
+        // a la "Site URL" del dashboard de Supabase. Sin esto, si la Site
+        // URL quedo en localhost, todos los emails apuntan a localhost y
+        // el usuario ve ERR_CONNECTION_REFUSED al hacer click.
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: profile },
+          options: {
+            data: profile,
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
         });
         if (signUpError) throw signUpError;
         // Si Supabase requiere confirmar email, data.session será null y el

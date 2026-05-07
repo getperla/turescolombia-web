@@ -9,15 +9,23 @@ export default function AuthCallback() {
   useEffect(() => {
     supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        const role = session.user.user_metadata?.role || 'tourist';
         localStorage.setItem('turescol_token', session.access_token);
         localStorage.setItem('turescol_user', JSON.stringify({
           id: session.user.id,
           name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuario',
           email: session.user.email || '',
-          role: session.user.user_metadata?.role || 'tourist',
+          role,
           avatarUrl: session.user.user_metadata?.avatar_url || '',
         }));
-        window.location.href = '/explorar';
+        // Redirect por rol: el jalador espera su panel, no el explorador.
+        // Lo mismo aplica si confirmaste email (signup) o iniciaste con OAuth.
+        const dest =
+          role === 'admin' ? '/dashboard/admin' :
+          role === 'operator' ? '/dashboard/operator' :
+          role === 'jalador' ? '/dashboard/jalador' :
+          '/explorar';
+        window.location.href = dest;
       }
     });
   }, [router]);
