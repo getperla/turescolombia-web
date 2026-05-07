@@ -117,16 +117,34 @@ export default function TourDetail() {
     await new Promise(r => setTimeout(r, 2500));
 
     try {
-      const { data } = await api.post('/bookings', {
-        tourId: tour!.id, tourDate, numAdults, numChildren,
-        refCode: refCode || undefined, clientName: clientName.trim(),
-        clientLastName: clientLastName.trim() || undefined,
-        clientPhone: clientPhone.trim(), clientHotel: clientHotel.trim() || undefined,
-        paymentMethod,
+      // Llamamos a NUESTRO endpoint propio (server-side de Next) que persiste
+      // en Supabase via lib/sales.createSale. Antes apuntaba a /bookings del
+      // backend Render legacy que devolvia 401 Unauthorized para invitados.
+      const res = await fetch('/api/bookings/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tourId: tour!.id,
+          tourDate,
+          numAdults,
+          numChildren,
+          refCode: refCode || undefined,
+          clientName: clientName.trim(),
+          clientLastName: clientLastName.trim() || undefined,
+          clientPhone: clientPhone.trim(),
+          clientHotel: clientHotel.trim() || undefined,
+          paymentMethod,
+        }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'No pudimos crear la reserva');
+      }
       setBookingResult(data);
-    } catch (error: any) {
-      setMessage(error.response?.data?.message || 'No pudimos crear la reserva. Intenta de nuevo o contáctanos por WhatsApp.');
+    } catch (error: unknown) {
+      const detail =
+        error instanceof Error ? error.message : 'No pudimos crear la reserva. Intenta de nuevo o contáctanos por WhatsApp.';
+      setMessage(detail);
       setPaymentStep('payment');
       setLoading(false);
       return;
