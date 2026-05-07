@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '../components/Layout';
 import api from '../lib/api';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 type Role = 'tourist' | 'jalador' | 'operator';
 
@@ -47,14 +48,45 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
+      // Path A — Supabase Auth (preferido). Guarda el usuario en auth.users
+      // con metadata custom (role, name, phone, perfil). Es lo que pide
+      // operación real: usuarios persisten, no son demo.
+      if (isSupabaseConfigured()) {
+        const profile: Record<string, unknown> = { name, role, phone };
+        if (role === 'jalador') { profile.zone = zone; profile.bio = bio; }
+        if (role === 'operator') {
+          profile.companyName = companyName;
+          if (rntNumber) profile.rntNumber = rntNumber;
+        }
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: profile },
+        });
+        if (signUpError) throw signUpError;
+        // Si Supabase requiere confirmar email, data.session será null y el
+        // usuario debe revisar su correo. Si no, ya queda autenticado.
+        if (data.session) {
+          router.push('/login?registered=1');
+        } else {
+          router.push('/login?registered=1&confirm=1');
+        }
+        return;
+      }
+
+      // Path B — fallback al backend Render legacy (modo dev local sin Supabase)
       const endpoint = role === 'tourist' ? '/auth/register' : role === 'jalador' ? '/auth/register/jalador' : '/auth/register/operator';
-      const body: any = { name, email, phone, password, role };
+      const body: Record<string, unknown> = { name, email, phone, password, role };
       if (role === 'jalador') { body.zone = zone; body.bio = bio; }
       if (role === 'operator') { body.companyName = companyName; body.rntNumber = rntNumber || undefined; }
       await api.post(endpoint, body);
       router.push('/login?registered=1');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al registrar. Intenta de nuevo.');
+    } catch (err: unknown) {
+      const detail =
+        err instanceof Error ? err.message :
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Error al registrar. Intenta de nuevo.';
+      setError(detail);
     }
     setLoading(false);
   };
