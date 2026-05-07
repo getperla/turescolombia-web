@@ -25,12 +25,16 @@ export default function LoginPage() {
   const role = router.query.role as string || '';
   const redirect = (router.query.redirect as string) || null;
 
+  const getRedirectPath = (userRole: string): string => {
+    if (redirect) return redirect;
+    if (userRole === 'admin') return '/dashboard/admin';
+    if (userRole === 'operator') return '/dashboard/operator';
+    if (userRole === 'jalador') return '/dashboard/jalador';
+    return '/explorar';
+  };
+
   const navigateByRole = (userRole: string) => {
-    if (redirect) router.push(redirect);
-    else if (userRole === 'admin') router.push('/dashboard/admin');
-    else if (userRole === 'operator') router.push('/dashboard/operator');
-    else if (userRole === 'jalador') router.push('/dashboard/jalador');
-    else router.push('/explorar');
+    router.push(getRedirectPath(userRole));
   };
 
   const doLogin = async (loginEmail: string, loginPassword: string) => {
@@ -51,12 +55,17 @@ export default function LoginPage() {
         const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
         if (err) throw err;
         if (data.session) {
+          const userRole = data.user?.user_metadata?.role || 'tourist';
           localStorage.setItem('turescol_token', data.session.access_token);
           localStorage.setItem('turescol_user', JSON.stringify({
             id: data.user?.id, name: data.user?.user_metadata?.name || email.split('@')[0],
-            email, role: data.user?.user_metadata?.role || 'tourist',
+            email, role: userRole,
           }));
-          navigateByRole(data.user?.user_metadata?.role || 'tourist');
+          // Hard navigation: AuthProvider solo lee localStorage al mount
+          // inicial. Sin esto el contexto sigue con user=null y
+          // useRequireAuth redirige al login → loop infinito.
+          window.location.assign(getRedirectPath(userRole));
+          return;
         }
       } catch (err: any) { setError(err.message || 'Correo o contraseña incorrectos.'); }
     } else {
@@ -91,12 +100,15 @@ export default function LoginPage() {
       const { data, error: err } = await supabase.auth.verifyOtp({ phone: fullPhone, token: otpCode, type: 'sms' });
       if (err) { setError(err.message); }
       else if (data.session) {
+        const userRole = data.user?.user_metadata?.role || 'tourist';
         localStorage.setItem('turescol_token', data.session.access_token);
         localStorage.setItem('turescol_user', JSON.stringify({
           id: data.user?.id, name: data.user?.user_metadata?.name || 'Usuario',
-          email: data.user?.email || '', role: data.user?.user_metadata?.role || 'tourist',
+          email: data.user?.email || '', role: userRole,
         }));
-        navigateByRole(data.user?.user_metadata?.role || 'tourist');
+        // Hard navigation — ver comentario en handleSubmit.
+        window.location.assign(getRedirectPath(userRole));
+        return;
       }
     } else {
       // Demo mode
