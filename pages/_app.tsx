@@ -1,8 +1,10 @@
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { AuthProvider } from '../lib/auth';
-import BetaGate from '../components/BetaGate';
 import '../styles/globals.css';
+// BetaGate eliminado del wrap por defecto. La pantalla inicial ahora muestra
+// la home pública. El BetaGate sigue importable para uso interno (testing
+// de roles), pero no envuelve la app.
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -36,9 +38,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta name="twitter:description" content="Reserva tours en Tayrona, Sierra Nevada y el Caribe colombiano. Pago seguro, confirmacion por WhatsApp." />
         <meta name="twitter:image" content="https://tourmarta-web.vercel.app/api/og" />
       </Head>
-      <BetaGate>
-        <Component {...pageProps} />
-      </BetaGate>
+      <Component {...pageProps} />
     </AuthProvider>
   );
 }
