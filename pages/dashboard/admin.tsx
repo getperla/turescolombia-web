@@ -223,13 +223,22 @@ export default function AdminDashboard() {
 
   if (authLoading || !authorized) return null;
 
+  // KPIs honestos: el backend Render legacy devuelve datos demo seed que NO
+  // son reales. Mostramos ceros hasta que el endpoint lea de Supabase con
+  // ventas reales. Cambiar IGNORE_LEGACY_DEMO_KPIS a false cuando
+  // /dashboard/admin retorne datos verificados de production.
+  const IGNORE_LEGACY_DEMO_KPIS = true;
   const cards = [
-    { key: 'jaladores' as Tab, label: 'Jaladores', value: data?.totalJaladores ?? '-', icon: '💰', color: '#F5882A' },
-    { key: 'operators' as Tab, label: 'Operadores', value: data?.totalOperators ?? '-', icon: '🏢', color: '#2D6A4F' },
-    { key: 'tours' as Tab, label: 'Tours', value: data?.activeTours ?? '-', icon: '🏖️', color: '#0D5C8A' },
-    { key: 'bookings' as Tab, label: 'Reservas', value: data?.totalBookings ?? '-', icon: '📋', color: '#FF5F5F' },
+    { key: 'jaladores' as Tab, label: 'Jaladores', value: IGNORE_LEGACY_DEMO_KPIS ? 0 : (data?.totalJaladores ?? '-'), icon: '💰', color: '#F5882A' },
+    { key: 'operators' as Tab, label: 'Operadores', value: IGNORE_LEGACY_DEMO_KPIS ? 0 : (data?.totalOperators ?? '-'), icon: '🏢', color: '#2D6A4F' },
+    { key: 'tours' as Tab, label: 'Tours', value: IGNORE_LEGACY_DEMO_KPIS ? 0 : (data?.activeTours ?? '-'), icon: '🏖️', color: '#0D5C8A' },
+    { key: 'bookings' as Tab, label: 'Reservas', value: IGNORE_LEGACY_DEMO_KPIS ? 0 : (data?.totalBookings ?? '-'), icon: '📋', color: '#FF5F5F' },
     { key: 'reports' as Tab, label: 'Reportes', value: '📊', icon: '📊', color: '#717171' },
   ];
+  // Revenue / GTV / Comisiones: misma lógica.
+  const gmv = IGNORE_LEGACY_DEMO_KPIS ? 0 : Number(data?.gmv ?? 0);
+  const platformRevenue = IGNORE_LEGACY_DEMO_KPIS ? 0 : Number(data?.platformRevenue ?? 0);
+  const jaladorCommissions = IGNORE_LEGACY_DEMO_KPIS ? 0 : Number(data?.jaladorCommissions ?? 0);
 
   const badge = (status: string | null | undefined) => {
     const s = status ?? 'pending';
@@ -299,15 +308,15 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
                   <div className="p-4 rounded-xl" style={{ background: '#F7F7F7' }}>
                     <div className="text-xs" style={{ color: '#717171' }}>GTV Total</div>
-                    <div className="text-xl font-bold" style={{ color: '#222' }}>${Number(data.gmv ?? 0).toLocaleString()}</div>
+                    <div className="text-xl font-bold" style={{ color: '#222' }}>${gmv.toLocaleString()}</div>
                   </div>
                   <div className="p-4 rounded-xl" style={{ background: '#F7F7F7' }}>
                     <div className="text-xs" style={{ color: '#717171' }}>Revenue (20%)</div>
-                    <div className="text-xl font-bold" style={{ color: '#F5882A' }}>${Number(data.platformRevenue ?? 0).toLocaleString()}</div>
+                    <div className="text-xl font-bold" style={{ color: '#F5882A' }}>${platformRevenue.toLocaleString()}</div>
                   </div>
                   <div className="p-4 rounded-xl" style={{ background: '#F7F7F7' }}>
                     <div className="text-xs" style={{ color: '#717171' }}>Comisiones Jaladores</div>
-                    <div className="text-xl font-bold" style={{ color: '#2D6A4F' }}>${Number(data.jaladorCommissions ?? 0).toLocaleString()}</div>
+                    <div className="text-xl font-bold" style={{ color: '#2D6A4F' }}>${jaladorCommissions.toLocaleString()}</div>
                   </div>
                 </div>
 
@@ -458,15 +467,15 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
               <div className="p-4 rounded-xl" style={{ background: '#F7F7F7' }}>
                 <div className="text-xs" style={{ color: '#717171' }}>GTV Total</div>
-                <div className="text-2xl font-bold" style={{ color: '#222' }}>${Number(data.gmv ?? 0).toLocaleString()}</div>
+                <div className="text-2xl font-bold" style={{ color: '#222' }}>${gmv.toLocaleString()}</div>
               </div>
               <div className="p-4 rounded-xl" style={{ background: '#F7F7F7' }}>
                 <div className="text-xs" style={{ color: '#717171' }}>Revenue Plataforma</div>
-                <div className="text-2xl font-bold" style={{ color: '#F5882A' }}>${Number(data.platformRevenue ?? 0).toLocaleString()}</div>
+                <div className="text-2xl font-bold" style={{ color: '#F5882A' }}>${platformRevenue.toLocaleString()}</div>
               </div>
               <div className="p-4 rounded-xl" style={{ background: '#F7F7F7' }}>
                 <div className="text-xs" style={{ color: '#717171' }}>Comisiones Jaladores</div>
-                <div className="text-2xl font-bold" style={{ color: '#2D6A4F' }}>${Number(data.jaladorCommissions ?? 0).toLocaleString()}</div>
+                <div className="text-2xl font-bold" style={{ color: '#2D6A4F' }}>${jaladorCommissions.toLocaleString()}</div>
               </div>
             </div>
 
