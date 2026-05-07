@@ -1,34 +1,134 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '../../lib/supabase';
 import Layout from '../../components/Layout';
 
+// Tras click en el link de confirmacion del email (o tras login OAuth),
+// Supabase aterriza al usuario aqui. La pagina:
+// 1. Si la URL trae ?code=, hace exchangeCodeForSession (PKCE flow).
+// 2. Si no, lee la sesion actual con getSession (cubre el caso en que
+//    supabase-js ya proceso el hash con detectSessionInUrl=true antes
+//    de que este componente montara).
+// 3. Si en 5s no hay sesion, mostramos error con boton para volver a
+//    intentar — evita el spinner infinito que reporto el owner.
+function persistSession(session: any): string {
+  const role = session.user.user_metadata?.role || 'tourist';
+  localStorage.setItem('turescol_token', session.access_token);
+  localStorage.setItem(
+    'turescol_user',
+    JSON.stringify({
+      id: session.user.id,
+      name:
+        session.user.user_metadata?.full_name ||
+        session.user.user_metadata?.name ||
+        session.user.email?.split('@')[0] ||
+        'Usuario',
+      email: session.user.email || '',
+      role,
+      avatarUrl: session.user.user_metadata?.avatar_url || '',
+    }),
+  );
+  return role;
+}
+
+function destForRole(role: string): string {
+  if (role === 'admin') return '/dashboard/admin';
+  if (role === 'operator') return '/dashboard/operator';
+  if (role === 'jalador') return '/dashboard/jalador';
+  return '/explorar';
+}
+
 export default function AuthCallback() {
   const router = useRouter();
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        const role = session.user.user_metadata?.role || 'tourist';
-        localStorage.setItem('turescol_token', session.access_token);
-        localStorage.setItem('turescol_user', JSON.stringify({
-          id: session.user.id,
-          name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuario',
-          email: session.user.email || '',
-          role,
-          avatarUrl: session.user.user_metadata?.avatar_url || '',
-        }));
-        // Redirect por rol: el jalador espera su panel, no el explorador.
-        // Lo mismo aplica si confirmaste email (signup) o iniciaste con OAuth.
-        const dest =
-          role === 'admin' ? '/dashboard/admin' :
-          role === 'operator' ? '/dashboard/operator' :
-          role === 'jalador' ? '/dashboard/jalador' :
-          '/explorar';
-        window.location.href = dest;
+    let done = false;
+
+    const finish = (session: any) => {
+      if (done) return;
+      done = true;
+      const role = persistSession(session);
+      window.location.href = destForRole(role);
+    };
+
+    const tryRecover = async () => {
+      // 1) PKCE flow: ?code=... en URL
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        if (code) {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          if (data?.session) {
+            finish(data.session);
+            return;
+          }
+        }
+      } catch (err: any) {
+        // Si exchange falla (code ya usado, expirado, etc), seguimos
+        // a getSession por si supabase-js ya proceso el flow.
+        console.warn('exchangeCodeForSession failed:', err?.message);
+      }
+
+      // 2) Hash flow / sesion ya procesada: leer la sesion actual.
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        setErrorMsg(error.message || 'No pudimos verificar tu correo');
+        return;
+      }
+      if (data?.session) {
+        finish(data.session);
+        return;
+      }
+
+      // 3) Sin sesion: probablemente el link expiro o ya fue usado.
+      setErrorMsg(
+        'El link de confirmacion no es valido o ya fue usado. Intenta entrar con tu correo y contrasena.',
+      );
+    };
+
+    // Tambien escuchamos onAuthStateChange por si supabase-js procesa el hash
+    // despues del montaje. SIGNED_IN dispara cuando exchangeCode termina;
+    // INITIAL_SESSION dispara cuando getSession resuelve por primera vez.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        finish(session);
       }
     });
+
+    tryRecover();
+
+    return () => {
+      sub.subscription.unsubscribe();
+    };
   }, [router]);
+
+  if (errorMsg) {
+    return (
+      <Layout>
+        <div className="min-h-[60vh] flex items-center justify-center px-4">
+          <div className="text-center max-w-md">
+            <div className="w-12 h-12 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: '#FFF0F0' }}>
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <p className="font-display font-bold text-lg mb-2" style={{ color: '#0A1628' }}>
+              No pudimos confirmar tu cuenta
+            </p>
+            <p className="text-sm font-sans mb-5" style={{ color: '#717171' }}>
+              {errorMsg}
+            </p>
+            <button
+              onClick={() => router.push('/login')}
+              className="btn-primary text-base"
+            >
+              Ir al inicio de sesion
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
