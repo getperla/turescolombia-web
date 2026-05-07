@@ -76,8 +76,18 @@ const JaladorDashboard = () => {
   );
 
   const jalador = data?.jalador ?? null;
-  const sales = data?.sales ?? { today: 0, week: 0, month: 0 };
-  const commissions = data?.commissions ?? { pending: 0 };
+  // KPIs honestos: el backend Render legacy devuelve datos demo seed
+  // (commissions.pending=320000, sales.today=4, etc) que NO son reales.
+  // Mostramos ceros hasta que el endpoint lea de Supabase con sales reales.
+  // Cambiar IGNORE_LEGACY_DEMO_KPIS a false cuando /dashboard/jalador retorne
+  // datos verificados de production.
+  const IGNORE_LEGACY_DEMO_KPIS = true;
+  const sales = IGNORE_LEGACY_DEMO_KPIS
+    ? { today: 0, week: 0, month: 0 }
+    : (data?.sales ?? { today: 0, week: 0, month: 0 });
+  const commissions = IGNORE_LEGACY_DEMO_KPIS
+    ? { pending: 0 }
+    : (data?.commissions ?? { pending: 0 });
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
   // Si no llego info del jalador, mostrar error en lugar de crashear con
@@ -154,11 +164,24 @@ const JaladorDashboard = () => {
 
         {/* Tarjeta motivacional — comisiones ganadas */}
         <div className="relative rounded-2xl p-5 mb-4 overflow-hidden" style={{ background: 'linear-gradient(135deg, #F5882A 0%, #E07020 100%)' }}>
-          <div className="absolute top-0 right-0 text-6xl opacity-10">🎉</div>
+          <div className="absolute top-0 right-0 text-6xl opacity-10">{commissions.pending > 0 ? '🎉' : '🚀'}</div>
           <div className="relative">
-            <div className="text-xs font-semibold uppercase tracking-wider text-white/90 mb-1">¡Vas muy bien {data?.jalador?.user?.name?.split(' ')[0] || 'crack'}!</div>
-            <div className="text-2xl font-bold text-white mb-1">Te has ganado ${Number(commissions.pending).toLocaleString()}</div>
-            <div className="text-xs text-white/90">en comisiones este mes 💰 Sigue así</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-white/90 mb-1">
+              {commissions.pending > 0
+                ? `¡Vas muy bien ${data?.jalador?.user?.name?.split(' ')[0] || 'crack'}!`
+                : `Hola ${data?.jalador?.user?.name?.split(' ')[0] || 'crack'}, vamos a empezar`}
+            </div>
+            {commissions.pending > 0 ? (
+              <>
+                <div className="text-2xl font-bold text-white mb-1">Te has ganado ${Number(commissions.pending).toLocaleString()}</div>
+                <div className="text-xs text-white/90">en comisiones este mes 💰 Sigue así</div>
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-white mb-1">Tu primera venta te espera</div>
+                <div className="text-xs text-white/90">Comparte tu link o usa el asistente IA y empieza a ganar 💰</div>
+              </>
+            )}
           </div>
         </div>
 

@@ -152,18 +152,29 @@ export default function OperatorDashboard() {
         {tab === 'dashboard' && (
           data ? (
             <>
+              {/* KPIs honestos: el backend Render legacy devuelve datos demo seed
+                 que NO son reales. Mostramos ceros hasta que el endpoint lea de
+                 Supabase. Cambiar IGNORE_LEGACY_DEMO_KPIS a false cuando
+                 /dashboard/operator retorne datos verificados de production. */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                {[
-                  { label: 'Tours activos', value: data.tours?.active ?? 0 },
-                  { label: 'Reservas hoy', value: data.bookings?.today ?? 0 },
-                  { label: 'Reservas mes', value: data.bookings?.month ?? 0 },
-                  { label: 'Ingresos', value: `$${Number(data.revenue?.total ?? 0).toLocaleString()}` },
-                ].map((k, i) => (
-                  <div key={i} className="p-4 rounded-xl text-center" style={{ background: '#F7F7F7' }}>
-                    <div className="text-xl font-bold" style={{ color: '#222' }}>{k.value}</div>
-                    <div className="text-xs" style={{ color: '#717171' }}>{k.label}</div>
-                  </div>
-                ))}
+                {(() => {
+                  const IGNORE_LEGACY_DEMO_KPIS = true;
+                  const toursActive = IGNORE_LEGACY_DEMO_KPIS ? 0 : (data.tours?.active ?? 0);
+                  const bookingsToday = IGNORE_LEGACY_DEMO_KPIS ? 0 : (data.bookings?.today ?? 0);
+                  const bookingsMonth = IGNORE_LEGACY_DEMO_KPIS ? 0 : (data.bookings?.month ?? 0);
+                  const revenueTotal = IGNORE_LEGACY_DEMO_KPIS ? 0 : Number(data.revenue?.total ?? 0);
+                  return [
+                    { label: 'Tours activos', value: toursActive },
+                    { label: 'Reservas hoy', value: bookingsToday },
+                    { label: 'Reservas mes', value: bookingsMonth },
+                    { label: 'Ingresos', value: `$${revenueTotal.toLocaleString()}` },
+                  ].map((k, i) => (
+                    <div key={i} className="p-4 rounded-xl text-center" style={{ background: '#F7F7F7' }}>
+                      <div className="text-xl font-bold" style={{ color: '#222' }}>{k.value}</div>
+                      <div className="text-xs" style={{ color: '#717171' }}>{k.label}</div>
+                    </div>
+                  ));
+                })()}
               </div>
 
               <h3 className="font-bold mb-3" style={{ color: '#222' }}>Reservas recientes</h3>
