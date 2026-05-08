@@ -72,12 +72,16 @@ const JaladorDashboard = () => {
         const u = udata.user;
         let refCode = (u.user_metadata?.refCode as string) || '';
         if (!refCode) {
-          // Derivamos el refCode del UUID Supabase del usuario para garantizar
-          // unicidad por construccion: los UUIDs son unicos, asi que los
-          // primeros 8 hex chars tambien lo son. Sin lookup ni colisiones
-          // (Codex P2 #32). Formato PED-A1B2C3D4 — 8 chars en mayusculas,
-          // facil de leer y compartir por WhatsApp.
-          const uidHex = u.id.replace(/-/g, '').slice(0, 8).toUpperCase();
+          // Derivamos el refCode de los primeros 16 hex chars del UUID
+          // Supabase del usuario (sin guiones). Por que 16 y no 8 ni 32:
+          // - 8 hex = 32 bits → birthday collision al 50% con ~65K jaladores
+          //   (Codex P2 round 2 #32, valido).
+          // - 32 hex = UUID completo → demasiado largo para WhatsApp share.
+          // - 16 hex = 64 bits → birthday collision al 50% con ~4.3B
+          //   jaladores. Ningun mercado realista llega ahi.
+          // Sin lookup ni uniqueness check: los UUIDv4 de Supabase tienen
+          // 122 bits aleatorios, asi que sus prefijos heredan unicidad.
+          const uidHex = u.id.replace(/-/g, '').slice(0, 16).toUpperCase();
           refCode = `PED-${uidHex}`;
           // Persistir en metadata para que el proximo login lo encuentre.
           await supabase.auth.updateUser({ data: { ...u.user_metadata, refCode } });
