@@ -125,18 +125,42 @@ function parseBudget(text: string): number | null {
   return null;
 }
 
+// Variante stricta de parseBudget para usar en follow-ups: exige una
+// keyword inequivoca de presupuesto (millones, mil, k, pesos, cop,
+// presupuesto, sub-/baj-) para reconocer el numero. Sin esto, mensajes
+// como "mi WhatsApp es 300.123.4567" hacen que parseBudget devuelva
+// 300.123.456 y nuestro merge loop sobrescriba el presupuesto real
+// (Codex P2 round 5 #34 — bug de revenue, confirmacion reservaria
+// muchos mas tours).
+//
+// Para el primer match (base completa: dias + budget juntos) seguimos
+// siendo permissivos porque ahi el user esta dando los criterios.
+// Solo en los OVERRIDES posteriores aplicamos esta version stricta.
+function parseBudgetStrict(text: string): number | null {
+  const lower = text.toLowerCase();
+  const hasBudgetKeyword =
+    /\b(millones?|mil\b|k\b|pesos|cop|presupuesto|subamos?|sube|bajamos?|baja)/i.test(lower);
+  if (!hasBudgetKeyword) return null;
+  return parseBudget(text);
+}
+
 function parseDays(text: string): number | null {
   const m = text.toLowerCase().match(/(\d+)\s*d[ií]as?/);
   return m ? parseInt(m[1], 10) : null;
 }
 
-function parsePeople(text: string): number {
+// Devuelve el numero de personas detectado en el texto, o null si no
+// hay indicacion explicita. El caller decide el default (normalmente 1
+// para flujos nuevos, o el valor historico si es un follow-up).
+// Antes esto retornaba 1 directo, lo cual hacia imposible distinguir
+// "no menciono personas" de "menciono 1 persona" — Codex P2 #34.
+function parsePeople(text: string): number | null {
   const lower = text.toLowerCase();
   const m = lower.match(/(\d+)\s*personas?/);
   if (m) return parseInt(m[1], 10);
   if (/\bpareja\b/.test(lower)) return 2;
   if (/\bfamilia\b/.test(lower)) return 4;
-  return 1;
+  return null;
 }
 
 // Normaliza texto del usuario: lowercase + quita tildes/diacríticos.
@@ -240,21 +264,76 @@ export type MockResponseOutput = {
   people?: number;
 };
 
-// Busca hacia atras el mensaje del usuario mas reciente con dias+presupuesto.
-// Usado al confirmar reserva para re-derivar las recomendaciones sin estado.
-function findLastConstraints(
+// Busca el contexto completo de la conversacion combinando el ultimo
+// mensaje con constraints completos (dias+presupuesto) con cualquier
+// override parcial posterior. Asi soportamos follow-ups del estilo:
+//   T1: "4 dias, 800.000 pesos, 2 personas"   ← base completa
+//   T2: "somos 3 personas"                     ← override de people
+//   T3: "subamos a 1.2 millones"               ← override de budget
+//   T4: "si, dale"                             ← confirma con context merged
+//
+// Sin este merge, confirmar despues de ovverrides parciales usaba el
+// people/budget/days de la base original, contradiciendo la cotizacion
+// que el user vio en pantalla (Codex P2 round 2 #34).
+export function findLastConstraints(
   messages: MockChatMessage[],
 ): { days: number; budget: number; people: number } | null {
+  let baseIdx = -1;
+  let result: { days: number; budget: number; people: number } | null = null;
+
+  // Paso 1: encuentra el mensaje mas reciente con dias+presupuesto completos.
   for (let i = messages.length - 1; i >= 0; i--) {
     const m = messages[i];
     if (m.role !== 'user') continue;
     const days = parseDays(m.content);
     const budget = parseBudget(m.content);
     if (days && budget) {
-      return { days, budget, people: parsePeople(m.content) };
+      const peopleInBase = parsePeople(m.content);
+      // Si el mensaje base no menciona personas explicitamente, buscamos
+      // hacia atras un valor previo. Caso real: el user ya dijo "2 personas"
+      // antes y ahora reescribe el plan completo ("mejor 5 dias y 1.2
+      // millones"). Sin esto el base nuevo defaultearia people=1, cobrando
+      // mal la reserva (Codex P2 round 6 #34).
+      let inheritedPeople: number | null = null;
+      if (peopleInBase === null) {
+        for (let j = i - 1; j >= 0; j--) {
+          const prev = messages[j];
+          if (prev.role !== 'user') continue;
+          const p = parsePeople(prev.content);
+          if (p !== null) {
+            inheritedPeople = p;
+            break;
+          }
+        }
+      }
+      result = {
+        days,
+        budget,
+        people: peopleInBase ?? inheritedPeople ?? 1,
+      };
+      baseIdx = i;
+      break;
     }
   }
-  return null;
+
+  if (!result) return null;
+
+  // Paso 2: aplica overrides parciales de mensajes posteriores. Para
+  // budget usamos parseBudgetStrict — exige una keyword inequivoca
+  // (millones/mil/k/pesos/cop/presupuesto/subamos/bajamos) para evitar
+  // tomar numeros de telefono "300.123.4567" como overrides falsos.
+  for (let i = baseIdx + 1; i < messages.length; i++) {
+    const m = messages[i];
+    if (m.role !== 'user') continue;
+    const days = parseDays(m.content);
+    const budget = parseBudgetStrict(m.content);
+    const people = parsePeople(m.content);
+    if (days) result.days = days;
+    if (budget) result.budget = budget;
+    if (people !== null) result.people = people;
+  }
+
+  return result;
 }
 
 export function buildMockResponse(input: MockResponseInput): MockResponseOutput {
@@ -283,12 +362,15 @@ export function buildMockResponse(input: MockResponseInput): MockResponseOutput 
     };
   }
 
-  const days = parseDays(last.content);
-  const budget = parseBudget(last.content);
-  const people = parsePeople(last.content);
+  // Buscamos contexto completo (incluyendo overrides parciales del current
+  // message ya que findLastConstraints recorre hasta el final del array).
+  const ctx = findLastConstraints(messages);
 
-  if (!days || !budget) {
-    const faltan = [];
+  if (!ctx) {
+    // Primer mensaje sin dias+presupuesto: pedimos los datos.
+    const days = parseDays(last.content);
+    const budget = parseBudget(last.content);
+    const faltan: string[] = [];
     if (!days) faltan.push('cuantos dias');
     if (!budget) faltan.push('presupuesto en pesos');
     return {
@@ -297,12 +379,41 @@ export function buildMockResponse(input: MockResponseInput): MockResponseOutput 
     };
   }
 
-  const picks = pickToursForBudget(source, budget, days, people);
+  // ctx ya tiene days/budget/people mergeado con overrides posteriores.
+  const picks = pickToursForBudget(source, ctx.budget, ctx.days, ctx.people);
+
+  // Caso especial: si el current message NO trae constraints nuevos y
+  // pide explicitamente "otro/cambia/diferente", explicamos el algoritmo
+  // greedy en lugar de re-mostrar lo mismo.
+  const lastDays = parseDays(last.content);
+  const lastBudget = parseBudget(last.content);
+  const lastPeople = parsePeople(last.content);
+  const lastHasNoNewConstraints = !lastDays && !lastBudget && lastPeople === null;
+  const isRequestingAlternative =
+    lastHasNoNewConstraints &&
+    /\b(otro|otra|cambia|diferente|distint|no\s*me|no me sirve)/i.test(normalize(last.content));
+
+  if (isRequestingAlternative) {
+    return {
+      message: `Esos planes son los que mejor se ajustan a tu presupuesto de $${COP(ctx.budget)} COP en ${ctx.days} dia(s).
+
+Para opciones diferentes podemos:
+• Subir el presupuesto y meto tours mas exclusivos (Pueblito Tayrona, Cabo San Juan)
+• Reducir dias si quieres un plan mas corto
+• Ajustar el numero de personas
+
+O si te sirve el plan actual, escribe "si, dale" y armamos la reserva. 🏖️`,
+      quiereReservar: false,
+      picks,
+      people: ctx.people,
+    };
+  }
+
   return {
-    message: formatRecommendation(picks, people, jaladorName, days),
+    message: formatRecommendation(picks, ctx.people, jaladorName, ctx.days),
     quiereReservar: false,
     picks,
-    people,
+    people: ctx.people,
   };
 }
 

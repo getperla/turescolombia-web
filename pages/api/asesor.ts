@@ -4,6 +4,7 @@ import { getTours, type Tour } from '../../lib/api';
 import {
   buildMockResponse,
   FALLBACK_CATALOG,
+  findLastConstraints,
   isLiveMode,
   type MockTour,
 } from '../../lib/agente/mock';
@@ -45,35 +46,15 @@ type ResponseBody =
   | { error: string };
 
 function buildMockItinerary(messages: { role: string; content: string }[]): Itinerary | undefined {
-  // Reusa el parser del mock para extraer dias/presupuesto/personas
-  // y armar un Itinerary con tours del FALLBACK_CATALOG.
-  const last = messages[messages.length - 1];
-  if (!last || last.role !== 'user') return undefined;
-  const text = last.content.toLowerCase();
-
-  const days = (text.match(/(\d+)\s*d[ií]as?/) || [])[1];
-  const peopleMatch = text.match(/(\d+)\s*personas?/);
-  const people = peopleMatch
-    ? parseInt(peopleMatch[1], 10)
-    : /\bpareja\b/.test(text)
-      ? 2
-      : /\bfamilia\b/.test(text)
-        ? 4
-        : 1;
-
-  const budgetParse = (() => {
-    const m1 = text.match(/(\d+(?:[.,]\d+)?)\s*millones?/);
-    if (m1) return Math.round(parseFloat(m1[1].replace(',', '.')) * 1_000_000);
-    const m2 = text.match(/(\d+(?:[.,]\d+)?)\s*(?:mil|k)\b/);
-    if (m2) return Math.round(parseFloat(m2[1].replace(',', '.')) * 1000);
-    const m3 = text.match(/(\d{1,3}(?:[.,]\d{3})+)/);
-    if (m3) return parseInt(m3[1].replace(/[.,]/g, ''), 10);
-    return null;
-  })();
-
-  if (!days || !budgetParse) return undefined;
-  const numDays = parseInt(days, 10);
-  let remaining = budgetParse;
+  // Usamos el mismo helper que buildMockResponse para tener la fuente
+  // unica de verdad sobre constraints. findLastConstraints hace merge
+  // de overrides parciales (Codex P2 #34) — sin esto el itinerario se
+  // quedaba con valores viejos cuando el user decia "somos 3 personas"
+  // o "subamos a 1.2 millones" en un follow-up.
+  const ctx = findLastConstraints(messages as { role: 'user' | 'assistant'; content: string }[]);
+  if (!ctx) return undefined;
+  const { days: numDays, budget, people } = ctx;
+  let remaining = budget;
   const sorted = [...FALLBACK_CATALOG].sort((a, b) => b.avg_rating - a.avg_rating);
   const picks: MockTour[] = [];
   for (const t of sorted) {
