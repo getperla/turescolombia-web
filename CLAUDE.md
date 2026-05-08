@@ -245,6 +245,13 @@ La Perla es la plataforma que digitaliza el turismo informal de Santa Marta — 
 ## Key Architectural Decisions
 <!-- GSD:architecture-end -->
 
+## Tech Debt & Setup
+
+Para limitaciones conocidas y migraciones planeadas ver `docs/TECH_DEBT.md`.
+Para configuracion de infra (Supabase, Vercel, Wompi, Storage buckets) ver
+`docs/SETUP.md`. Si haces un cambio que requiere setup manual, agregalo en
+`SETUP.md` en el mismo PR.
+
 <!-- GSD:workflow-start source:GSD defaults -->
 ## GSD Workflow Enforcement
 

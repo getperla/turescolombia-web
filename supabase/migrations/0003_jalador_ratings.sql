@@ -1,0 +1,198 @@
+-- Migration 0003 — Reseñas de jaladores + columna avatar_url + RPC agregada.
+--
+-- Foundation del PR del dashboard mejorado. NO toca el flujo de creacion
+-- de reseñas (ese es PR aparte). Aqui solo creamos:
+--   - tabla public.jalador_ratings  — una review por sale
+--   - funcion get_jalador_rating(uuid) — devuelve { avg, count }
+--   - RLS policies estrictas
+--
+-- avatar_url va en auth.users.user_metadata, no en una tabla nueva — eso
+-- queda como deuda tecnica documentada en docs/TECH_DEBT.md.
+--
+-- Idempotente: pega este archivo en SQL Editor de Supabase y ejecuta.
+
+create extension if not exists "pgcrypto";
+
+-- ---------------------------------------------------------------------------
+-- jalador_ratings
+-- ---------------------------------------------------------------------------
+-- Decision #5: jalador_user_id uuid REFERENCES auth.users(id) ON DELETE
+-- CASCADE — integridad referencial real. Las reviews siguen al user; si
+-- el user se borra, sus reviews se borran (no quedan huerfanas).
+--
+-- Decision #6: sale_id uuid REFERENCES sales(id) — una sale = una
+-- experiencia = una review. ON DELETE CASCADE para que no queden reviews
+-- de ventas borradas.
+--
+-- UNIQUE(sale_id): una review por sale. NO usamos UNIQUE(sale_id, tourist_id)
+-- porque la policy SELECT es publica → cualquier authenticated user puede
+-- leer un sale_id existente y reusarlo con su propio tourist_id, y como
+-- nuestro helper SECURITY DEFINER no puede aun verificar que el reviewer
+-- sea el COMPRADOR real (sales no tiene tourist_user_id; los clientes son
+-- invitados), un attacker logueado podria acumular N reviews en una sola
+-- sale (Codex P2 round 3 #35). Con UNIQUE en sale_id solo, una vez la
+-- primera review existe, cualquier INSERT subsecuente para esa sale falla
+-- con violation de constraint — el ataque queda contenido.
+--
+-- Deuda tecnica relacionada: agregar tourist_user_id a sales para validar
+-- ownership en el helper. Documentado en docs/TECH_DEBT.md.
+create table if not exists public.jalador_ratings (
+  id                uuid primary key default gen_random_uuid(),
+  jalador_user_id   uuid not null references auth.users(id) on delete cascade,
+  tourist_id        uuid not null references auth.users(id) on delete cascade,
+  sale_id           uuid not null references public.sales(id) on delete cascade,
+  rating            integer not null check (rating between 1 and 5),
+  comment           text,
+  created_at        timestamptz not null default now(),
+  unique (sale_id)
+);
+
+-- Indices: el lookup principal es por jalador (para mostrar su perfil).
+-- Tambien por sale_id para verificar si una sale ya tiene review.
+create index if not exists jalador_ratings_jalador_user_id_idx
+  on public.jalador_ratings(jalador_user_id);
+
+create index if not exists jalador_ratings_sale_id_idx
+  on public.jalador_ratings(sale_id);
+
+-- ---------------------------------------------------------------------------
+-- RPC get_jalador_rating
+-- ---------------------------------------------------------------------------
+-- Devuelve agregados en una sola query — evita N+1 desde el frontend.
+-- avg redondeado a 1 decimal (estilo Airbnb). Si no hay reviews, devuelve
+-- avg=NULL para que el frontend muestre "Aun sin calificaciones" en lugar
+-- de "0.0 estrellas".
+--
+-- SECURITY INVOKER (default): respeta RLS del usuario que llama.
+create or replace function public.get_jalador_rating(p_jalador_user_id uuid)
+returns table (avg numeric, count bigint)
+language sql
+stable
+as $$
+  select
+    round(avg(rating)::numeric, 1) as avg,
+    count(*)::bigint as count
+  from public.jalador_ratings
+  where jalador_user_id = p_jalador_user_id;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- RLS — Row Level Security
+-- ---------------------------------------------------------------------------
+alter table public.jalador_ratings enable row level security;
+
+-- SELECT publico: las reviews son contenido publico (alguien puede ver el
+-- perfil de un jalador antes de loguearse).
+drop policy if exists "jalador_ratings_select_public" on public.jalador_ratings;
+create policy "jalador_ratings_select_public"
+  on public.jalador_ratings
+  for select
+  using (true);
+
+-- INSERT: solo el turista que hizo la sale, y solo si la sale esta paid.
+-- El frontend pasa tourist_id = auth.uid() y sale_id; chequeamos que esa
+-- combinacion exista en sales con status='paid'. La tabla sales no tiene
+-- tourist_id explicito (es invitado), asi que para v1 hacemos el match
+-- por phone del cliente — cuando agreguemos un campo tourist_user_id en
+-- sales, ajustamos esta policy.
+--
+-- IMPORTANTE: la RLS de public.sales (migration 0002) solo expone rows
+-- al jalador dueño (matchea jalador_ref_code con el JWT). Si la policy
+-- de INSERT aqui hiciera EXISTS sobre sales directamente, un turista
+-- autenticado no veria ninguna sale → review valida rechazada (Codex
+-- P2 #35).
+--
+-- Fix: helper SECURITY DEFINER que bypasea RLS para validar que la sale
+-- existe, esta paid Y pertenece al jalador que se intenta calificar.
+--
+-- El check tambien protege contra un ataque sutil (Codex P2 round 2 #35):
+-- la API devuelve sale_id al turista que paga. Sin la validacion de
+-- jalador, ese turista podria reusar su sale_id para insertar reviews
+-- contra otros jaladores y corromper su rating publico. Bind explicito
+-- via jalador_ref_code en sales ↔ user_metadata.refCode en auth.users.
+--
+-- No expone columnas — solo devuelve un booleano. Worst case: alguien
+-- prueba combinaciones uuid (no enumerable) hasta acertar un par valido,
+-- lo cual es practicamente imposible.
+drop function if exists public.is_sale_paid_for_review(uuid);
+
+create or replace function public.is_sale_paid_by_jalador(
+  p_sale_id uuid,
+  p_jalador_user_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.sales s
+    join auth.users u on u.id = p_jalador_user_id
+    where s.id = p_sale_id
+      and s.status = 'paid'
+      and s.jalador_ref_code = u.raw_user_meta_data ->> 'refCode'
+  );
+$$;
+
+revoke all on function public.is_sale_paid_by_jalador(uuid, uuid) from public;
+grant execute on function public.is_sale_paid_by_jalador(uuid, uuid) to authenticated;
+
+drop policy if exists "jalador_ratings_insert_authenticated" on public.jalador_ratings;
+create policy "jalador_ratings_insert_authenticated"
+  on public.jalador_ratings
+  for insert
+  to authenticated
+  with check (
+    tourist_id = auth.uid()
+    and public.is_sale_paid_by_jalador(sale_id, jalador_user_id)
+  );
+
+-- UPDATE/DELETE: nadie. Las reviews no se editan ni borran (excepto via
+-- ON DELETE CASCADE cuando el user o la sale se borran). Esto previene
+-- manipulacion: un jalador no puede borrar reviews malas.
+drop policy if exists "jalador_ratings_no_update" on public.jalador_ratings;
+create policy "jalador_ratings_no_update"
+  on public.jalador_ratings
+  for update
+  using (false);
+
+drop policy if exists "jalador_ratings_no_delete" on public.jalador_ratings;
+create policy "jalador_ratings_no_delete"
+  on public.jalador_ratings
+  for delete
+  using (false);
+
+-- ---------------------------------------------------------------------------
+-- Realtime publication
+-- ---------------------------------------------------------------------------
+-- Sumamos jalador_ratings a la publication para que el dashboard del
+-- jalador pueda refrescar el badge de rating sin recargar.
+-- Idempotente: si la tabla ya esta en la publication, no falla.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'jalador_ratings'
+  ) then
+    alter publication supabase_realtime add table public.jalador_ratings;
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- Notas operacionales
+-- ---------------------------------------------------------------------------
+-- 1. avatar_url se guarda en auth.users.raw_user_meta_data (jsonb) bajo
+--    la key "avatarUrl". El frontend lo lee con
+--    supabase.auth.getUser().data.user.user_metadata.avatarUrl.
+--    Esto evita crear una tabla profiles por ahora — ver docs/TECH_DEBT.md
+--    para los triggers que indicarian que toca migrar.
+--
+-- 2. El bucket "avatars" debe crearse manualmente en Supabase Dashboard.
+--    Ver docs/SETUP.md seccion "Storage > avatars" para los pasos.
+--
+-- 3. Reseñas dummy para testing: insertar manualmente desde SQL Editor
+--    una vez la tabla este aplicada. NO crear endpoint de seeding.
