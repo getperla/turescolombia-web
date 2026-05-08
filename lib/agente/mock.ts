@@ -130,13 +130,18 @@ function parseDays(text: string): number | null {
   return m ? parseInt(m[1], 10) : null;
 }
 
-function parsePeople(text: string): number {
+// Devuelve el numero de personas detectado en el texto, o null si no
+// hay indicacion explicita. El caller decide el default (normalmente 1
+// para flujos nuevos, o el valor historico si es un follow-up).
+// Antes esto retornaba 1 directo, lo cual hacia imposible distinguir
+// "no menciono personas" de "menciono 1 persona" — Codex P2 #34.
+function parsePeople(text: string): number | null {
   const lower = text.toLowerCase();
   const m = lower.match(/(\d+)\s*personas?/);
   if (m) return parseInt(m[1], 10);
   if (/\bpareja\b/.test(lower)) return 2;
   if (/\bfamilia\b/.test(lower)) return 4;
-  return 1;
+  return null;
 }
 
 // Normaliza texto del usuario: lowercase + quita tildes/diacríticos.
@@ -251,7 +256,8 @@ function findLastConstraints(
     const days = parseDays(m.content);
     const budget = parseBudget(m.content);
     if (days && budget) {
-      return { days, budget, people: parsePeople(m.content) };
+      // people: si el mensaje historico no menciono cantidad, default 1.
+      return { days, budget, people: parsePeople(m.content) ?? 1 };
     }
   }
   return null;
@@ -285,7 +291,7 @@ export function buildMockResponse(input: MockResponseInput): MockResponseOutput 
 
   const days = parseDays(last.content);
   const budget = parseBudget(last.content);
-  const people = parsePeople(last.content);
+  const peopleExplicit = parsePeople(last.content); // null si no menciono
 
   if (!days || !budget) {
     // Sin dias/presupuesto en el ultimo mensaje. Antes de rendirnos y
@@ -295,7 +301,11 @@ export function buildMockResponse(input: MockResponseInput): MockResponseOutput 
     // desmemoriado y el jalador se desespera.
     const ctx = findLastConstraints(messages);
     if (ctx) {
-      const picks = pickToursForBudget(source, ctx.budget, ctx.days, ctx.people);
+      // Merge de constraints parciales: si el mensaje actual SI menciono
+      // cantidad de personas (ej. "somos 3 personas"), preferimos ese
+      // valor. Si no, usamos el historico (Codex P2 #34).
+      const peopleToUse = peopleExplicit ?? ctx.people;
+      const picks = pickToursForBudget(source, ctx.budget, ctx.days, peopleToUse);
       const isRequestingAlternative = /\b(otro|otra|cambia|diferente|distint|no\s*me|no me sirve)/i.test(
         normalize(last.content),
       );
@@ -314,17 +324,17 @@ Para opciones diferentes podemos:
 O si te sirve el plan actual, escribe "si, dale" y armamos la reserva. 🏖️`,
           quiereReservar: false,
           picks,
-          people: ctx.people,
+          people: peopleToUse,
         };
       }
       // Cualquier otro mensaje sin constraints: re-mostramos el plan
-      // con el contexto historico para que el user vea que SI lo
-      // recordamos.
+      // con el contexto historico (y people actualizado si lo dieron)
+      // para que el user vea que SI lo recordamos.
       return {
-        message: formatRecommendation(picks, ctx.people, jaladorName, ctx.days),
+        message: formatRecommendation(picks, peopleToUse, jaladorName, ctx.days),
         quiereReservar: false,
         picks,
-        people: ctx.people,
+        people: peopleToUse,
       };
     }
     // Sin context historico: aqui si pedimos los datos.
@@ -337,6 +347,8 @@ O si te sirve el plan actual, escribe "si, dale" y armamos la reserva. 🏖️`,
     };
   }
 
+  // days+budget presentes: people default a 1 si no se menciono.
+  const people = peopleExplicit ?? 1;
   const picks = pickToursForBudget(source, budget, days, people);
   return {
     message: formatRecommendation(picks, people, jaladorName, days),
