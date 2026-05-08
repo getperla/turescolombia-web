@@ -10,10 +10,6 @@ export default function LoginPage() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [loginMode, setLoginMode] = useState<'email' | 'phone'>('email');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -74,52 +70,6 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  const handlePhoneOtp = async () => {
-    if (!phone.trim()) { setError('Ingresa tu número de WhatsApp'); return; }
-    setLoading(true);
-    setError('');
-    if (isSupabaseConfigured()) {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const fullPhone = cleanPhone.startsWith('57') ? `+${cleanPhone}` : `+57${cleanPhone}`;
-      const { error: err } = await supabase.auth.signInWithOtp({ phone: fullPhone });
-      if (err) setError(err.message);
-      else setOtpSent(true);
-    } else {
-      setOtpSent(true);
-    }
-    setLoading(false);
-  };
-
-  const verifyOtp = async () => {
-    if (!otpCode.trim()) { setError('Ingresa el código'); return; }
-    setLoading(true);
-    setError('');
-    if (isSupabaseConfigured()) {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const fullPhone = cleanPhone.startsWith('57') ? `+${cleanPhone}` : `+57${cleanPhone}`;
-      const { data, error: err } = await supabase.auth.verifyOtp({ phone: fullPhone, token: otpCode, type: 'sms' });
-      if (err) { setError(err.message); }
-      else if (data.session) {
-        const userRole = data.user?.user_metadata?.role || 'tourist';
-        localStorage.setItem('turescol_token', data.session.access_token);
-        localStorage.setItem('turescol_user', JSON.stringify({
-          id: data.user?.id, name: data.user?.user_metadata?.name || 'Usuario',
-          email: data.user?.email || '', role: userRole,
-        }));
-        // Hard navigation — ver comentario en handleSubmit.
-        window.location.assign(getRedirectPath(userRole));
-        return;
-      }
-    } else {
-      // Demo mode
-      localStorage.setItem('turescol_token', 'beta-demo-token');
-      localStorage.setItem('turescol_user', JSON.stringify({ id: 0, name: 'Usuario WhatsApp', email: '', role: 'tourist' }));
-      localStorage.setItem('laperla_beta', JSON.stringify({ role: 'tourist', betaMode: true }));
-      window.location.href = '/explorar';
-    }
-    setLoading(false);
-  };
-
   const roleTitle = role === 'jalador' ? 'Jalador'
     : role === 'operator' ? 'Operador'
     : role === 'admin' ? 'Administrador'
@@ -129,160 +79,152 @@ export default function LoginPage() {
     <Layout>
       <div className="min-h-[85vh] flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-md">
-          {/* Card principal */}
           <div className="bg-white rounded-card shadow-card p-8">
+            {/* Hero con logo de marca */}
             <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: 'linear-gradient(135deg, #0A1628, #0D5C8A)' }}>
+              <div className="flex justify-center mb-5">
+                <div
+                  className="w-20 h-20 rounded-full flex items-center justify-center text-4xl shadow-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, #C9A05C 0%, #F5E6C8 50%, #8B6914 100%)',
+                    boxShadow: '0 8px 24px rgba(201,160,92,0.35), inset 0 2px 8px rgba(255,255,255,0.4)',
+                  }}
+                >
                   {role === 'jalador' ? '💰' : role === 'operator' ? '🏢' : role === 'admin' ? '⚙️' : '🏖️'}
                 </div>
               </div>
-              <h1 className="font-display font-bold text-2xl" style={{ color: '#0A1628' }}>
-                {roleTitle ? `Entrar como ${roleTitle}` : 'Entrar a tu cuenta'}
+              <h1 className="font-display font-bold text-3xl mb-2" style={{ color: '#0A1628' }}>
+                {roleTitle ? `Entrar como ${roleTitle}` : 'Bienvenido a La Perla'}
               </h1>
-              <p className="font-sans text-sm mt-1" style={{ color: '#C9A05C' }}>
-                {role === 'jalador' ? 'Accede a tu panel de ventas' : 'Ingresa tus credenciales'}
+              <p className="font-sans text-sm" style={{ color: '#717171' }}>
+                {role === 'jalador' ? 'Accede a tu panel de ventas' : 'Ingresa con tus credenciales'}
               </p>
             </div>
 
             {registered && needsConfirm && (
-              <div className="px-4 py-3 rounded-2xl text-sm mb-4 font-sans" style={{ background: '#FFF8E5', color: '#7A5C00', border: '1px solid #F5E0A8' }}>
+              <div className="px-4 py-3 rounded-2xl text-sm mb-5 font-sans" style={{ background: '#FFF8E5', color: '#7A5C00', border: '1px solid #F5E0A8' }}>
                 📧 <strong>Cuenta creada.</strong> Te enviamos un correo de confirmación — ábrelo y haz clic en el link para activar tu cuenta. Después puedes entrar aquí.
               </div>
             )}
             {registered && !needsConfirm && (
-              <div className="px-4 py-3 rounded-2xl text-sm mb-4 font-sans" style={{ background: '#E8F5EF', color: '#2D6A4F' }}>
+              <div className="px-4 py-3 rounded-2xl text-sm mb-5 font-sans" style={{ background: '#E8F5EF', color: '#2D6A4F' }}>
                 ✓ Cuenta creada exitosamente. Ahora puedes entrar.
               </div>
             )}
 
-            {/* Toggle email / telefono */}
-            <div className="flex rounded-full p-1 mb-4" style={{ background: '#F7F7F7' }}>
-              <button onClick={() => { setLoginMode('email'); setError(''); }}
-                className="flex-1 py-2 rounded-full text-xs font-semibold transition-all"
-                style={{ background: loginMode === 'email' ? 'white' : 'transparent', color: loginMode === 'email' ? '#222' : '#717171', boxShadow: loginMode === 'email' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
-                ✉️ Correo
+            {/* Form principal: email + contraseña */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-sans font-semibold mb-1.5" style={{ color: '#0A1628' }}>
+                  Correo electrónico
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  placeholder="tu@correo.com"
+                  className="input"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="password" className="block text-sm font-sans font-semibold" style={{ color: '#0A1628' }}>
+                    Contraseña
+                  </label>
+                  <span className="text-xs font-sans" style={{ color: '#B0B0B0' }} title="Recuperación de contraseña próximamente">
+                    ¿Olvidaste? <span className="font-semibold" style={{ color: '#C9A05C' }}>Próximamente</span>
+                  </span>
+                </div>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  placeholder="Tu contraseña"
+                  className="input"
+                />
+              </div>
+
+              {error && (
+                <div className="px-4 py-3 rounded-2xl text-sm font-sans" style={{ background: '#FFF0F0', color: '#CC3333' }}>
+                  {error}
+                </div>
+              )}
+
+              <button type="submit" disabled={loading} className="w-full btn-primary text-base disabled:opacity-50">
+                {loading ? 'Entrando...' : 'Entrar a mi cuenta'}
               </button>
-              <button onClick={() => { setLoginMode('phone'); setError(''); setOtpSent(false); }}
-                className="flex-1 py-2 rounded-full text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
-                style={{ background: loginMode === 'phone' ? 'white' : 'transparent', color: loginMode === 'phone' ? '#222' : '#717171', boxShadow: loginMode === 'phone' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
-                📱 WhatsApp
+            </form>
+
+            {/* Separador */}
+            <div className="flex items-center gap-3 my-6">
+              <div className="flex-1 h-px" style={{ background: '#EBEBEB' }} />
+              <span className="text-xs font-sans uppercase tracking-wide" style={{ color: '#B0B0B0' }}>
+                o continúa con
+              </span>
+              <div className="flex-1 h-px" style={{ background: '#EBEBEB' }} />
+            </div>
+
+            {/* Métodos alternativos — proximamente */}
+            <div className="space-y-3">
+              <button
+                type="button"
+                disabled
+                title="Inicio de sesión con Google estará disponible pronto"
+                className="w-full flex items-center justify-center gap-3 py-3 rounded-pill border bg-white cursor-not-allowed opacity-70"
+                style={{ borderColor: '#DDDDDD' }}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 48 48" aria-hidden="true">
+                  <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+                  <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+                  <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+                  <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571.001-.001.002-.001.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+                </svg>
+                <span className="font-sans font-semibold text-sm" style={{ color: '#222' }}>
+                  Continuar con Google
+                </span>
                 <span
-                  className="text-[9px] px-1.5 py-0.5 rounded-full font-bold"
+                  className="text-[10px] px-2 py-0.5 rounded-full font-bold"
                   style={{ background: '#FEF3E8', color: '#F5882A' }}
-                  title="Phone Provider de Supabase + Twilio aún no configurado. Si te registraste con email, tu rol no se vinculará por ahora."
+                >
+                  PRÓXIMAMENTE
+                </span>
+              </button>
+
+              <button
+                type="button"
+                disabled
+                title="Inicio de sesión por WhatsApp estará disponible pronto"
+                className="w-full flex items-center justify-center gap-3 py-3 rounded-pill border bg-white cursor-not-allowed opacity-70"
+                style={{ borderColor: '#DDDDDD' }}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#25D366" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
+                <span className="font-sans font-semibold text-sm" style={{ color: '#222' }}>
+                  Continuar con WhatsApp
+                </span>
+                <span
+                  className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                  style={{ background: '#FEF3E8', color: '#F5882A' }}
                 >
                   PRÓXIMAMENTE
                 </span>
               </button>
             </div>
 
-            {loginMode === 'email' ? (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Correo</label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="tu@correo.com" className="input" />
-                </div>
-                <div>
-                  <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Contraseña</label>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Tu contraseña" className="input" />
-                </div>
-                {error && <div className="px-4 py-3 rounded-2xl text-sm font-sans" style={{ background: '#FFF0F0', color: '#CC3333' }}>{error}</div>}
-                <button type="submit" disabled={loading} className="w-full btn-primary text-base disabled:opacity-50">
-                  {loading ? 'Entrando...' : 'Entrar'}
-                </button>
-              </form>
-            ) : (
-              <div className="space-y-4">
-                {!otpSent ? (
-                  <>
-                    <div>
-                      <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Tu número de WhatsApp</label>
-                      <div className="flex gap-2">
-                        <span className="flex items-center px-3 rounded-lg border text-sm font-semibold" style={{ borderColor: '#DDDDDD', color: '#222', background: '#F7F7F7' }}>🇨🇴 +57</span>
-                        <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="300 000 0000" className="input flex-1" />
-                      </div>
-                      <p className="text-xs mt-1" style={{ color: '#B0B0B0' }}>Te enviaremos un código por SMS para verificar</p>
-                    </div>
-                    {error && <div className="px-4 py-3 rounded-2xl text-sm font-sans" style={{ background: '#FFF0F0', color: '#CC3333' }}>{error}</div>}
-                    <button onClick={handlePhoneOtp} disabled={loading}
-                      className="w-full py-3 rounded-lg text-white font-semibold text-base disabled:opacity-50"
-                      style={{ background: '#25D366' }}>
-                      {loading ? 'Enviando...' : '📱 Enviar código por SMS'}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-center p-4 rounded-xl" style={{ background: '#E8F5EF' }}>
-                      <span className="text-2xl">✅</span>
-                      <p className="text-sm font-semibold mt-1" style={{ color: '#2D6A4F' }}>Código enviado a +57 {phone}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-sans font-medium mb-1" style={{ color: '#6B5329' }}>Código de verificación</label>
-                      <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} placeholder="123456"
-                        className="input text-center text-2xl font-mono tracking-widest" maxLength={6} />
-                    </div>
-                    {error && <div className="px-4 py-3 rounded-2xl text-sm font-sans" style={{ background: '#FFF0F0', color: '#CC3333' }}>{error}</div>}
-                    <button onClick={verifyOtp} disabled={loading} className="w-full btn-primary text-base disabled:opacity-50">
-                      {loading ? 'Verificando...' : 'Verificar y entrar'}
-                    </button>
-                    <button onClick={() => { setOtpSent(false); setOtpCode(''); setError(''); }}
-                      className="w-full text-sm font-semibold" style={{ color: '#0D5C8A' }}>
-                      Cambiar número
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-
-            <div className="mt-6 text-center text-sm font-sans" style={{ color: '#C9A05C' }}>
+            <div className="mt-7 pt-6 border-t text-center text-sm font-sans" style={{ borderColor: '#EBEBEB', color: '#717171' }}>
               ¿No tienes cuenta?{' '}
-              <Link href={`/register${role ? `?role=${role}` : ''}`} className="font-bold hover:underline" style={{ color: '#0D5C8A' }}>Regístrate gratis</Link>
+              <Link href={`/register${role ? `?role=${role}` : ''}`} className="font-bold hover:underline" style={{ color: '#0D5C8A' }}>
+                Regístrate gratis
+              </Link>
             </div>
           </div>
-
-          {/* Magic login para jaladores */}
-          {(role === 'jalador' || !role) && (
-            <div className="mt-6 rounded-card p-6" style={{ background: 'linear-gradient(135deg, #F5882A, #FF5F5F)' }}>
-              <div className="text-center mb-4">
-                <h3 className="font-display font-bold text-white text-lg">Acceso rápido Jalador</h3>
-                <p className="text-sm text-white/70 font-sans">Entra con tu código, sin contraseña</p>
-              </div>
-              <div className="space-y-3">
-                <input type="text" placeholder="Tu codigo (ej: PED-0001)" id="magic-ref"
-                  className="w-full px-4 py-3.5 rounded-pill text-center text-lg font-mono uppercase bg-white/20 text-white placeholder-white/50 border border-white/30 outline-none focus:bg-white/30" />
-                <input type="tel" placeholder="Tu WhatsApp" id="magic-phone"
-                  className="w-full px-4 py-3.5 rounded-pill text-center text-lg bg-white/20 text-white placeholder-white/50 border border-white/30 outline-none focus:bg-white/30" />
-                <button
-                  onClick={async () => {
-                    const refEl = document.getElementById('magic-ref') as HTMLInputElement;
-                    const phoneEl = document.getElementById('magic-phone') as HTMLInputElement;
-                    if (!refEl?.value) return;
-                    setError('');
-                    setLoading(true);
-                    try {
-                      const { magicLogin: doMagic } = await import('../lib/api');
-                      const result = await doMagic(refEl.value.trim().toUpperCase(), phoneEl?.value?.trim() || '');
-                      if (result.access_token) {
-                        localStorage.setItem('turescol_token', result.access_token);
-                        if (result.refresh_token) localStorage.setItem('turescol_refresh', result.refresh_token);
-                        localStorage.setItem('turescol_user', JSON.stringify(result.user));
-                        router.push('/dashboard/jalador');
-                      }
-                    } catch (err: any) {
-                      setError(err.response?.data?.message || 'Codigo o telefono incorrecto');
-                    }
-                    setLoading(false);
-                  }}
-                  disabled={loading}
-                  className="w-full btn-white text-base disabled:opacity-50"
-                >
-                  {loading ? 'Entrando...' : 'Entrar como Jalador'}
-                </button>
-              </div>
-            </div>
-          )}
-
         </div>
       </div>
     </Layout>
