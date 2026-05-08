@@ -96,6 +96,13 @@ function getRangeStart(range: MetricsRange): Date {
 /**
  * Lee metricas para un rango especifico. Si quieres los 3 rangos a la vez,
  * usa getMetricsBundle (hace 1 sola query y suma en cliente).
+ *
+ * IMPORTANTE: filtramos y bucketeamos por paid_at, NO por created_at.
+ * Razon: una sale creada el domingo 11pm y pagada el lunes 9am corresponde
+ * (para el jalador) a las metricas del lunes — es el momento en que la
+ * conversion ocurrio. lib/sales.ts::confirmSale setea paid_at con el
+ * timestamp del pago. Filtrar por created_at perdia conversiones tardias
+ * en el bucket de "esta semana" (Codex P2 #35).
  */
 export async function getMetricsForJalador(
   jaladorRefCode: string,
@@ -109,7 +116,7 @@ export async function getMetricsForJalador(
     .select('total_cop, commission_cop')
     .eq('jalador_ref_code', jaladorRefCode)
     .eq('status', 'paid')
-    .gte('created_at', start);
+    .gte('paid_at', start);
 
   if (error) {
     throw new Error(`No se pudieron leer las metricas: ${error.message}`);
@@ -137,10 +144,10 @@ export async function getMetricsBundle(
 
   const { data, error } = await supabase
     .from('sales')
-    .select('total_cop, commission_cop, created_at')
+    .select('total_cop, commission_cop, paid_at')
     .eq('jalador_ref_code', jaladorRefCode)
     .eq('status', 'paid')
-    .gte('created_at', startOfMonth);
+    .gte('paid_at', startOfMonth);
 
   if (error) {
     throw new Error(`No se pudieron leer las metricas: ${error.message}`);
@@ -154,7 +161,11 @@ export async function getMetricsBundle(
   };
 
   for (const row of data ?? []) {
-    const ts = new Date(row.created_at).getTime();
+    // paid_at es nullable en el schema, pero status='paid' garantiza que
+    // confirmSale lo populo. Si por algun bug viniera null, ignoramos la
+    // row para no contar contra los rangos con timestamps invalidos.
+    if (!row.paid_at) continue;
+    const ts = new Date(row.paid_at).getTime();
     const total = row.total_cop ?? 0;
     const commission = row.commission_cop ?? 0;
 

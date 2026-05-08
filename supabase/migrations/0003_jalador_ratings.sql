@@ -87,9 +87,32 @@ create policy "jalador_ratings_select_public"
 -- por phone del cliente — cuando agreguemos un campo tourist_user_id en
 -- sales, ajustamos esta policy.
 --
--- POR AHORA (foundation PR): permitimos INSERT a cualquier usuario auth
--- y validamos a nivel app. El PR de "creacion de reseñas" reforzara esta
--- policy con la verificacion contra sales.
+-- IMPORTANTE: la RLS de public.sales (migration 0002) solo expone rows
+-- al jalador dueño (matchea jalador_ref_code con el JWT). Si la policy
+-- de INSERT aqui hiciera EXISTS sobre sales directamente, un turista
+-- autenticado no veria ninguna sale → review valida rechazada (Codex
+-- P2 #35).
+--
+-- Fix: helper SECURITY DEFINER que bypasea RLS solo para devolver un
+-- booleano "existe esta sale en estado paid?". No expone columnas — el
+-- worst case es confirmar/negar la existencia de un sale_id especifico,
+-- lo cual tampoco es secreto (los IDs son uuid, no enumerables).
+create or replace function public.is_sale_paid_for_review(p_sale_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.sales
+    where id = p_sale_id and status = 'paid'
+  );
+$$;
+
+revoke all on function public.is_sale_paid_for_review(uuid) from public;
+grant execute on function public.is_sale_paid_for_review(uuid) to authenticated;
+
 drop policy if exists "jalador_ratings_insert_authenticated" on public.jalador_ratings;
 create policy "jalador_ratings_insert_authenticated"
   on public.jalador_ratings
@@ -97,11 +120,7 @@ create policy "jalador_ratings_insert_authenticated"
   to authenticated
   with check (
     tourist_id = auth.uid()
-    and exists (
-      select 1 from public.sales s
-      where s.id = sale_id
-        and s.status = 'paid'
-    )
+    and public.is_sale_paid_for_review(sale_id)
   );
 
 -- UPDATE/DELETE: nadie. Las reviews no se editan ni borran (excepto via
