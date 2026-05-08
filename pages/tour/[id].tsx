@@ -134,6 +134,10 @@ export default function TourDetail() {
           clientPhone: clientPhone.trim(),
           clientHotel: clientHotel.trim() || undefined,
           paymentMethod,
+          // Mandamos el total ya calculado con priceChild para que Wompi cobre
+          // exactamente lo que el cliente vio. Sin esto el server defaultea a
+          // price_adult * personas y sobre-cobra ninos con descuento (Codex P1 #32).
+          totalCop: totalPrice,
         }),
       });
       const data = await res.json();

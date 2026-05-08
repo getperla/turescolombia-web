@@ -106,6 +106,11 @@ export default function JaladorTourLink() {
           clientLastName: clientLastName.trim() || undefined,
           clientPhone: clientPhone.trim(),
           clientHotel: clientHotel.trim() || undefined,
+          // Mandamos el totalCop ya calculado con priceChild para que el
+          // server/Wompi cobren EXACTAMENTE lo que el cliente vio en la
+          // pagina. Sin esto el server defaultea a price_adult * personas
+          // y sobre-cobra bookings con ninos descontados (Codex P1 #32).
+          totalCop: totalPrice,
         }),
       });
       const data = await res.json();

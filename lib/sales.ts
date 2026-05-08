@@ -23,6 +23,11 @@ export type SaleInput = {
   people: number;
   tours: Pick<MockTour, 'id' | 'name' | 'slug' | 'price_adult'>[];
   redirectUrl: string;
+  // Override del total cuando el caller ya calculo el precio correcto
+  // (por ejemplo distinguiendo adultos vs ninos con priceChild). Sin esto,
+  // createSale defaultea a price_adult * people, lo cual sobre-cobra
+  // bookings con ninos en tours con priceChild < priceAdult (Codex P1 #32).
+  totalCopOverride?: number;
 };
 
 export type Sale = {
@@ -70,7 +75,10 @@ function getSupabase(): SupabaseClient {
 export async function createSale(input: SaleInput): Promise<CreateSaleResult> {
   const supabase = getSupabase();
   const reference = generateReference();
-  const totalCop = input.tours.reduce((acc, t) => acc + t.price_adult * input.people, 0);
+  const totalCop =
+    typeof input.totalCopOverride === 'number' && input.totalCopOverride > 0
+      ? input.totalCopOverride
+      : input.tours.reduce((acc, t) => acc + t.price_adult * input.people, 0);
   const commissionCop = Math.round(totalCop * COMMISSION_RATE);
 
   const link = createPaymentLink({
