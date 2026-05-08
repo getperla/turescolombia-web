@@ -125,6 +125,25 @@ function parseBudget(text: string): number | null {
   return null;
 }
 
+// Variante stricta de parseBudget para usar en follow-ups: exige una
+// keyword inequivoca de presupuesto (millones, mil, k, pesos, cop,
+// presupuesto, sub-/baj-) para reconocer el numero. Sin esto, mensajes
+// como "mi WhatsApp es 300.123.4567" hacen que parseBudget devuelva
+// 300.123.456 y nuestro merge loop sobrescriba el presupuesto real
+// (Codex P2 round 5 #34 — bug de revenue, confirmacion reservaria
+// muchos mas tours).
+//
+// Para el primer match (base completa: dias + budget juntos) seguimos
+// siendo permissivos porque ahi el user esta dando los criterios.
+// Solo en los OVERRIDES posteriores aplicamos esta version stricta.
+function parseBudgetStrict(text: string): number | null {
+  const lower = text.toLowerCase();
+  const hasBudgetKeyword =
+    /\b(millones?|mil\b|k\b|pesos|cop|presupuesto|subamos?|sube|bajamos?|baja)/i.test(lower);
+  if (!hasBudgetKeyword) return null;
+  return parseBudget(text);
+}
+
 function parseDays(text: string): number | null {
   const m = text.toLowerCase().match(/(\d+)\s*d[ií]as?/);
   return m ? parseInt(m[1], 10) : null;
@@ -277,14 +296,15 @@ export function findLastConstraints(
 
   if (!result) return null;
 
-  // Paso 2: aplica overrides parciales de mensajes posteriores. Solo
-  // sobrescribimos cuando hay un valor explicito en el mensaje (no
-  // cuando parsePeople devuelve null por ejemplo).
+  // Paso 2: aplica overrides parciales de mensajes posteriores. Para
+  // budget usamos parseBudgetStrict — exige una keyword inequivoca
+  // (millones/mil/k/pesos/cop/presupuesto/subamos/bajamos) para evitar
+  // tomar numeros de telefono "300.123.4567" como overrides falsos.
   for (let i = baseIdx + 1; i < messages.length; i++) {
     const m = messages[i];
     if (m.role !== 'user') continue;
     const days = parseDays(m.content);
-    const budget = parseBudget(m.content);
+    const budget = parseBudgetStrict(m.content);
     const people = parsePeople(m.content);
     if (days) result.days = days;
     if (budget) result.budget = budget;
