@@ -6,6 +6,7 @@ import api from '../../lib/api';
 import Layout from '../../components/Layout';
 import { Tour } from '../../lib/api';
 import { useRequireAuth } from '../../lib/auth';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 
 const JaladorDashboard = () => {
   const { authorized, loading: authLoading } = useRequireAuth(['jalador']);
@@ -52,7 +53,55 @@ const JaladorDashboard = () => {
 
   useEffect(() => {
     if (!authorized) return;
-    api.get('/dashboard/jalador').then((r) => setData(r.data)).catch(() => setError('Inicia sesion como jalador.'));
+    // Hidratamos el dashboard desde Supabase user_metadata (la fuente de
+    // verdad nueva), no del backend Render legacy. Render devuelve 401
+    // porque no acepta nuestros tokens de Supabase, y eso bloqueaba todo
+    // el dashboard mostrando "Inicia sesion como jalador" — un mensaje
+    // engañoso porque el usuario SÍ está autenticado, solo que en otro
+    // sistema. Si por alguna razón no hay refCode en metadata (jaladores
+    // viejos), generamos uno al vuelo y lo persistimos con updateUser.
+    (async () => {
+      if (!isSupabaseConfigured()) {
+        // Fallback dev local: usar Render legacy.
+        api.get('/dashboard/jalador').then((r) => setData(r.data)).catch(() => setError('Inicia sesion como jalador.'));
+        return;
+      }
+      try {
+        const { data: udata, error: uerr } = await supabase.auth.getUser();
+        if (uerr || !udata?.user) throw uerr || new Error('No user');
+        const u = udata.user;
+        let refCode = (u.user_metadata?.refCode as string) || '';
+        if (!refCode) {
+          // Derivamos el refCode de los primeros 16 hex chars del UUID
+          // Supabase del usuario (sin guiones). Por que 16 y no 8 ni 32:
+          // - 8 hex = 32 bits → birthday collision al 50% con ~65K jaladores
+          //   (Codex P2 round 2 #32, valido).
+          // - 32 hex = UUID completo → demasiado largo para WhatsApp share.
+          // - 16 hex = 64 bits → birthday collision al 50% con ~4.3B
+          //   jaladores. Ningun mercado realista llega ahi.
+          // Sin lookup ni uniqueness check: los UUIDv4 de Supabase tienen
+          // 122 bits aleatorios, asi que sus prefijos heredan unicidad.
+          const uidHex = u.id.replace(/-/g, '').slice(0, 16).toUpperCase();
+          refCode = `PED-${uidHex}`;
+          // Persistir en metadata para que el proximo login lo encuentre.
+          await supabase.auth.updateUser({ data: { ...u.user_metadata, refCode } });
+        }
+        setData({
+          jalador: {
+            refCode,
+            user: {
+              name: u.user_metadata?.name || u.email?.split('@')[0] || 'Jalador',
+            },
+          },
+          // KPIs en cero: aun no tenemos sales reales en Supabase para este
+          // usuario. IGNORE_LEGACY_DEMO_KPIS abajo refuerza esto.
+          sales: { today: 0, week: 0, month: 0 },
+          commissions: { pending: 0 },
+        });
+      } catch {
+        setError('No pudimos cargar tu perfil. Por favor entra de nuevo.');
+      }
+    })();
     loadTours();
   }, [authorized, loadTours]);
 

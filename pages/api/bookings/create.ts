@@ -28,6 +28,10 @@ type RequestBody = {
   clientHotel?: string;
   clientEmail?: string;
   paymentMethod?: string;
+  // Total ya calculado por el frontend con priceChild si aplica.
+  // Si no se pasa, calculamos en el server con price_adult * people
+  // (lo cual sobre-cobra cuando hay ninos con descuento, Codex P1 #32).
+  totalCop?: number;
 };
 
 type ResponseBody =
@@ -97,6 +101,7 @@ export default async function handler(
     clientLastName,
     clientPhone,
     clientEmail,
+    totalCop,
   } = body;
 
   // Validaciones basicas — si fallan, devolvemos shape compatible con el
@@ -128,6 +133,10 @@ export default async function handler(
         people: totalPeople,
         tours: [tour],
         redirectUrl: `${origin}/pago-resultado?ref={REFERENCE}${refCode ? `&jal=${refCode}` : ''}`,
+        // Si el frontend mando un total ya calculado (incluye priceChild),
+        // lo respetamos para que Wompi cobre EXACTAMENTE lo que vio el
+        // cliente. Sin esto, ninos con descuento serian sobre-cobrados.
+        totalCopOverride: typeof totalCop === 'number' && totalCop > 0 ? totalCop : undefined,
       });
 
       // bookingCode es human-friendly para mostrar; el QR contiene la
