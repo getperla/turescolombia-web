@@ -256,7 +256,7 @@ export type MockResponseOutput = {
 // Sin este merge, confirmar despues de ovverrides parciales usaba el
 // people/budget/days de la base original, contradiciendo la cotizacion
 // que el user vio en pantalla (Codex P2 round 2 #34).
-function findLastConstraints(
+export function findLastConstraints(
   messages: MockChatMessage[],
 ): { days: number; budget: number; people: number } | null {
   let baseIdx = -1;
