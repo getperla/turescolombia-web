@@ -93,11 +93,24 @@ create policy "jalador_ratings_select_public"
 -- autenticado no veria ninguna sale → review valida rechazada (Codex
 -- P2 #35).
 --
--- Fix: helper SECURITY DEFINER que bypasea RLS solo para devolver un
--- booleano "existe esta sale en estado paid?". No expone columnas — el
--- worst case es confirmar/negar la existencia de un sale_id especifico,
--- lo cual tampoco es secreto (los IDs son uuid, no enumerables).
-create or replace function public.is_sale_paid_for_review(p_sale_id uuid)
+-- Fix: helper SECURITY DEFINER que bypasea RLS para validar que la sale
+-- existe, esta paid Y pertenece al jalador que se intenta calificar.
+--
+-- El check tambien protege contra un ataque sutil (Codex P2 round 2 #35):
+-- la API devuelve sale_id al turista que paga. Sin la validacion de
+-- jalador, ese turista podria reusar su sale_id para insertar reviews
+-- contra otros jaladores y corromper su rating publico. Bind explicito
+-- via jalador_ref_code en sales ↔ user_metadata.refCode en auth.users.
+--
+-- No expone columnas — solo devuelve un booleano. Worst case: alguien
+-- prueba combinaciones uuid (no enumerable) hasta acertar un par valido,
+-- lo cual es practicamente imposible.
+drop function if exists public.is_sale_paid_for_review(uuid);
+
+create or replace function public.is_sale_paid_by_jalador(
+  p_sale_id uuid,
+  p_jalador_user_id uuid
+)
 returns boolean
 language sql
 stable
@@ -105,13 +118,17 @@ security definer
 set search_path = public
 as $$
   select exists (
-    select 1 from public.sales
-    where id = p_sale_id and status = 'paid'
+    select 1
+    from public.sales s
+    join auth.users u on u.id = p_jalador_user_id
+    where s.id = p_sale_id
+      and s.status = 'paid'
+      and s.jalador_ref_code = u.raw_user_meta_data ->> 'refCode'
   );
 $$;
 
-revoke all on function public.is_sale_paid_for_review(uuid) from public;
-grant execute on function public.is_sale_paid_for_review(uuid) to authenticated;
+revoke all on function public.is_sale_paid_by_jalador(uuid, uuid) from public;
+grant execute on function public.is_sale_paid_by_jalador(uuid, uuid) to authenticated;
 
 drop policy if exists "jalador_ratings_insert_authenticated" on public.jalador_ratings;
 create policy "jalador_ratings_insert_authenticated"
@@ -120,7 +137,7 @@ create policy "jalador_ratings_insert_authenticated"
   to authenticated
   with check (
     tourist_id = auth.uid()
-    and public.is_sale_paid_for_review(sale_id)
+    and public.is_sale_paid_by_jalador(sale_id, jalador_user_id)
   );
 
 -- UPDATE/DELETE: nadie. Las reviews no se editan ni borran (excepto via
