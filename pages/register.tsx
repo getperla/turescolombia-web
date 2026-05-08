@@ -56,12 +56,11 @@ export default function RegisterPage() {
         if (role === 'jalador') {
           profile.zone = zone;
           profile.bio = bio;
-          // Generamos un refCode unico al registrarse para que el jalador
-          // tenga su link de ventas listo desde el primer login, sin
-          // depender del backend Render legacy. Formato PED-XXXX (4 chars
-          // alfanumericos). Admin puede regenerarlo despues si quiere
-          // uno mas memorable. Colisiones son improbables (36^4 = 1.6M).
-          profile.refCode = `PED-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+          // refCode NO se genera aqui — lo hace dashboard/jalador.tsx en el
+          // primer login, donde tenemos acceso a user.id (UUID Supabase) y
+          // podemos derivar un refCode unico por construccion. Aqui no
+          // tenemos UUID todavia (signUp aun no respondio) y un random
+          // de 4 chars puede colisionar (Codex P2 #32).
         }
         if (role === 'operator') {
           profile.companyName = companyName;

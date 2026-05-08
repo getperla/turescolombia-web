@@ -72,8 +72,13 @@ const JaladorDashboard = () => {
         const u = udata.user;
         let refCode = (u.user_metadata?.refCode as string) || '';
         if (!refCode) {
-          // Migracion: jaladores creados antes de generar refCode al signup.
-          refCode = `PED-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+          // Derivamos el refCode del UUID Supabase del usuario para garantizar
+          // unicidad por construccion: los UUIDs son unicos, asi que los
+          // primeros 8 hex chars tambien lo son. Sin lookup ni colisiones
+          // (Codex P2 #32). Formato PED-A1B2C3D4 — 8 chars en mayusculas,
+          // facil de leer y compartir por WhatsApp.
+          const uidHex = u.id.replace(/-/g, '').slice(0, 8).toUpperCase();
+          refCode = `PED-${uidHex}`;
           // Persistir en metadata para que el proximo login lo encuentre.
           await supabase.auth.updateUser({ data: { ...u.user_metadata, refCode } });
         }

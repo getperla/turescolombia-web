@@ -88,20 +88,33 @@ export default function JaladorTourLink() {
     setLoading(true);
     setMessage('');
     try {
-      const { data } = await api.post('/bookings', {
-        tourId: tour.id,
-        tourDate,
-        numAdults,
-        numChildren,
-        refCode,
-        clientName: clientName.trim(),
-        clientLastName: clientLastName.trim() || undefined,
-        clientPhone: clientPhone.trim(),
-        clientHotel: clientHotel.trim() || undefined,
+      // Usamos /api/bookings/create (Next.js + Supabase) en lugar del
+      // backend Render legacy. Razon: los refCodes nuevos generados por
+      // Supabase no existen en Render → la comision del jalador se
+      // perderia si pasaramos por /bookings (Codex P1 #32). El endpoint
+      // de Supabase si resuelve el refCode contra user_metadata.
+      const res = await fetch('/api/bookings/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tourId: tour.id,
+          tourDate,
+          numAdults,
+          numChildren,
+          refCode,
+          clientName: clientName.trim(),
+          clientLastName: clientLastName.trim() || undefined,
+          clientPhone: clientPhone.trim(),
+          clientHotel: clientHotel.trim() || undefined,
+        }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.message || 'Error al crear la reserva.');
+      }
       setBookingResult(data);
     } catch (error: any) {
-      setMessage(error.response?.data?.message || 'Error al crear la reserva.');
+      setMessage(error?.message || 'Error al crear la reserva.');
     }
     setLoading(false);
   };
