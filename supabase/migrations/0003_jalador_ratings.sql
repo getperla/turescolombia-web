@@ -24,9 +24,18 @@ create extension if not exists "pgcrypto";
 -- experiencia = una review. ON DELETE CASCADE para que no queden reviews
 -- de ventas borradas.
 --
--- UNIQUE(sale_id, tourist_id): una review por turista por venta. Esto
--- previene spam — un mismo cliente no puede dejar 5 estrellas a la misma
--- sale 10 veces.
+-- UNIQUE(sale_id): una review por sale. NO usamos UNIQUE(sale_id, tourist_id)
+-- porque la policy SELECT es publica → cualquier authenticated user puede
+-- leer un sale_id existente y reusarlo con su propio tourist_id, y como
+-- nuestro helper SECURITY DEFINER no puede aun verificar que el reviewer
+-- sea el COMPRADOR real (sales no tiene tourist_user_id; los clientes son
+-- invitados), un attacker logueado podria acumular N reviews en una sola
+-- sale (Codex P2 round 3 #35). Con UNIQUE en sale_id solo, una vez la
+-- primera review existe, cualquier INSERT subsecuente para esa sale falla
+-- con violation de constraint — el ataque queda contenido.
+--
+-- Deuda tecnica relacionada: agregar tourist_user_id a sales para validar
+-- ownership en el helper. Documentado en docs/TECH_DEBT.md.
 create table if not exists public.jalador_ratings (
   id                uuid primary key default gen_random_uuid(),
   jalador_user_id   uuid not null references auth.users(id) on delete cascade,
@@ -35,7 +44,7 @@ create table if not exists public.jalador_ratings (
   rating            integer not null check (rating between 1 and 5),
   comment           text,
   created_at        timestamptz not null default now(),
-  unique (sale_id, tourist_id)
+  unique (sale_id)
 );
 
 -- Indices: el lookup principal es por jalador (para mostrar su perfil).

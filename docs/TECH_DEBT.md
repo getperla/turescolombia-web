@@ -42,6 +42,34 @@ indicarian que toca atender la deuda.
 
 ---
 
+## tourist_user_id en sales (validar ownership de reviews)
+
+- **Estado:** deuda activa, prioridad media
+- **Origen:** Codex P2 round 3 en PR de jalador foundation (mayo 2026)
+- **Por que importa:** la tabla `sales` no tiene `tourist_user_id` porque
+  hoy los clientes finales son invitados (compran sin loguearse). Cuando
+  un turista quiera ratear, no podemos validar a nivel DB que el reviewer
+  haya sido el comprador real de esa sale. Como mitigacion temporal, el
+  UNIQUE constraint en `jalador_ratings.sale_id` garantiza una review por
+  sale (race condition: el primero gana), pero un attacker logueado podria
+  ganar la carrera contra un cliente invitado que aun no se registra.
+- **Cuando revisitar:** antes del PR de "creacion de reseñas". Sin esto, el
+  primer authenticated user que sepa el `sale_id` puede meter la review.
+- **Triggers que indican que toca atender:**
+  - Reportes de reviews falsas en sales reales
+  - PR de creacion de reseñas necesita validacion estricta
+- **Aprox del trabajo:**
+  - Migration que agrega `sales.tourist_user_id uuid REFERENCES auth.users(id)`
+  - Backfill: `UPDATE sales SET tourist_user_id = ...` matcheando por
+    `client_phone` con `auth.users.phone` cuando exista
+  - Modificar `lib/sales.ts::createSale` para aceptar `touristUserId` opcional
+  - Refactor del helper `is_sale_paid_by_jalador` para que tambien valide
+    que `auth.uid() = sales.tourist_user_id`
+  - Idealmente combinar con la migracion a `profiles` (deuda ya listada
+    arriba) para hacer todo el refactor de auth+sales en una sola pasada
+
+---
+
 ## Pendientes "indicador de pagos pendientes" en dashboard jalador
 
 - **Estado:** pendiente, baja prioridad
