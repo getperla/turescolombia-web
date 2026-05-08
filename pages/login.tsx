@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Layout from '../components/Layout';
 import { useAuth } from '../lib/auth';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { translateAuthError } from '../lib/supabaseErrors';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,7 +40,10 @@ export default function LoginPage() {
       const user = await login(loginEmail, loginPassword);
       navigateByRole(user.role);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Correo o contraseña incorrectos.');
+      // El backend Render devuelve mensajes en distintos formatos; el
+      // traductor cubre los mas comunes y deja un fallback amigable.
+      const raw = err?.response?.data?.message || err?.message || '';
+      setError(translateAuthError(raw));
     }
   };
 
@@ -63,7 +67,12 @@ export default function LoginPage() {
           window.location.assign(getRedirectPath(userRole));
           return;
         }
-      } catch (err: any) { setError(err.message || 'Correo o contraseña incorrectos.'); }
+      } catch (err: any) {
+        // Errores de Supabase Auth llegan en ingles ("Email not confirmed",
+        // "Invalid login credentials"). Los traducimos al espanol antes de
+        // mostrarlos al usuario (PR G — Cowork P3).
+        setError(translateAuthError(err));
+      }
     } else {
       await doLogin(email, password);
     }

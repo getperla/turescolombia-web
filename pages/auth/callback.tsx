@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '../../lib/supabase';
+import { translateAuthError } from '../../lib/supabaseErrors';
 import Layout from '../../components/Layout';
 
 // Tras click en el link de confirmacion del email (o tras login OAuth),
@@ -85,10 +86,12 @@ export default function AuthCallback() {
         return;
       }
 
-      // Si Supabase nos paso un error directo, lo mostramos tal cual.
+      // Si Supabase nos paso un error directo, lo traducimos antes de
+      // mostrar — los error_description suelen venir en ingles.
       const errParam = search.get('error_description') || hash.get('error_description');
       if (errParam) {
-        setErrorMsg(decodeURIComponent(errParam.replace(/\+/g, ' ')));
+        const decoded = decodeURIComponent(errParam.replace(/\+/g, ' '));
+        setErrorMsg(translateAuthError(decoded));
         return;
       }
 
@@ -137,7 +140,7 @@ export default function AuthCallback() {
       // usuarios que cerraron antes y aterrizan sin parametros de auth.
       const { data, error } = await supabase.auth.getSession();
       if (error) {
-        setErrorMsg(error.message || 'No pudimos verificar tu correo');
+        setErrorMsg(translateAuthError(error));
         return;
       }
       if (data?.session) {

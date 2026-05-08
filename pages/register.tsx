@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Layout from '../components/Layout';
 import api from '../lib/api';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { translateAuthError } from '../lib/supabaseErrors';
 
 type Role = 'tourist' | 'jalador' | 'operator';
 
@@ -108,11 +109,13 @@ export default function RegisterPage() {
       await api.post(endpoint, body);
       router.push('/login?registered=1');
     } catch (err: unknown) {
-      const detail =
-        err instanceof Error ? err.message :
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Error al registrar. Intenta de nuevo.';
-      setError(detail);
+      // Pasamos cualquier error por el traductor — Supabase devuelve mensajes
+      // en ingles que no queremos exponerle al usuario final. Si es un error
+      // del backend Render legacy con shape axios, extraemos primero el
+      // message para que el traductor lo procese.
+      const apiMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const raw = apiMessage || (err instanceof Error ? err.message : '');
+      setError(translateAuthError(raw || 'Error al registrar. Intenta de nuevo.'));
     }
     setLoading(false);
   };
