@@ -288,7 +288,29 @@ export function findLastConstraints(
     const days = parseDays(m.content);
     const budget = parseBudget(m.content);
     if (days && budget) {
-      result = { days, budget, people: parsePeople(m.content) ?? 1 };
+      const peopleInBase = parsePeople(m.content);
+      // Si el mensaje base no menciona personas explicitamente, buscamos
+      // hacia atras un valor previo. Caso real: el user ya dijo "2 personas"
+      // antes y ahora reescribe el plan completo ("mejor 5 dias y 1.2
+      // millones"). Sin esto el base nuevo defaultearia people=1, cobrando
+      // mal la reserva (Codex P2 round 6 #34).
+      let inheritedPeople: number | null = null;
+      if (peopleInBase === null) {
+        for (let j = i - 1; j >= 0; j--) {
+          const prev = messages[j];
+          if (prev.role !== 'user') continue;
+          const p = parsePeople(prev.content);
+          if (p !== null) {
+            inheritedPeople = p;
+            break;
+          }
+        }
+      }
+      result = {
+        days,
+        budget,
+        people: peopleInBase ?? inheritedPeople ?? 1,
+      };
       baseIdx = i;
       break;
     }
