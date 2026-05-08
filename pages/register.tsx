@@ -53,7 +53,16 @@ export default function RegisterPage() {
       // operación real: usuarios persisten, no son demo.
       if (isSupabaseConfigured()) {
         const profile: Record<string, unknown> = { name, role, phone };
-        if (role === 'jalador') { profile.zone = zone; profile.bio = bio; }
+        if (role === 'jalador') {
+          profile.zone = zone;
+          profile.bio = bio;
+          // Generamos un refCode unico al registrarse para que el jalador
+          // tenga su link de ventas listo desde el primer login, sin
+          // depender del backend Render legacy. Formato PED-XXXX (4 chars
+          // alfanumericos). Admin puede regenerarlo despues si quiere
+          // uno mas memorable. Colisiones son improbables (36^4 = 1.6M).
+          profile.refCode = `PED-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+        }
         if (role === 'operator') {
           profile.companyName = companyName;
           if (rntNumber) profile.rntNumber = rntNumber;

@@ -6,6 +6,7 @@ import api from '../../lib/api';
 import Layout from '../../components/Layout';
 import { Tour } from '../../lib/api';
 import { useRequireAuth } from '../../lib/auth';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 
 const JaladorDashboard = () => {
   const { authorized, loading: authLoading } = useRequireAuth(['jalador']);
@@ -52,7 +53,46 @@ const JaladorDashboard = () => {
 
   useEffect(() => {
     if (!authorized) return;
-    api.get('/dashboard/jalador').then((r) => setData(r.data)).catch(() => setError('Inicia sesion como jalador.'));
+    // Hidratamos el dashboard desde Supabase user_metadata (la fuente de
+    // verdad nueva), no del backend Render legacy. Render devuelve 401
+    // porque no acepta nuestros tokens de Supabase, y eso bloqueaba todo
+    // el dashboard mostrando "Inicia sesion como jalador" — un mensaje
+    // engañoso porque el usuario SÍ está autenticado, solo que en otro
+    // sistema. Si por alguna razón no hay refCode en metadata (jaladores
+    // viejos), generamos uno al vuelo y lo persistimos con updateUser.
+    (async () => {
+      if (!isSupabaseConfigured()) {
+        // Fallback dev local: usar Render legacy.
+        api.get('/dashboard/jalador').then((r) => setData(r.data)).catch(() => setError('Inicia sesion como jalador.'));
+        return;
+      }
+      try {
+        const { data: udata, error: uerr } = await supabase.auth.getUser();
+        if (uerr || !udata?.user) throw uerr || new Error('No user');
+        const u = udata.user;
+        let refCode = (u.user_metadata?.refCode as string) || '';
+        if (!refCode) {
+          // Migracion: jaladores creados antes de generar refCode al signup.
+          refCode = `PED-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+          // Persistir en metadata para que el proximo login lo encuentre.
+          await supabase.auth.updateUser({ data: { ...u.user_metadata, refCode } });
+        }
+        setData({
+          jalador: {
+            refCode,
+            user: {
+              name: u.user_metadata?.name || u.email?.split('@')[0] || 'Jalador',
+            },
+          },
+          // KPIs en cero: aun no tenemos sales reales en Supabase para este
+          // usuario. IGNORE_LEGACY_DEMO_KPIS abajo refuerza esto.
+          sales: { today: 0, week: 0, month: 0 },
+          commissions: { pending: 0 },
+        });
+      } catch {
+        setError('No pudimos cargar tu perfil. Por favor entra de nuevo.');
+      }
+    })();
     loadTours();
   }, [authorized, loadTours]);
 
