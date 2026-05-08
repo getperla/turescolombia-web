@@ -288,6 +288,46 @@ export function buildMockResponse(input: MockResponseInput): MockResponseOutput 
   const people = parsePeople(last.content);
 
   if (!days || !budget) {
+    // Sin dias/presupuesto en el ultimo mensaje. Antes de rendirnos y
+    // pedir los datos de nuevo, buscamos en el historial — el user
+    // puede estar haciendo follow-up ("no", "otro plan", "cambialo")
+    // sin repetir constraints. Sin esto el agente se siente
+    // desmemoriado y el jalador se desespera.
+    const ctx = findLastConstraints(messages);
+    if (ctx) {
+      const picks = pickToursForBudget(source, ctx.budget, ctx.days, ctx.people);
+      const isRequestingAlternative = /\b(otro|otra|cambia|diferente|distint|no\s*me|no me sirve)/i.test(
+        normalize(last.content),
+      );
+      if (isRequestingAlternative) {
+        // El algoritmo de seleccion es greedy por rating: ya te di los
+        // mejores tours que caben. Para variar tendrias que ajustar el
+        // presupuesto o los dias.
+        return {
+          message: `Esos planes son los que mejor se ajustan a tu presupuesto de $${COP(ctx.budget)} COP en ${ctx.days} dia(s).
+
+Para opciones diferentes podemos:
+• Subir el presupuesto y meto tours mas exclusivos (Pueblito Tayrona, Cabo San Juan)
+• Reducir dias si quieres un plan mas corto
+• Ajustar el numero de personas
+
+O si te sirve el plan actual, escribe "si, dale" y armamos la reserva. 🏖️`,
+          quiereReservar: false,
+          picks,
+          people: ctx.people,
+        };
+      }
+      // Cualquier otro mensaje sin constraints: re-mostramos el plan
+      // con el contexto historico para que el user vea que SI lo
+      // recordamos.
+      return {
+        message: formatRecommendation(picks, ctx.people, jaladorName, ctx.days),
+        quiereReservar: false,
+        picks,
+        people: ctx.people,
+      };
+    }
+    // Sin context historico: aqui si pedimos los datos.
     const faltan = [];
     if (!days) faltan.push('cuantos dias');
     if (!budget) faltan.push('presupuesto en pesos');
