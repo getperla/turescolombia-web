@@ -245,22 +245,53 @@ export type MockResponseOutput = {
   people?: number;
 };
 
-// Busca hacia atras el mensaje del usuario mas reciente con dias+presupuesto.
-// Usado al confirmar reserva para re-derivar las recomendaciones sin estado.
+// Busca el contexto completo de la conversacion combinando el ultimo
+// mensaje con constraints completos (dias+presupuesto) con cualquier
+// override parcial posterior. Asi soportamos follow-ups del estilo:
+//   T1: "4 dias, 800.000 pesos, 2 personas"   ← base completa
+//   T2: "somos 3 personas"                     ← override de people
+//   T3: "subamos a 1.2 millones"               ← override de budget
+//   T4: "si, dale"                             ← confirma con context merged
+//
+// Sin este merge, confirmar despues de ovverrides parciales usaba el
+// people/budget/days de la base original, contradiciendo la cotizacion
+// que el user vio en pantalla (Codex P2 round 2 #34).
 function findLastConstraints(
   messages: MockChatMessage[],
 ): { days: number; budget: number; people: number } | null {
+  let baseIdx = -1;
+  let result: { days: number; budget: number; people: number } | null = null;
+
+  // Paso 1: encuentra el mensaje mas reciente con dias+presupuesto completos.
   for (let i = messages.length - 1; i >= 0; i--) {
     const m = messages[i];
     if (m.role !== 'user') continue;
     const days = parseDays(m.content);
     const budget = parseBudget(m.content);
     if (days && budget) {
-      // people: si el mensaje historico no menciono cantidad, default 1.
-      return { days, budget, people: parsePeople(m.content) ?? 1 };
+      result = { days, budget, people: parsePeople(m.content) ?? 1 };
+      baseIdx = i;
+      break;
     }
   }
-  return null;
+
+  if (!result) return null;
+
+  // Paso 2: aplica overrides parciales de mensajes posteriores. Solo
+  // sobrescribimos cuando hay un valor explicito en el mensaje (no
+  // cuando parsePeople devuelve null por ejemplo).
+  for (let i = baseIdx + 1; i < messages.length; i++) {
+    const m = messages[i];
+    if (m.role !== 'user') continue;
+    const days = parseDays(m.content);
+    const budget = parseBudget(m.content);
+    const people = parsePeople(m.content);
+    if (days) result.days = days;
+    if (budget) result.budget = budget;
+    if (people !== null) result.people = people;
+  }
+
+  return result;
 }
 
 export function buildMockResponse(input: MockResponseInput): MockResponseOutput {
@@ -289,56 +320,15 @@ export function buildMockResponse(input: MockResponseInput): MockResponseOutput 
     };
   }
 
-  const days = parseDays(last.content);
-  const budget = parseBudget(last.content);
-  const peopleExplicit = parsePeople(last.content); // null si no menciono
+  // Buscamos contexto completo (incluyendo overrides parciales del current
+  // message ya que findLastConstraints recorre hasta el final del array).
+  const ctx = findLastConstraints(messages);
 
-  if (!days || !budget) {
-    // Sin dias/presupuesto en el ultimo mensaje. Antes de rendirnos y
-    // pedir los datos de nuevo, buscamos en el historial — el user
-    // puede estar haciendo follow-up ("no", "otro plan", "cambialo")
-    // sin repetir constraints. Sin esto el agente se siente
-    // desmemoriado y el jalador se desespera.
-    const ctx = findLastConstraints(messages);
-    if (ctx) {
-      // Merge de constraints parciales: si el mensaje actual SI menciono
-      // cantidad de personas (ej. "somos 3 personas"), preferimos ese
-      // valor. Si no, usamos el historico (Codex P2 #34).
-      const peopleToUse = peopleExplicit ?? ctx.people;
-      const picks = pickToursForBudget(source, ctx.budget, ctx.days, peopleToUse);
-      const isRequestingAlternative = /\b(otro|otra|cambia|diferente|distint|no\s*me|no me sirve)/i.test(
-        normalize(last.content),
-      );
-      if (isRequestingAlternative) {
-        // El algoritmo de seleccion es greedy por rating: ya te di los
-        // mejores tours que caben. Para variar tendrias que ajustar el
-        // presupuesto o los dias.
-        return {
-          message: `Esos planes son los que mejor se ajustan a tu presupuesto de $${COP(ctx.budget)} COP en ${ctx.days} dia(s).
-
-Para opciones diferentes podemos:
-• Subir el presupuesto y meto tours mas exclusivos (Pueblito Tayrona, Cabo San Juan)
-• Reducir dias si quieres un plan mas corto
-• Ajustar el numero de personas
-
-O si te sirve el plan actual, escribe "si, dale" y armamos la reserva. 🏖️`,
-          quiereReservar: false,
-          picks,
-          people: peopleToUse,
-        };
-      }
-      // Cualquier otro mensaje sin constraints: re-mostramos el plan
-      // con el contexto historico (y people actualizado si lo dieron)
-      // para que el user vea que SI lo recordamos.
-      return {
-        message: formatRecommendation(picks, peopleToUse, jaladorName, ctx.days),
-        quiereReservar: false,
-        picks,
-        people: peopleToUse,
-      };
-    }
-    // Sin context historico: aqui si pedimos los datos.
-    const faltan = [];
+  if (!ctx) {
+    // Primer mensaje sin dias+presupuesto: pedimos los datos.
+    const days = parseDays(last.content);
+    const budget = parseBudget(last.content);
+    const faltan: string[] = [];
     if (!days) faltan.push('cuantos dias');
     if (!budget) faltan.push('presupuesto en pesos');
     return {
@@ -347,14 +337,41 @@ O si te sirve el plan actual, escribe "si, dale" y armamos la reserva. 🏖️`,
     };
   }
 
-  // days+budget presentes: people default a 1 si no se menciono.
-  const people = peopleExplicit ?? 1;
-  const picks = pickToursForBudget(source, budget, days, people);
+  // ctx ya tiene days/budget/people mergeado con overrides posteriores.
+  const picks = pickToursForBudget(source, ctx.budget, ctx.days, ctx.people);
+
+  // Caso especial: si el current message NO trae constraints nuevos y
+  // pide explicitamente "otro/cambia/diferente", explicamos el algoritmo
+  // greedy en lugar de re-mostrar lo mismo.
+  const lastDays = parseDays(last.content);
+  const lastBudget = parseBudget(last.content);
+  const lastPeople = parsePeople(last.content);
+  const lastHasNoNewConstraints = !lastDays && !lastBudget && lastPeople === null;
+  const isRequestingAlternative =
+    lastHasNoNewConstraints &&
+    /\b(otro|otra|cambia|diferente|distint|no\s*me|no me sirve)/i.test(normalize(last.content));
+
+  if (isRequestingAlternative) {
+    return {
+      message: `Esos planes son los que mejor se ajustan a tu presupuesto de $${COP(ctx.budget)} COP en ${ctx.days} dia(s).
+
+Para opciones diferentes podemos:
+• Subir el presupuesto y meto tours mas exclusivos (Pueblito Tayrona, Cabo San Juan)
+• Reducir dias si quieres un plan mas corto
+• Ajustar el numero de personas
+
+O si te sirve el plan actual, escribe "si, dale" y armamos la reserva. 🏖️`,
+      quiereReservar: false,
+      picks,
+      people: ctx.people,
+    };
+  }
+
   return {
-    message: formatRecommendation(picks, people, jaladorName, days),
+    message: formatRecommendation(picks, ctx.people, jaladorName, ctx.days),
     quiereReservar: false,
     picks,
-    people,
+    people: ctx.people,
   };
 }
 
